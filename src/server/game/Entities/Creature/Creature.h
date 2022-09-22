@@ -771,9 +771,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
 
         bool isRegeneratingHealth() { return m_regenHealth; }
         void setRegeneratingHealth(bool regenHealth) { m_regenHealth = regenHealth; }
-        bool isRegeneratingMana() const { return m_regenMana; }
-        void setRegeneratingMana(bool regenMana) { m_regenMana = regenMana; }
-
         virtual uint8 GetPetAutoSpellSize() const { return MAX_SPELL_CHARM; }
         virtual uint32 GetPetAutoSpellOnPos(uint8 pos) const
         {
@@ -825,7 +822,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         static float _GetDamageMod(int32 Rank);
 
         float m_SightDistance, m_CombatDistance;
-        float m_ReactDistance;
 
         void SetGUIDTransport(uint32 guid) { guid_transport=guid; }
         uint32 GetGUIDTransport() { return guid_transport; }
@@ -877,7 +873,6 @@ class Creature : public Unit, public GridObject<Creature>, public MapCreature
         bool m_AlreadyCallAssistance;
         bool m_AlreadySearchedAssistance;
         bool m_regenHealth;
-        bool m_regenMana;
         bool m_AI_locked;
 
         SpellSchoolMask m_meleeDamageSchoolMask;

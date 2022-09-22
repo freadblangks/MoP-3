@@ -49,7 +49,7 @@ public:
             player->EnterVehicle(vehicle);
             }*/
 
-            player->NearTeleportTo(943.52f, 3619.68f, 252.34f, 1.476f);
+            player->NearTeleportTo(926.58f, 3605.33f, 251.63f, 3.114f);
         }
 
         player->PlayerTalkClass->SendCloseGossip();
@@ -124,7 +124,7 @@ public:
 
         void WaypointReached(uint32 waypointId)
         {
-            if (waypointId == 9)
+            if (waypointId == 6)
             {
                 if (me->GetVehicleKit())
                     me->GetVehicleKit()->RemoveAllPassengers();
@@ -423,7 +423,7 @@ public:
             if (playerList.empty())
                 return NULL;
 
-            WoWSource::Containers::RandomResizeList(playerList, 1);
+            SkyMistCore::Containers::RandomResizeList(playerList, 1);
 
             return *playerList.begin();
         }
@@ -805,7 +805,7 @@ class mob_shang_xi_air_balloon : public VehicleScript
         {
             switch (waypointId)
             {
-                case 55:
+                case 19:
                     if (me->GetVehicleKit())
                     {
                         if (Unit* passenger = me->GetVehicleKit()->GetPassenger(0))
@@ -845,50 +845,6 @@ class mob_shang_xi_air_balloon : public VehicleScript
     CreatureAI* GetAI(Creature* creature) const
     {
         return new mob_shang_xi_air_balloonAI(creature);
-    }
-};
-
-class spell_monkey_wisdom : public SpellScriptLoader
-{
-public:
-    spell_monkey_wisdom() : SpellScriptLoader("spell_monkey_wisdom") {}
-
-    class spell_monkey_wisdom_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_monkey_wisdom_SpellScript);
-
-        void HandleScript(SpellEffIndex /*effIndex*/)
-        {
-            uint8 text = urand(0, 8);
-            if (text == 0)
-                GetHitUnit()->MonsterTextEmote("Peel banana first, eat second.", GetHitUnit()->GetGUID(), true);
-            if (text == 1)
-                GetHitUnit()->MonsterTextEmote("Wet fur not fun to sleep on.", GetHitUnit()->GetGUID(), true);
-            if (text == 2)
-                GetHitUnit()->MonsterTextEmote("Don't roll in own poo unless you want to smell like poo all day.", GetHitUnit()->GetGUID(), true);
-            if (text == 3)
-                GetHitUnit()->MonsterTextEmote("Steal a banana from a hozen, expect an angry hozen.", GetHitUnit()->GetGUID(), true);
-            if (text == 4)
-                GetHitUnit()->MonsterTextEmote("Poo not good to eat, but very good to throw.", GetHitUnit()->GetGUID(), true);
-            if (text == 5)
-                GetHitUnit()->MonsterTextEmote("Mouth only hole that banana go in.", GetHitUnit()->GetGUID(), true);
-            if (text == 6)
-                GetHitUnit()->MonsterTextEmote("Don't throw banana peel where going to walk.", GetHitUnit()->GetGUID(), true);
-            if (text == 7)
-                GetHitUnit()->MonsterTextEmote("Firecracker for throwing, banana for eating.", GetHitUnit()->GetGUID(), true);
-            if (text == 8)
-                GetHitUnit()->MonsterTextEmote("Don't pull own tail when there are other tails to pull.", GetHitUnit()->GetGUID(), true);
-        }
-
-        void Register()
-        {
-            OnEffectHitTarget += SpellEffectFn(spell_monkey_wisdom_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_KILL_CREDIT2);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_monkey_wisdom_SpellScript();
     }
 };
 
@@ -1026,5 +982,4 @@ void AddSC_WanderingIsland_West()
     new mob_shang_xi_air_balloon();
     new npc_ji_firepaw();
     new npc_ji_firepaw_escort();
-    new spell_monkey_wisdom();
 }

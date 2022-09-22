@@ -1018,7 +1018,7 @@ class TrashRespawnWorker
 static void AlysrazorTrashEvaded(Creature* creature)
 {
     TrashRespawnWorker check;
-    WoWSource::CreatureWorker<TrashRespawnWorker> worker(creature, check);
+    SkyMistCore::CreatureWorker<TrashRespawnWorker> worker(creature, check);
     creature->VisitNearbyGridObject(SIZE_OF_GRIDS, worker);
 }
 
@@ -1315,11 +1315,11 @@ class npc_egg_pile : public CreatureScript
                         {
                             std::list<Creature*> eggs;
                             MoltenEggCheck check(me);
-                            WoWSource::CreatureListSearcher<MoltenEggCheck> searcher(me, eggs, check);
+                            SkyMistCore::CreatureListSearcher<MoltenEggCheck> searcher(me, eggs, check);
                             me->VisitNearbyGridObject(20.0f, searcher);
                             if (!eggs.empty())
                             {
-                                Creature* egg = WoWSource::Containers::SelectRandomContainerElement(eggs);
+                                Creature* egg = SkyMistCore::Containers::SelectRandomContainerElement(eggs);
                                 egg->CastSpell(egg, SPELL_SUMMON_SMOULDERING_HATCHLING, TRIGGERED_FULL_MASK);
                                 egg->SetDisplayId(MODEL_INVISIBLE_STALKER);
                                 egg->m_Events.AddEvent(new RespawnEggEvent(egg), egg->m_Events.CalculateTime(5000));
@@ -1691,33 +1691,6 @@ class spell_firelands_siphon_essence : public SpellScriptLoader
             return new spell_firelands_siphon_essence_SpellScript();
         }
 };
-class mob_fl_teleport : public CreatureScript
-{
-    public:
-     mob_fl_teleport() : CreatureScript("mob_fl_teleport") { }
- 
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new mob_fl_teleportAI (creature);
-    }
-
-    struct mob_fl_teleportAI : public ScriptedAI
-    {
-        mob_fl_teleportAI(Creature* creature) : ScriptedAI(creature) { }
-
-        void MoveInLineOfSight(Unit* who)
-        {
-            if (!who)
-                return;
-
-            if (!who->ToPlayer())
-                return;
-            
-            if (me->GetExactDist(who) <= 17.0f) // we use here not GetExactDist2d because player fly also into the FL portal
-                who->ToPlayer()->TeleportTo(720, -542.885f, 316.925f, 115.493f, 5.947003f);
-        }
-    };
-};
 
 void AddSC_firelands()
 {
@@ -1751,5 +1724,4 @@ void AddSC_firelands()
     new npc_firelands_circle_of_thorns_portal();
     new npc_firelands_volcanus();
     new spell_firelands_siphon_essence();
-	new mob_fl_teleport();
 }

@@ -276,12 +276,7 @@ Unit::Unit(bool isWorldObject): WorldObject(isWorldObject)
 
     _focusSpell = NULL;
     _lastLiquid = NULL;
-	_isWalkingBeforeCharm = false;
-
-	_eclipsePower = 0;
-
-	// Don't send packet in constructor, it may cause crashes
-	SetEclipsePower(0, false); // Not sure of 0
+    _isWalkingBeforeCharm = false;
 
     // Area Skip Update
     _skipCount = 0;
@@ -290,14 +285,8 @@ Unit::Unit(bool isWorldObject): WorldObject(isWorldObject)
     m_IsInKillingProcess = false;
     m_VisibilityUpdScheduled = false;
 
-	m_SendTransportMoveTimer = 0;
-	m_lastVisibilityUpdPos = *this;
-
-	for (int i = 0; i < MAX_POWERS; ++i)
-		m_lastRegenTime[i] = getMSTime();
-
-	for (int i = 0; i < MAX_POWERS; ++i)
-		m_powers[i] = 0;
+    m_SendTransportMoveTimer = 0;
+    m_lastVisibilityUpdPos = *this;
 
     m_oldEmoteState = 0;
 }
@@ -696,7 +685,7 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
         if (targetList.size() > 1)
         {
             targetList.remove(this); // Remove Player
-            targetList.sort(WoWSource::HealthPctOrderPred());
+            targetList.sort(SkyMistCore::HealthPctOrderPred());
             targetList.resize(1);
         }
 
@@ -1473,11 +1462,6 @@ void Unit::CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* dam
             damageInfo->procEx      |= PROC_EX_DODGE;
             damageInfo->cleanDamage += damageInfo->damage;
             damageInfo->damage = 0;
-            if (victim->GetTypeId() == TYPEID_PLAYER)
-            {
-                if (victim->HasAura(138216) && victim->HasAura(132402))
-                    victim->CastSpell(victim, 138217, true);
-            }
             break;
         case MELEE_HIT_BLOCK:
             damageInfo->TargetState = VICTIMSTATE_HIT;
@@ -1568,7 +1552,7 @@ void Unit::CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* dam
         {
             if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(108446))
             {
-                uint32 splitDamage = CalculatePct(damageInfo->damage, 20);
+                uint32 splitDamage = CalculatePct(damage, 20);
 
                 if (splitDamage)
                 {
@@ -1699,12 +1683,7 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
 
         // 6 Rage for each Bear auto - attack.
         if (getClass() == CLASS_DRUID && GetShapeshiftForm() == FORM_BEAR)
-        {
-            if (HasAura(5229) && HasAura(138222))
-                RewardRage(90, true, false);
-            else
             RewardRage(60, true, false);
-        }
     }
 
     // If this is a creature and it attacks from behind it has a probability to daze it's victim
@@ -2083,7 +2062,7 @@ void Unit::CalcAbsorbResist(Unit* victim, SpellSchoolMask schoolMask, DamageEffe
     // We're going to call functions which can modify content of the list during iteration over it's elements
     // Let's copy the list so we can prevent iterator invalidation
     AuraEffectList vSchoolAbsorbCopy(victim->GetAuraEffectsByType(SPELL_AURA_SCHOOL_ABSORB));
-    vSchoolAbsorbCopy.sort(WoWSource::AbsorbAuraOrderPred());
+    vSchoolAbsorbCopy.sort(SkyMistCore::AbsorbAuraOrderPred());
 
     // absorb without mana cost
     for (AuraEffectList::iterator itr = vSchoolAbsorbCopy.begin(); (itr != vSchoolAbsorbCopy.end()) && (dmgInfo.GetDamage() > 0); ++itr)
@@ -2852,11 +2831,8 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* victim, SpellInfo const* spell)
     // Ranged attacks can only miss, resist, dodge(5.0.4), block and deflect
     if (attType == RANGED_ATTACK)
     {
-        canParry = false;
-        canDodge = false;
-		
         // only if in front
-        if ((victim->HasInArc(M_PI, this) || victim->HasAuraType(SPELL_AURA_IGNORE_HIT_DIRECTION)) && !victim->HasAuraType(SPELL_AURA_MOD_STUN))
+        if (victim->HasInArc(M_PI, this) || victim->HasAuraType(SPELL_AURA_IGNORE_HIT_DIRECTION))
         {
             int32 deflect_chance = victim->GetTotalAuraModifier(SPELL_AURA_DEFLECT_SPELLS) * 100;
             tmp += deflect_chance;
@@ -2868,14 +2844,13 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* victim, SpellInfo const* spell)
     }
 
     // Check for attack from behind
-    bool IsBehind = FindCurrentSpellBySpellId(spell->Id) && FindCurrentSpellBySpellId(spell->Id)->GetSpellInfo()->AttributesCu & SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET;
-	if (!victim->HasInArc(M_PI, this) || IsBehind) // don't dodge hits that can come only from behind
+    if (!victim->HasInArc(M_PI, this))
     {
         // Players can't dodge attacks that are from behind, however a mob can.
         if (victim->GetTypeId() == TYPEID_PLAYER)
             canDodge = false;
 
-        if (!victim->HasAuraType(SPELL_AURA_IGNORE_HIT_DIRECTION) || IsBehind)
+        if (!victim->HasAuraType(SPELL_AURA_IGNORE_HIT_DIRECTION) || spell->AttributesCu & SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET)
             canParry = false; // Can`t parry attacks from behind (unless with SPELL_AURA_IGNORE_HIT_DIRECTION).
 
         // Can`t block attacks from behind.
@@ -5759,7 +5734,7 @@ void Unit::SendSpellDamageResist(Unit* target, uint32 spellId)
 
 void Unit::SendMessageUnfriendlyToSetInRange(WorldPacket* data, float fist)
 {
-    WoWSource::UnfriendlyMessageDistDeliverer notifier(this, data, GetVisibilityRange());
+    SkyMistCore::UnfriendlyMessageDistDeliverer notifier(this, data, GetVisibilityRange());
     VisitNearbyWorldObject(GetVisibilityRange(), notifier);
 }
 
@@ -6380,6 +6355,26 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                     else
                         triggered_spell_id = 34650;
 
+                    // Item - Priest T13 Shadow 4P Bonus (Shadowfiend and Shadowy Apparition)
+                    if (AuraEffectPtr eff = target->GetAuraEffect(105844, 0))
+                    {
+                        if (roll_chance_i(eff->GetAmount()))
+                        {
+                            // don't apply if allready have orbs
+                            bool found = false;
+                            if (AuraPtr orbs = target->GetAura(77487))
+                                if (orbs->GetStackAmount() == 3)
+                                    found = true;
+
+                            if (!found)
+                            {
+                                for (int i = 0; i < eff->GetSpellInfo()->Effects[1].BasePoints; i++)
+                                {
+                                    target->CastSpell(target, 77487, true);
+                                }
+                            }
+                        }
+                    }
                     break;
                 }
                 // Mark of Malice
@@ -7328,6 +7323,49 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                         basepoints0 = int32(CalculatePct(damage, triggerAmount) / (blessHealing->GetMaxDuration() / blessHealing->Effects[0].Amplitude));
                     }
                     break;
+                // Shadowy Apparition
+                case 78203:
+                    if (AuraPtr aur = GetAura(dummySpell->Id))
+                    {
+                        int32 chance = aur->GetEffect(0)->GetAmount();
+                        if (IsMoving())
+                            chance *= 5;
+                        if (effIndex !=0 || !procSpell || !roll_chance_i(chance))
+                            return false;
+
+                        std::list<Creature*> summons;
+                        GetAllMinionsByEntry(summons, 46954);
+                        if (summons.size() > 3)
+                            return false;
+
+                        int32 bp0 = 1;
+                        CastCustomSpell(this, 87426, &bp0, NULL, NULL, true);
+
+                        std::list<Creature*> new_summons;
+                        GetAllMinionsByEntry(new_summons, 46954);
+
+                        Unit* summon = NULL;
+                        for (std::list<Creature*>::iterator new_itr = new_summons.begin(); new_itr != new_summons.end(); ++new_itr)
+                        {
+                            summon = NULL;
+                            for (std::list<Creature*>::iterator itr = summons.begin(); itr != summons.end(); ++itr)
+                                if ((*new_itr)->GetGUID() == (*itr)->GetGUID())
+                                    summon = *new_itr;
+                            if (!summon)
+                            {
+                                summon = *new_itr;
+                                break;
+                            }
+                        }
+                        if (summon)
+                        {
+                            //summon->m_FollowingRefManager.clearReferences();
+                            CastSpell(summon, 87213, true);
+                            summon->CastSpell(summon, 87427, true);
+                            summon->GetAI()->AttackStart(victim);
+                        }
+                    }
+                    break;
             }
             break;
         }
@@ -7371,8 +7409,8 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
 
                     
                     std::list<Player*> plrList;
-                    WoWSource::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
-                    WoWSource::PlayerListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
+                    SkyMistCore::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
+                    SkyMistCore::PlayerListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
                     VisitNearbyObject(15.0f, searcher);
                     if (plrList.empty())
                         return false;
@@ -7382,7 +7420,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                     if (plrList.empty())
                         return false;
 
-                    plrList.sort(WoWSource::HealthPctOrderPred());
+                    plrList.sort(SkyMistCore::HealthPctOrderPred());
                     plrList.resize(1);
 
                     int32 bp0 = damage;
@@ -7467,24 +7505,24 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                     ToPlayer()->AddSpellCooldown(46832, 0, time(NULL) + 6);
 
                     if (ToPlayer()->GetLastEclipsePower() == 48518)
-                        SetEclipsePower(GetEclipsePower() + 20);
+                        SetPower(POWER_ECLIPSE, GetPower(POWER_ECLIPSE) + 20);
                     else
-                        SetEclipsePower(GetEclipsePower() - 20);
+                        SetPower(POWER_ECLIPSE, GetPower(POWER_ECLIPSE) - 20);
 
-                    if (GetEclipsePower() == 100)
+                    if (GetPower(POWER_ECLIPSE) == 100)
                     {
-                        CastSpell(this, 48517, true, 0); // Cast Lunar Eclipse
-                        CastSpell(this, 16886, true); // Cast Nature's Grace
-                        CastSpell(this, 81070, true); // Cast Eclipse - Give 35% of POWER_MANA
+                        CastSpell(this, 48517, true, 0); // Cast Solar Eclipse.
+                        CastSpell(this, 16886, true);    // Cast Nature's Grace..
+                        CastSpell(this, 81070, true);    // Cast Eclipse - Give 35% of POWER_MANA.
 
                         // Now our last eclipse is Solar.
                         ToPlayer()->SetLastEclipsePower(48517);
                     }
-                    else if (GetEclipsePower() == -100)
+                    else if (GetPower(POWER_ECLIPSE) == -100)
                     {
-                        CastSpell(this, 48518, true, 0); // Cast Lunar Eclipse
-                        CastSpell(this, 16886, true); // Cast Nature's Grace
-                        CastSpell(this, 81070, true); // Cast Eclipse - Give 35% of POWER_MANA
+                        CastSpell(this,  48518, true, 0); // Cast Lunar Eclipse.
+                        CastSpell(this,  16886, true);    // Cast Nature's Grace.
+                        CastSpell(this,  81070, true);    // Cast Eclipse - Give 35% of POWER_MANA.
                         CastSpell(this, 107095, true);
 
                         // Now our last eclipse is Lunar.
@@ -7968,8 +8006,8 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
 
                     
                     std::list<Player*> plrList;
-                    WoWSource::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
-                    WoWSource::PlayerListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
+                    SkyMistCore::AnyFriendlyUnitInObjectRangeCheck check(this, this, 15.0f);
+                    SkyMistCore::PlayerListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, plrList, check);
                     VisitNearbyObject(15.0f, searcher);
                     if (plrList.empty())
                         return false;
@@ -7979,7 +8017,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                     if (plrList.empty())
                         return false;
 
-                    plrList.sort(WoWSource::HealthPctOrderPred());
+                    plrList.sort(SkyMistCore::HealthPctOrderPred());
                     plrList.resize(1);
 
                     int32 bp0 = int32(CalculatePct(damage, 10));
@@ -8537,7 +8575,9 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
                         return false;
 
                     WeaponAttackType attType = WeaponAttackType(player->GetAttackBySlot(castItem->GetSlot()));
-                    if ((attType != BASE_ATTACK && attType != OFF_ATTACK))
+                    if ((attType != BASE_ATTACK && attType != OFF_ATTACK)
+                        || (attType == BASE_ATTACK && procFlag & PROC_FLAG_DONE_MAINHAND_ATTACK)
+                        || (attType == OFF_ATTACK && procFlag & PROC_FLAG_DONE_OFFHAND_ATTACK))
                          return false;
 
                     // Now compute real proc chance...
@@ -8552,12 +8592,6 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffectPtr trigge
 
                     if (!roll_chance_i(chance))
                         return false;
-                    
-                    if (HasAura(138141))
-                    {
-                        if (ToPlayer())
-                            ToPlayer()->ReduceSpellCooldown(51533, 8000);
-                    }
 
                     // Now amount of extra power stored in 1 effect of Enchant spell
                     uint32 spellId = 8232;
@@ -10100,8 +10134,8 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffectPtr tri
             if (HasAura(119477))
             {
                 std::list<Unit*> targets;
-                WoWSource::AnyGroupedUnitInObjectRangeCheck u_check(this, this, 100.0f, true);
-                WoWSource::UnitListSearcher<WoWSource::AnyGroupedUnitInObjectRangeCheck> searcher(this, targets, u_check);
+                SkyMistCore::AnyGroupedUnitInObjectRangeCheck u_check(this, this, 100.0f, true);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyGroupedUnitInObjectRangeCheck> searcher(this, targets, u_check);
                 victim->VisitNearbyObject(100.0f, searcher);
 
                 Unit* lowhealtarget = NULL;
@@ -12332,13 +12366,13 @@ int32 Unit::DealHeal(Unit* victim, uint32 addhealth, SpellInfo const* spellProto
         {
             std::list<Unit*> targetList;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(unit, unit, 6.0f);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(unit, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(unit, unit, 6.0f);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(unit, targetList, u_check);
             unit->VisitNearbyObject(6.0f, searcher);
 
             if (!targetList.empty())
             {
-                targetList.sort(WoWSource::HealthPctOrderPred());
+                targetList.sort(SkyMistCore::HealthPctOrderPred());
 
                 for (auto itr : targetList)
                 {
@@ -12933,13 +12967,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uin
     {
         if (spellProto->Id == 116 || spellProto->Id == 44614 || spellProto->Id == 84721)
         {
-            int32 chance = 12;
-            if (spellProto->Id == 116)
-            {
-                if (HasAura(138376))
-                    chance += 6;
-            }
-            if (roll_chance_i(chance))
+            if (roll_chance_i(12))
             {
                 CastSpell(this, 44544, true);  // Fingers of frost proc
                 CastSpell(this, 126084, true); // Fingers of frost visual
@@ -13246,7 +13274,7 @@ uint32 Unit::SpellDamageBonusTaken(Unit* caster, SpellInfo const* spellProto, ui
     // small exception for Stagger Amount, can't find any general rules
     // Light Stagger, Moderate Stagger and Heavy Stagger ignore reduction mods
     if (spellProto->Id == 124275 || spellProto->Id == 124274 || spellProto->Id == 124273)
-        return pdamage;        
+        return pdamage;
 
     // small exception for Improved Serpent Sting, can't find any general rule
     // should ignore ALL damage mods, they already calculated in trigger spell
@@ -15983,8 +16011,6 @@ int32 Unit::CalcSpellDuration(SpellInfo const* spellProto)
     int32 maxduration = spellProto->GetMaxDuration();
 
     int32 duration;
-    if (comboPoints && HasAura(138148))
-        comboPoints++;
 
     if (comboPoints && minduration != -1 && minduration != maxduration)
         duration = minduration + int32((maxduration - minduration) * comboPoints / 5);
@@ -16581,6 +16607,64 @@ void Unit::SetLevel(uint8 lvl)
         sWorld->UpdateCharacterNameDataLevel(ToPlayer()->GetGUIDLow(), lvl);
 }
 
+void Unit::CheckEclipsePowerAuras(int32 powerValue)
+{
+    if (GetTypeId() != TYPEID_PLAYER)
+        return;
+
+    uint32 solarEclipseMarker = 67483;
+    uint32 lunarEclipseMarker = 67484;
+
+    if (powerValue > 0)
+    {
+        if (HasAura(48518))
+            RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
+        if (HasAura(107095))
+            RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
+
+        if (HasAura(lunarEclipseMarker))
+        {
+            RemoveAurasDueToSpell(lunarEclipseMarker);
+            CastSpell(this, solarEclipseMarker, true);
+        }
+        else if (!HasAura(solarEclipseMarker))
+        {
+            CastSpell(this, solarEclipseMarker, true);
+        }
+    }
+
+    if (powerValue == 0)
+    {
+        if (HasAura(48517))
+            RemoveAurasDueToSpell(48517); // Eclipse (Solar)
+        if (HasAura(48518))
+            RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
+        if (HasAura(107095))
+            RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
+
+        if (HasAura(lunarEclipseMarker))
+            RemoveAurasDueToSpell(lunarEclipseMarker);
+        if (HasAura(solarEclipseMarker))
+            RemoveAurasDueToSpell(solarEclipseMarker);
+    }
+
+    if (powerValue < 0)
+    {
+        if (HasAura(48517))
+            RemoveAurasDueToSpell(48517); // Eclipse (Solar)
+
+        if (HasAura(solarEclipseMarker))
+        {
+            RemoveAurasDueToSpell(solarEclipseMarker);
+            CastSpell(this, lunarEclipseMarker, true);
+        }
+        else if (!HasAura(lunarEclipseMarker))
+        {
+            CastSpell(this, lunarEclipseMarker, true);
+        }
+    }
+}
+
 void Unit::SetHealth(uint32 val)
 {
     if (getDeathState() == JUST_DIED)
@@ -16750,6 +16834,10 @@ void Unit::SetPower(Powers power, int32 val)
     SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER ? true : false);
 
     // Packet sent. Now make the other checks.
+
+    // Check and add / remove Druid Eclipse auras.
+    if (power == POWER_ECLIPSE)
+        CheckEclipsePowerAuras(val);
 
     // Custom MoP Script
     // Pursuit of Justice - 26023
@@ -17601,9 +17689,8 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
             SetPower(POWER_BURNING_EMBERS, GetPower(POWER_BURNING_EMBERS) + 1);
 
     // Cast Shadowy Apparitions when Shadow Word : Pain is crit
-    if (procSpell && procSpell->Id == 589 && HasAura(78203) && procExtra & PROC_EX_CRITICAL_HIT)
+    if (GetTypeId() == TYPEID_PLAYER && procSpell && procSpell->Id == 589 && HasAura(78203) && procExtra & PROC_EX_CRITICAL_HIT)
         CastSpell(target, 147193, true);
-
 
     Unit* actor = isVictim ? target : this;
     Unit* actionTarget = !isVictim ? target : this;
@@ -18361,15 +18448,15 @@ void Unit::UpdateReactives(uint32 p_time)
 
 void Unit::GetAttackableUnitListInRange(std::list<Unit*> &list, float fMaxSearchRange) const
 {
-    CellCoord p(WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY()));
+    CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::AnyUnitInObjectRangeCheck u_check(this, fMaxSearchRange);
-    WoWSource::UnitListSearcher<WoWSource::AnyUnitInObjectRangeCheck> searcher(this, list, u_check);
+    SkyMistCore::AnyUnitInObjectRangeCheck u_check(this, fMaxSearchRange);
+    SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck> searcher(this, list, u_check);
 
-    TypeContainerVisitor<WoWSource::UnitListSearcher<WoWSource::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
-    TypeContainerVisitor<WoWSource::UnitListSearcher<WoWSource::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
 
     cell.Visit(p, world_unit_searcher, *GetMap(), *this, fMaxSearchRange);
     cell.Visit(p, grid_unit_searcher, *GetMap(), *this, fMaxSearchRange);
@@ -18378,8 +18465,8 @@ void Unit::GetAttackableUnitListInRange(std::list<Unit*> &list, float fMaxSearch
 Unit* Unit::SelectNearbyTarget(Unit* exclude, float dist) const
 {
     std::list<Unit*> targets;
-    WoWSource::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, this, dist);
-    WoWSource::UnitListSearcher<WoWSource::AnyUnfriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
+    SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, this, dist);
+    SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
     VisitNearbyObject(dist, searcher);
 
     // remove current target
@@ -18403,14 +18490,14 @@ Unit* Unit::SelectNearbyTarget(Unit* exclude, float dist) const
         return NULL;
 
     // select random
-    return WoWSource::Containers::SelectRandomContainerElement(targets);
+    return SkyMistCore::Containers::SelectRandomContainerElement(targets);
 }
 
 Unit* Unit::SelectNearbyAlly(Unit* exclude, float dist) const
 {
     std::list<Unit*> targets;
-    WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, this, dist);
-    WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
+    SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, this, dist);
+    SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
     VisitNearbyObject(dist, searcher);
 
     if (exclude)
@@ -18430,7 +18517,7 @@ Unit* Unit::SelectNearbyAlly(Unit* exclude, float dist) const
         return NULL;
 
     // select random
-    return WoWSource::Containers::SelectRandomContainerElement(targets);
+    return SkyMistCore::Containers::SelectRandomContainerElement(targets);
 }
 
 void Unit::ApplyAttackTimePercentMod(WeaponAttackType att, float val, bool apply)
@@ -18776,11 +18863,6 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* victim, AuraPtr aura, SpellInfo con
             return false;
     }
 
-    if (aura->GetId() == 51558)
-    {
-        if (HasAura(138305) && roll_chance_i(50))
-            procExtra |= 2;
-    }
     // Check spellProcEvent data requirements
     if (!sSpellMgr->IsSpellProcEventCanTriggeredBy(spellProcEvent, EventProcFlag, procSpell, procFlag, procExtra, active))
     {
@@ -18875,8 +18957,8 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* victim, AuraPtr aura, SpellInfo con
     if (aura->GetId() == 93399 && (procSpell->Id == 8921 || procSpell->Id == 93402))
     {
         UnitList targets;
-        WoWSource::AnyUnitHavingBuffInObjectRangeCheck u_check(this, this, 150.0f, procSpell->Id, false);
-        WoWSource::UnitListSearcher<WoWSource::AnyUnitHavingBuffInObjectRangeCheck> searcher(this, targets, u_check);
+        SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck u_check(this, this, 150.0f, procSpell->Id, false);
+        SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(this, targets, u_check);
         VisitNearbyObject(150.0f, searcher);
 
         // Blue post - The way this works under the hood is by multiplying the base proc chance by SQRT(x)/x, where x is the number of mobs that have Moonfire or Sunfire active.
@@ -19984,8 +20066,8 @@ void Unit::ApplyResilience(Unit const* victim, int32* damage) const
         return;
 
     // Do not apply resilience for unit / own - cast spells.
-  //if (GetTypeId() != TYPEID_PLAYER || this == target)
-      //return;
+    if (GetTypeId() != TYPEID_PLAYER || this == target)
+        return;
 
     *damage -= target->GetDamageReduction(*damage);
 }
@@ -20104,7 +20186,7 @@ public:
 
     virtual bool Execute(uint64 , uint32)
     {
-        WoWSource::AIRelocationNotifier notifier(m_owner);
+        SkyMistCore::AIRelocationNotifier notifier(m_owner);
         m_owner.VisitNearbyObject(m_owner.GetVisibilityRange(), notifier);
         return true;
     }
@@ -21946,109 +22028,6 @@ void Unit::SendCanTurnWhileFalling(bool apply)
     ToPlayer()->GetSession()->SendPacket(&data);
 }
 
-void Unit::SetEclipsePower(int32 power, bool send)
-{
-	if (power > 100)
-		power = 100;
-
-	if (power < -100)
-		power = -100;
-
-	if (power > 0)
-	{
-		if (HasAura(48518))
-			RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
-		if (HasAura(107095))
-			RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
-	}
-
-	if (power == 0)
-	{
-		if (HasAura(48517))
-			RemoveAurasDueToSpell(48517); // Eclipse (Solar)
-		if (HasAura(48518))
-			RemoveAurasDueToSpell(48518); // Eclipse (Lunar)
-		if (HasAura(107095))
-			RemoveAurasDueToSpell(107095);// Eclipse (Lunar) - SPELL_AURA_OVERRIDE_SPELLS
-	}
-
-	if (power < 0)
-	{
-		if (HasAura(48517))
-			RemoveAurasDueToSpell(48517); // Eclipse (Solar)
-	}
-
-	const uint32 solarEclipseMarker = 67483;
-	const uint32 lunarEclipseMarker = 67484;
-
-	int diff = power - _eclipsePower;
-
-	if (diff < 0)
-	{
-		if (HasAura(solarEclipseMarker))
-		{
-			RemoveAurasDueToSpell(solarEclipseMarker);
-			CastSpell(this, lunarEclipseMarker, true);
-		}
-		else if (!HasAura(lunarEclipseMarker))
-		{
-			CastSpell(this, lunarEclipseMarker, true);
-		}
-	}
-	else if (diff > 0)
-	{
-		if (HasAura(lunarEclipseMarker))
-		{
-			RemoveAurasDueToSpell(lunarEclipseMarker);
-			CastSpell(this, solarEclipseMarker, true);
-		}
-		else if (!HasAura(solarEclipseMarker))
-		{
-			CastSpell(this, solarEclipseMarker, true);
-		}
-	}
-	else if (power == 0)
-	{
-		if (HasAura(lunarEclipseMarker))
-			RemoveAurasDueToSpell(lunarEclipseMarker);
-		if (HasAura(solarEclipseMarker))
-			RemoveAurasDueToSpell(solarEclipseMarker);
-	}
-
-	_eclipsePower = power;
-
-	if (send)
-	{
-		WorldPacket data(SMSG_POWER_UPDATE, 17);
-
-		ObjectGuid guid = GetGUID();
-
-		data.WriteBit(guid[3]);
-		data.WriteBit(guid[6]);
-		data.WriteBit(guid[4]);
-		int powerCounter = 1;
-		data.WriteBits(powerCounter, 21);
-		data.WriteBit(guid[2]);
-		data.WriteBit(guid[1]);
-		data.WriteBit(guid[7]);
-		data.WriteBit(guid[5]);
-		data.WriteBit(guid[0]);
-
-		data.WriteByteSeq(guid[3]);
-		data.WriteByteSeq(guid[5]);
-		data.WriteByteSeq(guid[7]);
-		data.WriteByteSeq(guid[1]);
-		data << uint8(POWER_ECLIPSE);
-		data << int32(_eclipsePower);
-		data.WriteByteSeq(guid[0]);
-		data.WriteByteSeq(guid[4]);
-		data.WriteByteSeq(guid[6]);
-		data.WriteByteSeq(guid[2]);
-
-		SendMessageToSet(&data, GetTypeId() == TYPEID_PLAYER ? true : false);
-	}
-}
-
 /* In the next functions, we keep 1 minute of last damage */
 uint32 Unit::GetHealingDoneInPastSecs(uint32 secs)
 {
@@ -22335,45 +22314,3 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
     updateMask.AppendToPacket(data);
     data->append(fieldBuffer);
 }
-
-void Unit::SendEclipse()
-{
-	enum DruidEclipseSpells
-	{
-		DRUID_SOLAR_ECLIPSE = 48517,
-		DRUID_LUNAR_ECLIPSE = 48518,
-		DRUID_LUNAR_ECLIPSE_OVERRIDE = 107095,
-		DRUID_ECLIPSE_GENERAL_ENERGIZE = 81070,
-		DRUID_NATURES_GRACE = 16886,
-		DRUID_STARFALL = 48505
-	};
-
-	if (Player* _player = this->ToPlayer())
-	{
-		if (_player->getClass() != CLASS_DRUID)
-			return;
-
-		if (_player->GetEclipsePower() == 100 && !_player->HasAura(DRUID_SOLAR_ECLIPSE))
-		{
-			_player->CastSpell(_player, DRUID_SOLAR_ECLIPSE, true, 0); // Cast Lunar Eclipse
-			_player->CastSpell(_player, DRUID_NATURES_GRACE, true); // Cast Nature's Grace
-			_player->CastSpell(_player, DRUID_ECLIPSE_GENERAL_ENERGIZE, true); // Cast Eclipse - Give 35% of POWER_MANA
-
-			// Now our last eclipse is Solar
-			_player->SetLastEclipsePower(DRUID_SOLAR_ECLIPSE);
-		}
-		else if (_player->GetEclipsePower() == -100 && !_player->HasAura(DRUID_LUNAR_ECLIPSE))
-		{
-			_player->CastSpell(_player, DRUID_LUNAR_ECLIPSE, true, 0); // Cast Lunar Eclipse
-			_player->CastSpell(_player, DRUID_NATURES_GRACE, true); // Cast Nature's Grace
-			_player->CastSpell(_player, DRUID_ECLIPSE_GENERAL_ENERGIZE, true); // Cast Eclipse - Give 35% of POWER_MANA
-			_player->CastSpell(_player, DRUID_LUNAR_ECLIPSE_OVERRIDE, true);
-
-			// Now our last eclipse is Lunar
-			_player->SetLastEclipsePower(DRUID_LUNAR_ECLIPSE);
-
-			if (_player->HasSpellCooldown(DRUID_STARFALL))
-				_player->RemoveSpellCooldown(DRUID_STARFALL, true);
-		}
-	}
-};

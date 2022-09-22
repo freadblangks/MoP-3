@@ -715,7 +715,7 @@ void WorldSession::HandleEmoteOpcode(WorldPacket& recvData)
     GetPlayer()->HandleEmote(emote);
 }
 
-namespace WoWSource
+namespace SkyMistCore
 {
     class EmoteChatBuilder
     {
@@ -779,7 +779,7 @@ namespace WoWSource
             uint32        i_emote_num;
             Unit const*   i_target;
     };
-}                                                           // namespace WoWSource
+}                                                           // namespace SkyMistCore
 
 void WorldSession::HandleTextEmoteOpcode(WorldPacket & recvData)
 {
@@ -844,15 +844,15 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket & recvData)
 
     Unit* unit = ObjectAccessor::GetUnit(*_player, guid);
 
-    CellCoord p = WoWSource::ComputeCellCoord(GetPlayer()->GetPositionX(), GetPlayer()->GetPositionY());
+    CellCoord p = SkyMistCore::ComputeCellCoord(GetPlayer()->GetPositionX(), GetPlayer()->GetPositionY());
 
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::EmoteChatBuilder emote_builder(*GetPlayer(), emote_anim, text_emote, unit);
-    WoWSource::LocalizedPacketDo<WoWSource::EmoteChatBuilder > emote_do(emote_builder);
-    WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::EmoteChatBuilder > > emote_worker(GetPlayer(), sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), emote_do);
-    TypeContainerVisitor<WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::EmoteChatBuilder> >, WorldTypeMapContainer> message(emote_worker);
+    SkyMistCore::EmoteChatBuilder emote_builder(*GetPlayer(), emote_anim, text_emote, unit);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::EmoteChatBuilder > emote_do(emote_builder);
+    SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::EmoteChatBuilder > > emote_worker(GetPlayer(), sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), emote_do);
+    TypeContainerVisitor<SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::EmoteChatBuilder> >, WorldTypeMapContainer> message(emote_worker);
     cell.Visit(p, message, *GetPlayer()->GetMap(), *GetPlayer(), sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE));
 
     GetPlayer()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DO_EMOTE, text_emote, 0, 0, unit);

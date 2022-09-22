@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 
-# Copyright (C) 2012-2015 TrinityCore <http://www.trinitycore.org/>
-# Author: Kalimdor
-# Date: 2015-07-03
-# Note: Based on conf file format of rev 11702
+# Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+# Author: leak
+# Date: 2010-12-06
+# Note: Based on conf file format of rev 10507
 
 use strict;
 

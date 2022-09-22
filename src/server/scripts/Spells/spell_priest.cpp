@@ -282,7 +282,7 @@ class spell_pri_psyfiend_hit_me_driver : public SpellScriptLoader
                         return;
 
                     if (psyfiendList.size() > 1)
-                        WoWSource::Containers::RandomResizeList(psyfiendList, 1);
+                        SkyMistCore::Containers::RandomResizeList(psyfiendList, 1);
 
                     for (auto itr : psyfiendList)
                         if (itr->AI())
@@ -528,6 +528,7 @@ int32 mendingCharges = 0;
 // Player of Mending - 33076
 // Heal by Player of Mending - 33110
 // Glyph of Prayer of Mending - 55685
+// Доделать. Попробовать через исчезание ауры самого мендинга, записать какая это аура по счету и если первая - то увеличить хил.
 class spell_pri_glyph_of_player_of_mending : public SpellScriptLoader
 {
     public:
@@ -1369,7 +1370,7 @@ class spell_pri_atonement : public SpellScriptLoader
 
                             if (groupList.size() > 1)
                             {
-                                groupList.sort(WoWSource::HealthPctOrderPred());
+                                groupList.sort(SkyMistCore::HealthPctOrderPred());
                                 groupList.resize(1);
                             }
 
@@ -1580,9 +1581,6 @@ class spell_pri_devouring_plague : public SpellScriptLoader
                     return;
 
                 powerUsed = GetCaster()->GetPower(POWER_SHADOW_ORBS) + 1;
-                if (GetCaster()->HasAura(145179))
-                    GetCaster()->CastCustomSpell(145180, SPELLVALUE_BASE_POINT0, powerUsed * 50, GetCaster(), true);
-
                 GetCaster()->SetPower(POWER_SHADOW_ORBS, 0);
 
                 // Calculate SpellPower from Intellect.
@@ -1855,7 +1853,7 @@ class spell_pri_cascade_second : public SpellScriptLoader
                             return;
 
                         // Each bound hit twice more targets up to 8 for the same bound
-                        WoWSource::Containers::RandomResizeList(targetList, (affectedUnits * 2));
+                        SkyMistCore::Containers::RandomResizeList(targetList, (affectedUnits * 2));
 
                         for (auto itr : targetList)
                         {
@@ -3013,8 +3011,8 @@ class spell_binding_heal : public SpellScriptLoader
                     if (GetCaster()->HasAura(63248))
                     {
                        std::list<Unit*> targets;
-                       WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 20.0f);
-                       WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
+                       SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 20.0f);
+                       SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
                        GetCaster()->VisitNearbyObject(20, searcher);
 
                        if (!targets.empty())
@@ -3035,7 +3033,7 @@ class spell_binding_heal : public SpellScriptLoader
                            if (targets.empty())
                                return;
                        }
-                        unitList.push_back(WoWSource::Containers::SelectRandomContainerElement(targets));
+                        unitList.push_back(SkyMistCore::Containers::SelectRandomContainerElement(targets));
                     }
                  }
             }
@@ -3257,301 +3255,8 @@ class spell_pri_holy_spark : public SpellScriptLoader
         }
 };
 
-// Called by Prayer of Mending - 33076
-class spell_pri_4p_holy_spark : public SpellScriptLoader
-{
-    public:
-        spell_pri_4p_holy_spark() : SpellScriptLoader("spell_pri_4p_holy_spark") { }
-
-        enum Spells
-        {
-            PRIEST_SPELL_HOLY_SPARK = 131567,
-            PRIEST_SPELL_FLASH_HEAL = 2061,
-            PRIEST_SPELL_GREATER_HEAL = 2060,
-            PRIEST_SPELL_HOLY_WORD_SERENITY = 88684,
-            PRIEST_SPELL_PRAYER_OF_MENDING = 33076,
-            PRIEST_SPELL_HOLY_SPARK_PASSIVE = 33333
-        };
-
-        class spell_impl : public SpellScript
-        {
-            PrepareSpellScript(spell_impl);
-
-            void HandleDrop(SpellEffIndex /*effIndex*/)
-            {
-                if (GetSpellInfo()->Id != PRIEST_SPELL_FLASH_HEAL 
-                    && GetSpellInfo()->Id != PRIEST_SPELL_GREATER_HEAL 
-                    && GetSpellInfo()->Id != PRIEST_SPELL_HOLY_WORD_SERENITY)
-                    return;
-
-                if (AuraPtr aura = GetHitUnit()->GetAura(PRIEST_SPELL_HOLY_SPARK))
-                    aura->DropCharge();
-            }
-
-            void HandleSpark(SpellEffIndex /*effIndex*/)
-            {
-                if (!GetCaster()->HasAura(PRIEST_SPELL_HOLY_SPARK_PASSIVE))
-                    return;
-
-                if (GetSpellInfo()->Id != PRIEST_SPELL_PRAYER_OF_MENDING)
-                    return;
-
-                GetCaster()->CastSpell(GetHitUnit(), PRIEST_SPELL_HOLY_SPARK, true);
-            }
-
-            void Register()
-            {
-                OnEffectHitTarget += SpellEffectFn(spell_impl::HandleDrop, EFFECT_0, SPELL_EFFECT_HEAL);
-                OnEffectHitTarget += SpellEffectFn(spell_impl::HandleSpark, EFFECT_1, SPELL_EFFECT_TRIGGER_SPELL);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_impl;
-        }
-};
-
-// 32592 - Mass Dispel
-class spell_pri_mass_dispel : public SpellScriptLoader
-{
-    class spell_impl : public SpellScript
-    {
-        PrepareSpellScript(spell_impl);
-
-        bool _hasImmunity;
-
-        bool Load()
-        {
-            _hasImmunity = false;
-            return true;
-        }
-
-        void CheckAuras()
-        {
-            // Check if Immunity aura is on target
-            if (Unit* target = GetHitUnit())
-                if (target->HasAuraWithMechanic(1 << MECHANIC_IMMUNE_SHIELD))
-                    _hasImmunity = true;
-        }
-
-        void HandleScript(SpellEffIndex effIndex)
-        {
-            // Glyph of Mass Dispel - Prevent dispel effect when target has immunity and no glyph is applied
-            if (_hasImmunity)
-                if (!GetCaster()->HasAura(55691))
-                    PreventHitEffect(effIndex);
-        }
-
-        void Register()
-        {
-            OnEffectHitTarget += SpellEffectFn(spell_impl::HandleScript, EFFECT_0, SPELL_EFFECT_DISPEL);
-            BeforeHit += SpellHitFn(spell_impl::CheckAuras);
-        }
-    };
-
-public:
-    spell_pri_mass_dispel() : SpellScriptLoader("spell_pri_mass_dispel") { }
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_impl();
-    }
-};
-class ConfessionGlyph : public SpellScriptLoader
-{
-public:
-    ConfessionGlyph() : SpellScriptLoader("ConfessionGlyph") { }
-
-    class ConfessionGlyph_Aura : public AuraScript
-    {
-        PrepareAuraScript(ConfessionGlyph_Aura);
-
-        void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Player* _player = GetTarget()->ToPlayer())
-            {
-                _player->learnSpell(126123, false);
-            }
-        }
-
-        void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Player* _player = GetTarget()->ToPlayer())
-                if (_player->HasSpell(126152))
-                    _player->removeSpell(126123, false, false);
-        }
-        void Register()
-        {
-            OnEffectApply += AuraEffectApplyFn(ConfessionGlyph_Aura::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            OnEffectRemove += AuraEffectRemoveFn(ConfessionGlyph_Aura::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new ConfessionGlyph_Aura();
-    }
-};
-
-class spell_confession : public SpellScriptLoader
-{
-public:
-    spell_confession() : SpellScriptLoader("spell_confession") { }
-
-    class spell_confession_spellscript : public SpellScript
-    {
-        PrepareSpellScript(spell_confession_spellscript);
-
-        void HandleAfterCast()
-        {
-            if (GetCaster())
-                if (GetCaster()->GetTypeId() == TYPEID_PLAYER)
-                    if (Unit* target = GetCaster()->ToPlayer()->GetSelectedUnit())
-                    {
-                        int32 randomdisplay = urand(1, 40);
-
-                        switch (randomdisplay)
-                        {
-                        case 1:
-                            target->MonsterSay("For a long time, I thought the plural of anecdote WAS data.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 2:
-                            target->MonsterSay("I always forget to gem my gear.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 3:
-                            target->MonsterSay("I always wanted to be a paladin.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 4:
-                            target->MonsterSay("I ask for the Light to give me strength, but I'm not sure it really does.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 5:
-                            target->MonsterSay("I asked a friend for gold to buy my first mount.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 6:
-                            target->MonsterSay("I dabble in archaeology, but I'm just not that interested in history.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 7:
-                            target->MonsterSay("I died to an elevator once. Maybe more than once.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 8:
-                            target->MonsterSay("I don't know if Milhouse is a good guy or not.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 9:
-                            target->MonsterSay("I don't really have a clue who the Sin'dorei are.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 10:
-                            target->MonsterSay("I don't really remember you in the mountains.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 11:
-                            target->MonsterSay("I don't treat all of my mounts equally.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 12:
-                            target->MonsterSay("I fell off of Dalaran.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 13:
-                            target->MonsterSay("I find all these names with so many apostrophes so confusing.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 14:
-                            target->MonsterSay("I forgot the Sunwell.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 15:
-                            target->MonsterSay("I go into dungeons not to make Azeroth a better place, but just for loot.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 16:
-                            target->MonsterSay("I have 'borrowed' things from my guild bank.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 17:
-                            target->MonsterSay("I have stood in the fire.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 18:
-                            target->MonsterSay("I haven't been in a barber shop in months. Goblins with scissors. Shudder.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 19:
-                            target->MonsterSay("I know he's a jerk, but there's something about Garrosh...", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 20:
-                            target->MonsterSay("I light things on fire and yell BY FIRE BE PURGED when nobody is looking.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 21:
-                            target->MonsterSay("I never use the lightwell.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 22:
-                            target->MonsterSay("I once punched a gnome. No reason. I was just having a bad day.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 23:
-                            target->MonsterSay("I once took a bow that a hunter wanted.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 24:
-                            target->MonsterSay("I outbid a friend on an auction for something I didn't really want.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 25:
-                            target->MonsterSay("I really wasn't prepared. Who knew?", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 26:
-                            target->MonsterSay("I said I had been in the dungeon before, but i had no idea what I was doing. It was embarassing.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 27:
-                            target->MonsterSay("I saw a mage cast a spell once and my jaw really did drop at the damage.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 28:
-                            target->MonsterSay("I sometimes forget if Northrend is north or south of here.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 29:
-                            target->MonsterSay("I sometimes use my mount to travel really short distances. I mean REALLY short.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 30:
-                            target->MonsterSay("I sometimes wonder if tauren taste like... you know.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 31:
-                            target->MonsterSay("I spent six months chasing the Time-Lost Proto-Drake.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 32:
-                            target->MonsterSay("I thought pandaren were a type of furbolg.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 33:
-                            target->MonsterSay("I told my raid leader that I was ready, but I wasn't really ready.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 34:
-                            target->MonsterSay("I wasn't really at the opening of Ahn'Qiraj, I just read about it", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 35:
-                            target->MonsterSay("I went into Alterac Valley and didn't help my team at all.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 36:
-                            target->MonsterSay("Oh, I took the candle.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 37:
-                            target->MonsterSay("Sometimes I ask for a warlock to summon me when I'm really not that far away.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 38:
-                            target->MonsterSay("Sometimes when I'm questing, I want to be alone, so I pretend I can't hear my friends.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 39:
-                            target->MonsterSay("This is just a setback.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        case 40:
-                            target->MonsterSay("Troll toes sort of creep me out.", LANG_UNIVERSAL, target->GetGUID());
-                            break;
-                        }
-                    }
-        }
-
-        void Register()
-        {
-            AfterCast += SpellCastFn(spell_confession_spellscript::HandleAfterCast);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_confession_spellscript;
-    }
-};
 void AddSC_priest_spell_scripts()
 {
-    new ConfessionGlyph();
-    new spell_confession();
     new spell_pri_power_word_fortitude();
     new spell_pri_spectral_guise_charges();
     new spell_pri_psyfiend_hit_me_driver();
@@ -3619,6 +3324,4 @@ void AddSC_priest_spell_scripts()
     new spell_priest_divine_star();
     new spell_priest_divine_star_aoe();
     new spell_pri_holy_spark();
-    new spell_pri_4p_holy_spark();
-    new spell_pri_mass_dispel();
 }

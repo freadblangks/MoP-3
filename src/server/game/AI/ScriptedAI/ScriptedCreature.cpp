@@ -170,15 +170,6 @@ Creature* ScriptedAI::DoSpawnCreature(uint32 entry, float offsetX, float offsetY
     return me->SummonCreature(entry, me->GetPositionX() + offsetX, me->GetPositionY() + offsetY, me->GetPositionZ() + offsetZ, angle, TempSummonType(type), despawntime);
 }
 
-void ScriptedAI::SetImmuneToPullPushEffects(bool immune)
-{
-    me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, immune);
-    me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK_DEST, immune);
-    me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_PULL, immune);
-    me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_PULL_TOWARDS, immune);
-    me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_PULL_TOWARDS_DEST, immune);
-}
-
 SpellInfo const* ScriptedAI::SelectSpell(Unit* target, uint32 school, uint32 mechanic, SelectTargetType targets, uint32 powerCostMin, uint32 powerCostMax, float rangeMin, float rangeMax, SelectEffect effects)
 {
     //No target so we can't cast
@@ -328,8 +319,8 @@ void ScriptedAI::DoTeleportAll(float x, float y, float z, float o)
 Unit* ScriptedAI::DoSelectLowestHpFriendly(float range, uint32 minHPDiff)
 {
     Unit* unit = NULL;
-    WoWSource::MostHPMissingInRange u_check(me, range, minHPDiff);
-    WoWSource::UnitLastSearcher<WoWSource::MostHPMissingInRange> searcher(me, unit, u_check);
+    SkyMistCore::MostHPMissingInRange u_check(me, range, minHPDiff);
+    SkyMistCore::UnitLastSearcher<SkyMistCore::MostHPMissingInRange> searcher(me, unit, u_check);
     me->VisitNearbyObject(range, searcher);
 
     return unit;
@@ -338,8 +329,8 @@ Unit* ScriptedAI::DoSelectLowestHpFriendly(float range, uint32 minHPDiff)
 std::list<Creature*> ScriptedAI::DoFindFriendlyCC(float range)
 {
     std::list<Creature*> list;
-    WoWSource::FriendlyCCedInRange u_check(me, range);
-    WoWSource::CreatureListSearcher<WoWSource::FriendlyCCedInRange> searcher(me, list, u_check);
+    SkyMistCore::FriendlyCCedInRange u_check(me, range);
+    SkyMistCore::CreatureListSearcher<SkyMistCore::FriendlyCCedInRange> searcher(me, list, u_check);
     me->VisitNearbyObject(range, searcher);
     return list;
 }
@@ -347,8 +338,8 @@ std::list<Creature*> ScriptedAI::DoFindFriendlyCC(float range)
 std::list<Creature*> ScriptedAI::DoFindFriendlyMissingBuff(float range, uint32 uiSpellid)
 {
     std::list<Creature*> list;
-    WoWSource::FriendlyMissingBuffInRange u_check(me, range, uiSpellid);
-    WoWSource::CreatureListSearcher<WoWSource::FriendlyMissingBuffInRange> searcher(me, list, u_check);
+    SkyMistCore::FriendlyMissingBuffInRange u_check(me, range, uiSpellid);
+    SkyMistCore::CreatureListSearcher<SkyMistCore::FriendlyMissingBuffInRange> searcher(me, list, u_check);
     me->VisitNearbyObject(range, searcher);
     return list;
 }
@@ -357,13 +348,13 @@ Player* ScriptedAI::GetPlayerAtMinimumRange(float minimumRange)
 {
     Player* player = NULL;
 
-    CellCoord pair(WoWSource::ComputeCellCoord(me->GetPositionX(), me->GetPositionY()));
+    CellCoord pair(SkyMistCore::ComputeCellCoord(me->GetPositionX(), me->GetPositionY()));
     Cell cell(pair);
     cell.SetNoCreate();
 
-    WoWSource::PlayerAtMinimumRangeAway check(me, minimumRange);
-    WoWSource::PlayerSearcher<WoWSource::PlayerAtMinimumRangeAway> searcher(me, player, check);
-    TypeContainerVisitor<WoWSource::PlayerSearcher<WoWSource::PlayerAtMinimumRangeAway>, GridTypeMapContainer> visitor(searcher);
+    SkyMistCore::PlayerAtMinimumRangeAway check(me, minimumRange);
+    SkyMistCore::PlayerSearcher<SkyMistCore::PlayerAtMinimumRangeAway> searcher(me, player, check);
+    TypeContainerVisitor<SkyMistCore::PlayerSearcher<SkyMistCore::PlayerAtMinimumRangeAway>, GridTypeMapContainer> visitor(searcher);
 
     cell.Visit(pair, visitor, *me->GetMap(), *me, minimumRange);
 

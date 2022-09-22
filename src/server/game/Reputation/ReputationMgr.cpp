@@ -379,11 +379,7 @@ bool ReputationMgr::SetOneFactionReputation(FactionEntry const* factionEntry, in
             if (_player->GetSession()->IsPremium())
                 standing = int32(floor((float)standing * sWorld->getRate(RATE_REPUTATION_GAIN_PREMIUM) + 0.5f));
 
-			
-			if(_player->GetSession()->GetVipLevel())
-                standing = int32(floor((float)standing * sWorld->getRate(RATE_REPUTATION_GAIN_VIP) + 0.5f));
-            
-			standing += itr->second.Standing + BaseRep;
+            standing += itr->second.Standing + BaseRep;
         }
 
         if (standing > Reputation_Cap)

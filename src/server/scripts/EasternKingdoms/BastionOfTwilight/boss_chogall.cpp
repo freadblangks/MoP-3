@@ -653,16 +653,13 @@ class npc_chogall_fire_elemental : public CreatureScript
 
                 events.Update(diff);
 
-                if (pChogall)
+                if (me->GetDistance(pChogall) < 1.0f && !bNear)
                 {
-                    if (me->GetDistance(pChogall) < 1.0f && !bNear)
-                    {
-                        bNear = true;
-                        me->GetMotionMaster()->Clear();
-                        pChogall->CastSpell(pChogall, SPELL_FIRE_DESTRUCTION, true);
-                        me->DespawnOrUnsummon();
-                        return;
-                    }
+                    bNear = true;
+                    me->GetMotionMaster()->Clear();
+                    pChogall->CastSpell(pChogall, SPELL_FIRE_DESTRUCTION, true);
+                    me->DespawnOrUnsummon();
+                    return;
                 }
 
                 while (uint32 eventId = events.ExecuteEvent())
@@ -727,16 +724,13 @@ class npc_chogall_shadow_lord : public CreatureScript
 
                 events.Update(diff);
 
-                if (pChogall)
+                if (me->GetDistance(pChogall) < 1.0f && !bNear)
                 {
-                    if (me->GetDistance(pChogall) < 1.0f && !bNear)
-                    {
-                        bNear = true;
-                        me->GetMotionMaster()->Clear();
-                        pChogall->CastSpell(pChogall, SPELL_EMPOWERED_SHADOWS, true);
-                        me->DespawnOrUnsummon();
-                        return;
-                    }
+                    bNear = true;
+                    me->GetMotionMaster()->Clear();
+                    pChogall->CastSpell(pChogall, SPELL_EMPOWERED_SHADOWS, true);
+                    me->DespawnOrUnsummon();
+                    return;
                 }
 
                 while (uint32 eventId = events.ExecuteEvent())

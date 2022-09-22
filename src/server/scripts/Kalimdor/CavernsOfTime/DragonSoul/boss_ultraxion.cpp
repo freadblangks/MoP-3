@@ -249,7 +249,7 @@ class boss_ultraxion: public CreatureScript
                 }
             }
 
-            void JustDied(Unit* killer)
+            void JustDied(Unit* /*killer*/)
             {
                 _JustDied();
 
@@ -259,7 +259,6 @@ class boss_ultraxion: public CreatureScript
                 DeleteGameObjects(GO_GIFT_OF_LIFE);
                 DeleteGameObjects(GO_ESSENCE_OF_DREAMS);
                 DeleteGameObjects(GO_SOURCE_OF_MAGIC);
-                killer->SummonGameObject(RAID_MODE(GO_ULTRAXION_LOOT_10N, GO_ULTRAXION_LOOT_25N, GO_ULTRAXION_LOOT_10H, GO_ULTRAXION_LOOT_25H), -1753.63f, -2370.01f, 340.845f, 0.0f, 0.0f, 0.0f, -0.66913f, 0.743145f, 100000);
 
                 if (Creature* pThrall = me->FindNearestCreature(NPC_THRALL_1, 300.0f))
                 {
@@ -715,7 +714,7 @@ class spell_ultraxion_fading_light : public SpellScriptLoader
                 }
 
                 if (targets.size() > min_players)
-                    WoWSource::Containers::RandomResizeList(targets, min_players);
+                    SkyMistCore::Containers::RandomResizeList(targets, min_players);
             }
            
             void Register()

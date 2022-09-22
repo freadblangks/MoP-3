@@ -1767,7 +1767,7 @@ void WorldSession::HandleInspectRatedBGStatsOpcode(WorldPacket& recvData)
     Player* player = ObjectAccessor::FindPlayer(guid);
     if (!player)
     {
-        sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_REQUEST_INSPECT_RATED_BG_STATS: No player found from GUID: " UI64FMTD, uint64(guid));
+        sLog->outDebug(LOG_FILTER_NETWORKIO, "CMSG_REQUEST_INSPECT_RATED_BG_STATS: No player found from GUID: " UI64FMTD, guid);
         return;
     }
 
@@ -2511,19 +2511,21 @@ void WorldSession::HandleViolenceLevel(WorldPacket& recvPacket)
 
 void WorldSession::HandleObjectUpdateFailedOpcode(WorldPacket& recvPacket)
 {
-	ObjectGuid guid;
+    ObjectGuid guid;
 
-	uint8 bitOrder[8] = { 4, 6, 3, 0, 7, 5, 1, 2 };
-	recvPacket.ReadBitInOrder(guid, bitOrder);
+    uint8 bitOrder[8] = {4, 6, 3, 0, 7, 5, 1, 2};
+    recvPacket.ReadBitInOrder(guid, bitOrder);
 
-	uint8 byteOrder[8] = { 4, 7, 0, 6, 5, 2, 1, 3 };
-	recvPacket.ReadBytesSeq(guid, byteOrder);
+    recvPacket.FlushBits();
 
-	WorldObject* obj = ObjectAccessor::GetWorldObject(*GetPlayer(), guid);
-	if (obj)
-		obj->SendUpdateToPlayer(GetPlayer());
+    uint8 byteOrder[8] = {4, 7, 0, 6, 5, 2, 1, 3};
+    recvPacket.ReadBytesSeq(guid, byteOrder);
 
-	sLog->outError(LOG_FILTER_NETWORKIO, "[%u] Object update failed for object " UI64FMTD " (%s) for player %s (%u)", time(NULL), uint64(guid), obj ? obj->GetName() : "object-not-found", GetPlayerName().c_str(), GetGuidLow());
+    WorldObject* obj = ObjectAccessor::GetWorldObject(*GetPlayer(), guid);
+    if (obj)
+        obj->SendUpdateToPlayer(GetPlayer());
+
+    sLog->outError(LOG_FILTER_NETWORKIO, "[%u] Object update failed for object " UI64FMTD " (%s) for player %s (%u)", time(NULL), uint64(guid), obj ? obj->GetName() : "object-not-found", GetPlayerName().c_str(), GetGuidLow());
 }
 
 // DestrinyFrame.xml : lua function NeutralPlayerSelectFaction

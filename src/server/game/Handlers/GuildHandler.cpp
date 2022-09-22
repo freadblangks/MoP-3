@@ -1000,27 +1000,6 @@ void WorldSession::HandleGuildNewsUpdateStickyOpcode(WorldPacket& recvPacket)
     }
 }
 
-void WorldSession::HandleGuildRequestMaxDailyXP(WorldPacket& recvPacket)
-{
-    ObjectGuid guildGuid;
-
-    uint8 bitOrder[8] = {2, 5, 3, 7, 4, 1, 0, 6};
-    recvPacket.ReadBitInOrder(guildGuid, bitOrder);
-
-    uint8 byteOrder[8] = {7, 3, 2, 1, 0, 5, 6, 4};
-    recvPacket.ReadBytesSeq(guildGuid, byteOrder);
-
-    if (Guild* guild = sGuildMgr->GetGuildByGuid(guildGuid))
-    {
-        if (guild->IsMember(_player->GetGUID()))
-        {
-            WorldPacket data(SMSG_GUILD_MAX_DAILY_XP, 8);
-            data << uint64(sWorld->getIntConfig(CONFIG_GUILD_DAILY_XP_CAP));
-            SendPacket(&data);
-        }
-    }
-}
-
 void WorldSession::HandleGuildRequestChallengeUpdate(WorldPacket& recvPacket)
 {
     sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Received CMSG_GUILD_REQUEST_CHALLENGE_UPDATE");

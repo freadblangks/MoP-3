@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2012-2016 WoWSource <http://wowsource.info/>
+ * Copyright (C) 2012-2013 JadeCore <http://www.pandashan.com/>
+ * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -22,13 +24,6 @@
 #include "terrace_of_endless_spring.h"
 
 #define ENTRANCE_ORIENTATION 4.723f
-
-enum eLootModes
-{
-    LOOT_PATTERNS         = 0x2,
-    LOOT_NORMAL           = 0x4,
-    LOOT_ELITE            = 0x8
-};
 
 enum eProtectorsSpells
 {
@@ -191,7 +186,7 @@ void RespawnProtectors(InstanceScript* instance, Creature* me)
     }
 }
 
-void StartProtectors(InstanceScript* instance, Creature* /*me*/, Unit* /*target*/)
+void StartProtectors(InstanceScript* instance, Creature* me, Unit* /*target*/)
 {
     if (!instance)
         return;
@@ -219,7 +214,7 @@ bool IntroDone(InstanceScript* instance, Creature* me)
     if (!instance || !me)
         return false;
 
-    if (instance->GetData(INTRO_DONE) == DONE)
+    if (instance->GetData(INTRO_DONE) > 0)
         return true;
 
     std::list<Creature*> fear;
@@ -248,7 +243,7 @@ bool IntroDone(InstanceScript* instance, Creature* me)
 
     if (done && instance)
     {
-        //instance->SetData(INTRO_DONE, DONE);
+        instance->SetData(INTRO_DONE, 1);
         return true;
     }
 
@@ -272,17 +267,17 @@ class boss_ancient_regail : public CreatureScript
 
             bool firstSpecialEnabled;
             bool secondSpecialEnabled;
-
-            void Reset()
-            {
+			
+			void Reset()
+			{
                 SetEquipmentSlots(false, REGAIL_ITEMS, REGAIL_ITEMS, EQUIP_NO_CHANGE);
                 me->CastSpell(me, SPELL_SHA_MASK, true);
 
-                _Reset();
-
-                events.Reset();
-
-                summons.DespawnAll();
+				_Reset();
+				
+				events.Reset();
+				
+				summons.DespawnAll();
 
                 firstSpecialEnabled = false;
                 secondSpecialEnabled = false;
@@ -292,8 +287,8 @@ class boss_ancient_regail : public CreatureScript
                 me->RemoveAura(SPELL_SUPERIOR_CORRUPTED_ESSENCE);
                 events.ScheduleEvent(EVENT_LIGHTNING_BOLT, 5000);
                 events.ScheduleEvent(EVENT_LIGHTNING_PRISON, 25000);
-
-                if (pInstance)
+				
+				if (pInstance)
                 {
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
                     pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
@@ -310,22 +305,20 @@ class boss_ancient_regail : public CreatureScript
 
                     RespawnProtectors(pInstance, me);
                 }
-                me->SetLootMode(LOOT_MODE_DEFAULT);
-            }
-
-            void JustReachedHome()
+			}
+			
+			void JustReachedHome()
             {
                 _JustReachedHome();
 
                 if (pInstance)
                     pInstance->SetBossState(DATA_PROTECTORS, FAIL);
             }
-
-            void EnterCombat(Unit* attacker)
+			
+			void EnterCombat(Unit* attacker)
             {
                 if (pInstance)
                 {
-
                     StartProtectors(pInstance, me, attacker);
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
                     DoZoneInCombat();
@@ -334,11 +327,10 @@ class boss_ancient_regail : public CreatureScript
                     if (me->GetMap()->IsHeroic())
                         if (Creature* minionController = pInstance->instance->GetCreature(pInstance->GetData64(NPC_MINION_OF_FEAR_CONTROLLER)))
                             minionController->AI()->DoAction(ACTION_INIT_MINION_CONTROLLER);
-
                 }
             }
-
-            void JustSummoned(Creature* summon)
+			
+			void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
             }
@@ -347,14 +339,14 @@ class boss_ancient_regail : public CreatureScript
             {
                 summons.Despawn(summon);
             }
-
-            void KilledUnit(Unit* who)
+			
+			void KilledUnit(Unit* who)
             {
                 if (who->GetTypeId() == TYPEID_PLAYER)
                     Talk(TALK_REGAIL_SLAY);
             }
-
-            void JustDied(Unit* killer)
+			
+			void JustDied(Unit* killer)
             {
                 Talk(TALK_REGAIL_DEATH);
 
@@ -391,7 +383,7 @@ class boss_ancient_regail : public CreatureScript
                                 asani->AI()->DoAction(ACTION_SECOND_PROTECTOR_DIED);
                                 asani->AI()->Talk(TALK_REGAIL_DIES_SECOND_ASANI);
 
-                                if (auto const shaCorruption = asani->GetAura(SPELL_SHA_CORRUPTION))
+                                if (AuraPtr shaCorruption = asani->GetAura(SPELL_SHA_CORRUPTION))
                                     if (Creature* corruptionCaster = me->GetMap()->GetCreature(shaCorruption->GetCasterGUID()))
                                         corruptionCaster->CastSpell(asani, SPELL_SHA_CORRUPTION, true);
                             }
@@ -401,7 +393,7 @@ class boss_ancient_regail : public CreatureScript
                                 kaolan->AI()->DoAction(ACTION_SECOND_PROTECTOR_DIED);
                                 kaolan->AI()->Talk(TALK_REGAIL_DIES_SECOND_KAOLAN);
 
-                                if (auto const shaCorruption = kaolan->GetAura(SPELL_SHA_CORRUPTION))
+                                if (AuraPtr shaCorruption = kaolan->GetAura(SPELL_SHA_CORRUPTION))
                                     if (Creature* corruptionCaster = me->GetMap()->GetCreature(shaCorruption->GetCasterGUID()))
                                         corruptionCaster->CastSpell(kaolan, SPELL_SHA_CORRUPTION, true);
                             }
@@ -412,10 +404,6 @@ class boss_ancient_regail : public CreatureScript
                         case 0:
                         {
                             pInstance->SetBossState(DATA_PROTECTORS, DONE);
-                            if (killer && killer->GetTypeId() == TYPEID_PLAYER)
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->ToPlayer());
-                            else if (killer && killer->GetTypeId() == TYPEID_UNIT && killer->GetOwner() && killer->GetOwner()->ToPlayer())
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->GetOwner()->ToPlayer());
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEFILED_GROUND_STACKS);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_OVERWHELMING_CORRUPTION_STACK);
@@ -455,7 +443,6 @@ class boss_ancient_regail : public CreatureScript
                         me->SetFullHealth();
                         break;
                     case ACTION_SECOND_PROTECTOR_DIED:
-                        me->SetLootMode(LOOT_PATTERNS | LOOT_NORMAL);
                         secondSpecialEnabled = true;
                         events.ScheduleEvent(EVENT_OVERWHELMING_CORRUPTION, 5000);
                         me->SetFullHealth();
@@ -478,13 +465,13 @@ class boss_ancient_regail : public CreatureScript
                         break;
                 }
             }
-
-            void UpdateAI(const uint32 diff)
+			
+			void UpdateAI(const uint32 diff)
             {
                 if (!IntroDone(pInstance, me))
                 {
                     me->SetReactState(REACT_PASSIVE);
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE|UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_LOOTING);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE|UNIT_FLAG_NOT_SELECTABLE|UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_LOOTING);
 
                     if (GameObject* vortex = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_COUNCILS_VORTEX)))
                     {
@@ -504,10 +491,10 @@ class boss_ancient_regail : public CreatureScript
                     return;
                 }
 
-                events.Update(diff);
-
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
+
+                events.Update(diff);
 
                 switch (events.ExecuteEvent())
                 {
@@ -525,7 +512,7 @@ class boss_ancient_regail : public CreatureScript
                             break;
 
                         Talk(TALK_LIGHTNING_STORM);
-                        me->CastSpell(me, SPELL_LIGHTNING_STORM, false);
+                        me->CastSpell(me, SPELL_LIGHTNING_STORM, true);
 
                         // Shorter CD in phase 3 (32s)
                         if (!secondSpecialEnabled)
@@ -538,10 +525,10 @@ class boss_ancient_regail : public CreatureScript
                         break;
                     default:
                         break;
-                }
+				}
 
                 DoMeleeAttackIfReady();
-            }
+			}
         };
 
         CreatureAI* GetAI(Creature* creature) const
@@ -567,17 +554,17 @@ class boss_ancient_asani : public CreatureScript
 
             bool firstSpecialEnabled;
             bool secondSpecialEnabled;
-
-            void Reset()
-            {
+			
+			void Reset()
+			{
                 SetEquipmentSlots(false, ASANI_MH_ITEM, EQUIP_NO_CHANGE, EQUIP_NO_CHANGE);
                 me->CastSpell(me, SPELL_SHA_MASK, true);
 
-                _Reset();
-
-                events.Reset();
-
-                summons.DespawnAll();
+				_Reset();
+				
+				events.Reset();
+				
+				summons.DespawnAll();
 
                 firstSpecialEnabled = false;
                 secondSpecialEnabled = false;
@@ -587,8 +574,8 @@ class boss_ancient_asani : public CreatureScript
                 me->RemoveAura(SPELL_SUPERIOR_CORRUPTED_ESSENCE);
                 events.ScheduleEvent(EVENT_WATER_BOLT, 5000);
                 events.ScheduleEvent(EVENT_CLEANSING_WATERS, 32500);
-
-                if (pInstance)
+				
+				if (pInstance)
                 {
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
                     pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
@@ -602,18 +589,17 @@ class boss_ancient_asani : public CreatureScript
 
                     RespawnProtectors(pInstance, me);
                 }
-                me->SetLootMode(LOOT_MODE_DEFAULT);
-            }
-
-            void JustReachedHome()
+			}
+			
+			void JustReachedHome()
             {
                 _JustReachedHome();
 
                 if (pInstance)
                     pInstance->SetBossState(DATA_PROTECTORS, FAIL);
             }
-
-            void EnterCombat(Unit* attacker)
+			
+			void EnterCombat(Unit* attacker)
             {
                 if (pInstance)
                 {
@@ -623,8 +609,8 @@ class boss_ancient_asani : public CreatureScript
                     Talk(TALK_ASANI_AGGRO);
                 }
             }
-
-            void JustSummoned(Creature* summon)
+			
+			void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
             }
@@ -633,14 +619,14 @@ class boss_ancient_asani : public CreatureScript
             {
                 summons.Despawn(summon);
             }
-
-            void KilledUnit(Unit* who)
+			
+			void KilledUnit(Unit* who)
             {
                 if (who->GetTypeId() == TYPEID_PLAYER)
                     Talk(TALK_ASANI_SLAY);
             }
-
-            void JustDied(Unit* killer)
+			
+			void JustDied(Unit* killer)
             {
                 Talk(TALK_ASANI_DEATH);
 
@@ -679,7 +665,7 @@ class boss_ancient_asani : public CreatureScript
                                 regail->AI()->DoAction(ACTION_SECOND_PROTECTOR_DIED);
                                 regail->AI()->Talk(TALK_ASANI_DIES_SECOND_REGAIL);
 
-                                if (auto const shaCorruption = regail->GetAura(SPELL_SHA_CORRUPTION))
+                                if (AuraPtr shaCorruption = regail->GetAura(SPELL_SHA_CORRUPTION))
                                     if (Creature* corruptionCaster = me->GetMap()->GetCreature(shaCorruption->GetCasterGUID()))
                                         corruptionCaster->CastSpell(regail, SPELL_SHA_CORRUPTION, true);
                             }
@@ -689,7 +675,7 @@ class boss_ancient_asani : public CreatureScript
                                 kaolan->AI()->DoAction(ACTION_SECOND_PROTECTOR_DIED);
                                 kaolan->AI()->Talk(TALK_ASANI_DIES_SECOND_KAOLAN);
 
-                                if (auto const shaCorruption = kaolan->GetAura(SPELL_SHA_CORRUPTION))
+                                if (AuraPtr shaCorruption = kaolan->GetAura(SPELL_SHA_CORRUPTION))
                                     if (Creature* corruptionCaster = me->GetMap()->GetCreature(shaCorruption->GetCasterGUID()))
                                         corruptionCaster->CastSpell(kaolan, SPELL_SHA_CORRUPTION, true);
                             }
@@ -700,10 +686,6 @@ class boss_ancient_asani : public CreatureScript
                         case 0:
                         {
                             pInstance->SetBossState(DATA_PROTECTORS, DONE);
-                            if (killer && killer->GetTypeId() == TYPEID_PLAYER)
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->ToPlayer());
-                            else if (killer && killer->GetTypeId() == TYPEID_UNIT && killer->GetOwner() && killer->GetOwner()->ToPlayer())
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->GetOwner()->ToPlayer());
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEFILED_GROUND_STACKS);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_OVERWHELMING_CORRUPTION_STACK);
@@ -743,7 +725,6 @@ class boss_ancient_asani : public CreatureScript
                         me->SetFullHealth();
                         break;
                     case ACTION_SECOND_PROTECTOR_DIED:
-                        me->SetLootMode(LOOT_PATTERNS | LOOT_NORMAL);
                         secondSpecialEnabled = true;
                         events.ScheduleEvent(EVENT_OVERWHELMING_CORRUPTION, 5000);
                         me->SetFullHealth();
@@ -766,13 +747,13 @@ class boss_ancient_asani : public CreatureScript
                         break;
                 }
             }
-
-            void UpdateAI(const uint32 diff)
+			
+			void UpdateAI(const uint32 diff)
             {
                 if (!IntroDone(pInstance, me))
                 {
                     me->SetReactState(REACT_PASSIVE);
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE|UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_LOOTING);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE|UNIT_FLAG_NOT_SELECTABLE|UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_LOOTING);
 
                     if (GameObject* vortex = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_COUNCILS_VORTEX)))
                     {
@@ -792,10 +773,10 @@ class boss_ancient_asani : public CreatureScript
                     return;
                 }
 
-                events.Update(diff);
-
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
+
+                events.Update(diff);
 
                 switch (events.ExecuteEvent())
                 {
@@ -818,10 +799,10 @@ class boss_ancient_asani : public CreatureScript
                         break;
                     default:
                         break;
-                }
+				}
 
                 DoMeleeAttackIfReady();
-            }
+			}
         };
 
         CreatureAI* GetAI(Creature* creature) const
@@ -848,17 +829,17 @@ class boss_protector_kaolan : public CreatureScript
             bool firstSpecialEnabled;
             bool secondSpecialEnabled;
             bool introDone;
-
-            void Reset()
-            {
+			
+			void Reset()
+			{
                 SetEquipmentSlots(false, KAOLAN_MH_ITEM, EQUIP_NO_CHANGE, EQUIP_NO_CHANGE);
                 me->CastSpell(me, SPELL_SHA_MASK, true);
 
-                _Reset();
-
-                events.Reset();
-
-                summons.DespawnAll();
+				_Reset();
+				
+				events.Reset();
+				
+				summons.DespawnAll();
 
                 firstSpecialEnabled = false;
                 secondSpecialEnabled = false;
@@ -868,8 +849,8 @@ class boss_protector_kaolan : public CreatureScript
                 me->RemoveAura(SPELL_SUPERIOR_CORRUPTED_ESSENCE);
 
                 events.ScheduleEvent(EVENT_TOUCH_OF_SHA, 12000);
-
-                if (pInstance)
+				
+				if (pInstance)
                 {
                     pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
                     pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
@@ -883,18 +864,17 @@ class boss_protector_kaolan : public CreatureScript
 
                     RespawnProtectors(pInstance, me);
                 }
-                me->SetLootMode(LOOT_MODE_DEFAULT);
-            }
-
-            void JustReachedHome()
+			}
+			
+			void JustReachedHome()
             {
                 _JustReachedHome();
 
                 if (pInstance)
                     pInstance->SetBossState(DATA_PROTECTORS, FAIL);
             }
-
-            void EnterCombat(Unit* attacker)
+			
+			void EnterCombat(Unit* attacker)
             {
                 if (pInstance)
                 {
@@ -903,8 +883,8 @@ class boss_protector_kaolan : public CreatureScript
                     DoZoneInCombat();
                 }
             }
-
-            void JustSummoned(Creature* summon)
+			
+			void JustSummoned(Creature* summon)
             {
                 summons.Summon(summon);
             }
@@ -914,7 +894,6 @@ class boss_protector_kaolan : public CreatureScript
                 summons.Despawn(summon);
             }
 
-            /*
             void MoveInLineOfSight(Unit* who)
             {
                 if (IntroDone(pInstance, me) && !introDone && who->GetTypeId() == TYPEID_PLAYER)
@@ -922,15 +901,15 @@ class boss_protector_kaolan : public CreatureScript
                     Talk(TALK_INTRO);
                     introDone = true;
                 }
-            }*/
-
-            void KilledUnit(Unit* who)
+            }
+			
+			void KilledUnit(Unit* who)
             {
                 if (who->GetTypeId() == TYPEID_PLAYER)
                     Talk(TALK_KAOLAN_SLAY);
             }
-
-            void JustDied(Unit* killer)
+			
+			void JustDied(Unit* killer)
             {
                 Talk(TALK_KAOLAN_DEATH);
 
@@ -968,7 +947,7 @@ class boss_protector_kaolan : public CreatureScript
                             {
                                 regail->AI()->DoAction(ACTION_SECOND_PROTECTOR_DIED);
 
-                                if (auto const shaCorruption = regail->GetAura(SPELL_SHA_CORRUPTION))
+                                if (AuraPtr shaCorruption = regail->GetAura(SPELL_SHA_CORRUPTION))
                                     if (Creature* corruptionCaster = me->GetMap()->GetCreature(shaCorruption->GetCasterGUID()))
                                         corruptionCaster->CastSpell(regail, SPELL_SHA_CORRUPTION, true);
                             }
@@ -977,7 +956,7 @@ class boss_protector_kaolan : public CreatureScript
                             {
                                 asani->AI()->DoAction(ACTION_SECOND_PROTECTOR_DIED);
 
-                                if (auto const shaCorruption = asani->GetAura(SPELL_SHA_CORRUPTION))
+                                if (AuraPtr shaCorruption = asani->GetAura(SPELL_SHA_CORRUPTION))
                                     if (Creature* corruptionCaster = me->GetMap()->GetCreature(shaCorruption->GetCasterGUID()))
                                         corruptionCaster->CastSpell(asani, SPELL_SHA_CORRUPTION, true);
                             }
@@ -988,10 +967,6 @@ class boss_protector_kaolan : public CreatureScript
                         case 0:
                         {
                             pInstance->SetBossState(DATA_PROTECTORS, DONE);
-                            if (killer && killer->GetTypeId() == TYPEID_PLAYER)
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->ToPlayer());
-                            else if (killer && killer->GetTypeId() == TYPEID_UNIT && killer->GetOwner() && killer->GetOwner()->ToPlayer())
-                                me->GetMap()->ToInstanceMap()->PermBindAllPlayers(killer->GetOwner()->ToPlayer());
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_TOUCH_OF_SHA);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEFILED_GROUND_STACKS);
                             pInstance->DoRemoveAurasDueToSpellOnPlayers(SPELL_OVERWHELMING_CORRUPTION_STACK);
@@ -1031,7 +1006,6 @@ class boss_protector_kaolan : public CreatureScript
                         me->SetFullHealth();
                         break;
                     case ACTION_SECOND_PROTECTOR_DIED:
-                        me->SetLootMode(LOOT_PATTERNS | LOOT_ELITE);
                         secondSpecialEnabled = true;
                         events.ScheduleEvent(EVENT_EXPEL_CORRUPTION, urand(5000, 10000)); // 5-10s variation for first cast
                         me->SetFullHealth();
@@ -1054,13 +1028,13 @@ class boss_protector_kaolan : public CreatureScript
                         break;
                 }
             }
-
-            void UpdateAI(const uint32 diff)
+			
+			void UpdateAI(const uint32 diff)
             {
                 if (!IntroDone(pInstance, me))
                 {
                     me->SetReactState(REACT_PASSIVE);
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE|UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_LOOTING);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE|UNIT_FLAG_NOT_SELECTABLE|UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_IMMUNE_TO_PC|UNIT_FLAG_LOOTING);
 
                     if (GameObject* vortex = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_COUNCILS_VORTEX)))
                     {
@@ -1080,16 +1054,16 @@ class boss_protector_kaolan : public CreatureScript
                     return;
                 }
 
-                events.Update(diff);
-
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
+
+                events.Update(diff);
 
                 switch (events.ExecuteEvent())
                 {
                     case EVENT_TOUCH_OF_SHA:
-                        if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true, -SPELL_TOUCH_OF_SHA))
-                            me->CastSpell(target, SPELL_TOUCH_OF_SHA, false);
+                        //if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true, -SPELL_TOUCH_OF_SHA))
+                        //    me->CastSpell(target, SPELL_TOUCH_OF_SHA, false);
                         events.ScheduleEvent(EVENT_TOUCH_OF_SHA, 12000);
                         break;
                     case EVENT_DEFILED_GROUND:
@@ -1110,10 +1084,10 @@ class boss_protector_kaolan : public CreatureScript
                         break;
                     default:
                         break;
-                }
+				}
 
                 DoMeleeAttackIfReady();
-            }
+			}
         };
 
         CreatureAI* GetAI(Creature* creature) const
@@ -1138,7 +1112,7 @@ class mob_defiled_ground : public CreatureScript
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE|UNIT_FLAG_NOT_SELECTABLE|UNIT_FLAG_NON_ATTACKABLE);
             }
 
-            void UpdateAI(const uint32 /*diff*/) { }
+            void UpdateAI(const uint32 diff) { }
         };
 
         CreatureAI* GetAI(Creature* creature) const
@@ -1184,7 +1158,6 @@ class mob_cleansing_water : public CreatureScript
 
             void Reset()
             {
-                me->SetCorpseDelay(0);
                 events.Reset();
                 events.ScheduleEvent(EVENT_REFRESH_CLEANSING_WATERS, 1000);
                 events.ScheduleEvent(EVENT_DESPAWN_CLEANSING_WATERS, 8000);
@@ -1235,7 +1208,7 @@ class mob_corrupting_waters : public CreatureScript
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
             }
 
-            void JustDied(Unit* /*killer*/)
+            void JustDied(Unit* killer)
             {
                 me->CastSpell(me, SPELL_PURIFIED, true);
             }
@@ -1289,7 +1262,7 @@ class mob_minion_of_fear : public CreatureScript
                         return;
                     }
 
-                    targets.sort(WoWSource::HealthPctOrderPred());
+                    targets.sort(SkyMistCore::HealthPctOrderPred());
 
                     Creature* target = targets.front();
                     if (!target)
@@ -1304,12 +1277,12 @@ class mob_minion_of_fear : public CreatureScript
                 }
             }
 
-            void JustDied(Unit* /*killer*/)
+            void JustDied(Unit* killer)
             {
                 me->CastSpell(me, SPELL_CORRUPTED_ESSENCE, true);
             }
 
-            void UpdateAI(const uint32 /*diff*/)
+            void UpdateAI(const uint32 diff)
             {
                 if (!protectorTargetedGuid)
                     return;
@@ -1318,7 +1291,7 @@ class mob_minion_of_fear : public CreatureScript
                 {
                     if (protector->IsWithinDist(me, 2.0f, false))
                     {
-                        if (auto const superiorCorruptedEssence = protector->GetAura(SPELL_SUPERIOR_CORRUPTED_ESSENCE))
+                        if (AuraPtr superiorCorruptedEssence = protector->GetAura(SPELL_SUPERIOR_CORRUPTED_ESSENCE))
                         {
                             superiorCorruptedEssence->ModStackAmount(1);
                             superiorCorruptedEssence->RefreshDuration();
@@ -1430,7 +1403,7 @@ class spell_defiled_ground_damage : public SpellScriptLoader
             {
                 if (Unit* target = GetHitUnit())
                 {
-                    if (auto const defiledGround = target->GetAuraEffect(SPELL_DEFILED_GROUND_STACKS, EFFECT_0))
+                    if (AuraEffectPtr defiledGround = target->GetAuraEffect(SPELL_DEFILED_GROUND_STACKS, EFFECT_0))
                     {
                         uint32 damage = GetHitDamage();
                         AddPct(damage, defiledGround->GetAmount());
@@ -1468,10 +1441,10 @@ class spell_expelled_corruption : public SpellScriptLoader
 
                 if (!caster || !target)
                     return;
-
+                
                 float distance = caster->GetExactDist2d(target);
 
-                if (distance >= 0.0f && distance <= (30.f + caster->GetFloatValue(UNIT_FIELD_BOUNDING_RADIUS)))
+                if (distance >= 0.0f && distance <= 30.0f)
                     SetHitDamage(GetHitDamage() * (1 - (distance / 30.0f)));
             }
 
@@ -1571,19 +1544,19 @@ class spell_lightning_storm_damage : public SpellScriptLoader
                 {
                     case SPELL_LIGHTNING_STORM_SECOND_DMG:
                         MinDist = 10.0f;
-                        MaxDist = 22.0f;
+                        MaxDist = 20.0f;
                         break;
                     case SPELL_LIGHTNING_STORM_THIRD_DMG:
                         MinDist = 30.0f;
-                        MaxDist = 42.0f;
+                        MaxDist = 40.0f;
                         break;
                     case SPELL_LIGHTNING_STORM_FOURTH_DMG:
                         MinDist = 50.0f;
-                        MaxDist = 62.0f;
+                        MaxDist = 60.0f;
                         break;
                     case SPELL_LIGHTNING_STORM_FIFTH_DMG:
                         MinDist = 70.0f;
-                        MaxDist = 82.0f;
+                        MaxDist = 80.0f;
                         break;
                     default:
                         break;
@@ -1622,7 +1595,7 @@ class spell_lightning_prison : public SpellScriptLoader
 
             void CorrectRange(std::list<WorldObject*>& targets)
             {
-                WoWSource::Containers::RandomResizeList(targets, GetCaster()->GetMap()->Is25ManRaid() ? 3 : 2);
+                SkyMistCore::Containers::RandomResizeList(targets, GetCaster()->GetMap()->Is25ManRaid() ? 3 : 2);
             }
 
             void Register()
@@ -1651,7 +1624,7 @@ class spell_corrupted_essence : public SpellScriptLoader
             {
                 if (Unit* target = GetTarget())
                 {
-                    if (auto const corruptedEssence = target->GetAura(SPELL_CORRUPTED_ESSENCE))
+                    if (AuraPtr corruptedEssence = target->GetAura(SPELL_CORRUPTED_ESSENCE))
                     {
                         if (corruptedEssence->GetStackAmount() >= 10)
                         {
@@ -1689,7 +1662,7 @@ class spell_corrupted_essence : public SpellScriptLoader
                     if (!itr->ToUnit())
                         continue;
 
-                    if (auto const corruptedEssence = itr->ToUnit()->GetAura(SPELL_CORRUPTED_ESSENCE))
+                    if (AuraPtr corruptedEssence = itr->ToUnit()->GetAura(SPELL_CORRUPTED_ESSENCE))
                     {
                         corruptedEssence->ModStackAmount(1);
                         targetsToRemove.push_back(itr);
@@ -1726,7 +1699,7 @@ class spell_superior_corrupted_essence : public SpellScriptLoader
             {
                 if (Unit* target = GetTarget())
                 {
-                    if (auto const corruptedEssence = target->GetAura(SPELL_SUPERIOR_CORRUPTED_ESSENCE))
+                    if (AuraPtr corruptedEssence = target->GetAura(SPELL_SUPERIOR_CORRUPTED_ESSENCE))
                     {
                         if (corruptedEssence->GetStackAmount() >= 5)
                         {
@@ -1764,7 +1737,7 @@ class spell_cleansing_waters_regen : public SpellScriptLoader
                 if (targets.empty())
                     return;
 
-                targets.remove_if(WoWSource::UnitAuraCheck(true, SPELL_CLEANSING_WATERS_REGEN));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_CLEANSING_WATERS_REGEN));
             }
 
             void Register()

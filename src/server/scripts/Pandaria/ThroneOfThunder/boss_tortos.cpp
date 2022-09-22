@@ -1,5 +1,5 @@
 /*
- * Trinity Core and update by WoWSource Forums
+ * Copyright (C) 2011-2015 SkyMist Gaming
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -684,7 +684,7 @@ class spell_crystal_shell_aura : public SpellScriptLoader
 
             void OnAbsorb(AuraEffectPtr aurEff, DamageInfo& dmgInfo, uint32& absorbAmount)
             {
-                if (Unit* target = dmgInfo.getVictim())
+                if (Unit* target = dmgInfo.GetVictim())
                 {
                     if (Unit* attacker = dmgInfo.GetAttacker())
                     {

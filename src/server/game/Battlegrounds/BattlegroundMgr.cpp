@@ -634,9 +634,6 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                 case 1105:
                     data->WriteBits(0x00000004, 22);
                     break;
-                case 727:
-                    *data << uint32(((BattlegroundSSMScore*)itr2->second)->MineCartCaptures);    // mine carts captured
-                     break;
                 default:
                     data->WriteBits(0, 22);
                     break;
@@ -647,7 +644,6 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                 break;
             case BATTLEGROUND_EY:
             case BATTLEGROUND_EYR:
-            case BATTLEGROUND_SSM:
                 data->WriteBits(0x00000001, 22);
                 break;
             case BATTLEGROUND_WS:
@@ -748,9 +744,6 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                     *data << uint32(((BattlegroundTPScore*)itr2->second)->FlagCaptures);         // flag captures
                     *data << uint32(((BattlegroundTPScore*)itr2->second)->FlagReturns);          // flag returns
                     break;
-                case 727:
-                    *data << uint32(((BattlegroundSSMScore*)itr2->second)->MineCartCaptures);    // mine carts captured
-                    break;
                 case 761:
                     *data << uint32(((BattlegroundBFGScore*)itr2->second)->BasesAssaulted);      // bases asssulted
                     *data << uint32(((BattlegroundBFGScore*)itr2->second)->BasesDefended);       // bases defended
@@ -807,9 +800,6 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                 *data << uint32(((BattlegroundDGScore*)itr2->second)->FlagReturns);         // flag returns
                 *data << uint32(((BattlegroundDGScore*)itr2->second)->BasesAssaulted);      // bases asssulted
                 *data << uint32(((BattlegroundDGScore*)itr2->second)->BasesDefended);       // bases defended
-                break;
-            case BATTLEGROUND_SSM:
-                *data << uint32(((BattlegroundSSMScore*)itr2->second)->MineCartCaptures);    // mine carts captured
                 break;
             }
             //

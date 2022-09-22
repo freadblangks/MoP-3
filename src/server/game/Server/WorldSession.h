@@ -272,7 +272,7 @@ class CharacterCreateInfo
 class WorldSession
 {
     public:
-        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, bool ispremium, uint8 expansion, uint8 viplevel, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
+        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, bool ispremium, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
         ~WorldSession();
 
         bool PlayerLoading() const { return m_playerLoading; }
@@ -308,7 +308,6 @@ class WorldSession
         std::string const& GetRemoteAddress() { return m_Address; }
         void SetPlayer(Player* player);
         uint8 Expansion() const { return m_expansion; }
-		uint8 GetVipLevel() const { return m_viplevel; }
 
         void InitWarden(BigNumber* k, std::string os);
 
@@ -673,11 +672,10 @@ class WorldSession
         void HandleSwapRanks(WorldPacket& recvPacket);
         void HandleGuildSetRankPermissionsOpcode(WorldPacket& recvPacket);
         void HandleGuildAddRankOpcode(WorldPacket& recvPacket);
-        void HandleGuildDelRankOpcode(WorldPacket& recvPacket); 
+        void HandleGuildDelRankOpcode(WorldPacket& recvPacket);
         void HandleGuildChangeInfoTextOpcode(WorldPacket& recvPacket);
         void HandleSaveGuildEmblemOpcode(WorldPacket& recvPacket);
         void HandleGuildRequestPartyState(WorldPacket& recvPacket);
-		void HandleGuildRequestMaxDailyXP(WorldPacket& recvPacket);
         void HandleAutoDeclineGuildInvites(WorldPacket& recvPacket);
         void HandleGuildRequestChallengeUpdate(WorldPacket& recvPacket);
         void HandleGuildRequestGuildRecipes(WorldPacket& recvPacket);
@@ -1127,7 +1125,6 @@ class WorldSession
         AccountTypes _security;
         uint32 _accountId;
         uint8 m_expansion;
-		uint8 m_viplevel;
         bool _ispremium;
 
         typedef std::list<AddonInfo> AddonsList;

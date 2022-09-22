@@ -197,13 +197,13 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                 else
                 {
                     std::list<Creature*> linkedLootCreatures;
-                    CellCoord p(WoWSource::ComputeCellCoord(player->GetPositionX(), player->GetPositionY()));
+                    CellCoord p(SkyMistCore::ComputeCellCoord(player->GetPositionX(), player->GetPositionY()));
                     Cell cell(p);
                     cell.SetNoCreate();
 
-                    WoWSource::AllDeadCreaturesInRange check(player, 25.0f, creature->GetGUID());
-                    WoWSource::CreatureListSearcher<WoWSource::AllDeadCreaturesInRange> searcher(player, linkedLootCreatures, check);
-                    TypeContainerVisitor<WoWSource::CreatureListSearcher<WoWSource::AllDeadCreaturesInRange>, GridTypeMapContainer> cSearcher(searcher);
+                    SkyMistCore::AllDeadCreaturesInRange check(player, 25.0f, creature->GetGUID());
+                    SkyMistCore::CreatureListSearcher<SkyMistCore::AllDeadCreaturesInRange> searcher(player, linkedLootCreatures, check);
+                    TypeContainerVisitor<SkyMistCore::CreatureListSearcher<SkyMistCore::AllDeadCreaturesInRange>, GridTypeMapContainer> cSearcher(searcher);
                     cell.Visit(p, cSearcher, *(player->GetMap()), *player,  25.0f);
 
                     for (auto itr : linkedLootCreatures)

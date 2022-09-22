@@ -100,14 +100,6 @@ set(scripts_STAT_SRCS
   Pandaria/ThroneOfThunder/boss_tortos.cpp
   Pandaria/ThroneOfThunder/boss_council_of_elders.cpp
   Pandaria/ThroneOfThunder/boss_megaera.cpp
-  Pandaria/ThroneOfThunder/boss_darkanimus.cpp
-  Pandaria/ThroneOfThunder/boss_durumu.cpp
-  Pandaria/ThroneOfThunder/boss_ironqon.cpp
-  Pandaria/ThroneOfThunder/boss_jikun.cpp
-  Pandaria/ThroneOfThunder/boss_leishen.cpp
-  Pandaria/ThroneOfThunder/boss_primordius.cpp
-  Pandaria/ThroneOfThunder/boss_raden.cpp
-  Pandaria/ThroneOfThunder/boss_twinconsorts.cpp
 
   Pandaria/SiegeOfOrgrimmar/instance_siege_of_orgrimmar.cpp
   Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.cpp

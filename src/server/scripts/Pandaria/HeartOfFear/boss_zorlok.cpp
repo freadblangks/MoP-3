@@ -446,14 +446,14 @@ class boss_zorlok : public CreatureScript
                     {
                         uint32 platformToUse = ChoosePlatform();
                         //temp crash fix.
-                        me->GetMotionMaster()->MoveTakeoff(platformToUse, zorlokReachPoints[platformToUse - 1]);
+                        //me->GetMotionMaster()->MoveTakeoff(platformToUse, zorlokReachPoints[platformToUse - 1]);
                         me->MonsterTextEmote("Imperial Vizier Zor'lok is flying to one of his platforms!", 0, true);
                     }
                     // At 40% remaining phase, switch on phase 2
                     else
                     {
                         phase = PHASE_ZORLOK2;
-                        me->GetMotionMaster()->MoveTakeoff(phase, oratiumCenter[0]);
+                        //me->GetMotionMaster()->MoveTakeoff(phase, oratiumCenter[0]);
                     }
 
                     // Set Flying
@@ -649,14 +649,6 @@ class boss_zorlok : public CreatureScript
             {
                 if (!isActive)
                     return;
-
-                // Temp Remove Flags
-                {
-                    me->SetReactState(REACT_DEFENSIVE);
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED | UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_STUNNED);
-                    me->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_DISABLE_TURN);
-                    me->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_ALLOW_ENEMY_INTERACT);
-                }
 
                 // On Wipe
                 if (pInstance)

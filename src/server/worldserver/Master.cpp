@@ -54,7 +54,7 @@ extern int m_ServiceStatus;
 #endif
 
 /// Handle worldservers's termination signals
-class WorldServerSignalHandler : public WoWSource::SignalHandler
+class WorldServerSignalHandler : public SkyMistCore::SignalHandler
 {
     public:
         virtual void HandleSignal(int SigNum)
@@ -132,15 +132,13 @@ int Master::Run()
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "%s (worldserver-daemon)", _FULLVERSION);
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "<Ctrl-C> to stop.\n");
 
-	sLog->outInfo(LOG_FILTER_WORLDSERVER, " _    _       _    _ _____                          ");
-	sLog->outInfo(LOG_FILTER_WORLDSERVER, "| |  | |     | |  | /  ___|                         ");
-	sLog->outInfo(LOG_FILTER_WORLDSERVER, "| |  | | ___ | |  | \\ `--.  ___  _   _ _ __ ___ ___ ");
-	sLog->outInfo(LOG_FILTER_WORLDSERVER, "| |/\\| |/ _ \\| |/\\| |`--. \\/ _ \\| | | | '__/ __/ _ \\");
-	sLog->outInfo(LOG_FILTER_WORLDSERVER, "\\  /\\  / (_) \\  /\\  /\\__/ / (_) | |_| | | | (_|  __/");
-	sLog->outInfo(LOG_FILTER_WORLDSERVER, " \\/  \\/ \\___/ \\/  \\/\\____/ \\___/ \\__,_|_|  \\___\\___|");
-	sLog->outInfo(LOG_FILTER_WORLDSERVER, "WoWSource 2012-2015");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "Visit our forum www.wowsource.info");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "WoWSource V4 Mop 5.4.8");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, " ############  ##   ##  ##  ##  ###    ###  ##    ###########  ###############");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, " ###           ##  ##    #  #   ## #  # ##        ###              ######");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, " #########     ###        ##    ##  ##  ##  ##    ##########         ##");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "       ###     ##  ##     ##    ##  ##  ##  ##           ###         ##");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "##########     ##   ##    ##    ##  ##  ##  ##    ##########         ##");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "     v. 5.4.7                         C O R E ");
+    sLog->outInfo(LOG_FILTER_WORLDSERVER, "  Project SkyMist 2014(c) Game Emulation <http://www.sky-mist.net/> \n");
 
     /// worldserver PID file creation
     std::string pidfile = ConfigMgr::GetStringDefault("PidFile", "");

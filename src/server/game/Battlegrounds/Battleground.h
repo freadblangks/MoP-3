@@ -279,8 +279,7 @@ enum BattlegroundStartingEvents
     BG_STARTING_EVENT_1               = 0x01,
     BG_STARTING_EVENT_2               = 0x02,
     BG_STARTING_EVENT_3               = 0x04,
-    BG_STARTING_EVENT_4               = 0x08,
-    BG_STARTING_EVENT_5               = 0x10
+    BG_STARTING_EVENT_4               = 0x08
 };
 
 enum BattlegroundStartingEventsIds
@@ -370,7 +369,6 @@ class Battleground
         virtual void Reset();                               // resets all common properties for battlegrounds, must be implemented and called in BG subclass
         virtual void StartingEventCloseDoors() { }
         virtual void StartingEventOpenDoors() { }
-        virtual void StartingEventDespawnDoors() {}
         virtual void ResetBGSubclass() { }                  // must be implemented in BG subclass
 
         virtual void DestroyGate(Player* /*player*/, GameObject* /*go*/) { }
@@ -619,7 +617,6 @@ class Battleground
 
         void DoorOpen(uint32 type);
         void DoorClose(uint32 type);
-        void DoorDespawn(uint32 type);
 
         const char* GetTrinityString(int32 entry); // To be removed
 
@@ -646,7 +643,6 @@ class Battleground
 
         uint8 ClickFastStart(Player *player, GameObject *go);
         void DespawnCrystals();
-        virtual uint32 GetPrematureWinner();
 
     protected:
         void BuildArenaOpponentSpecializations(WorldPacket* data, uint32 team);

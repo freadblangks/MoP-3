@@ -159,7 +159,6 @@ m_creatureInfo(NULL), m_creatureData(NULL), m_path_id(0), m_formation(NULL), m_b
 
     m_SightDistance = sWorld->getFloatConfig(CONFIG_SIGHT_MONSTER);
     m_CombatDistance = 0;//MELEE_RANGE;
-    m_ReactDistance = 0;
 
     m_LOSCheckTimer = DEFAULT_VISIBILITY_NOTIFY_PERIOD;
     m_LOSCheck_player = false;
@@ -604,7 +603,13 @@ void Creature::Update(uint32 diff)
             {
                 // do not allow the AI to be changed during update
                 m_AI_locked = true;
+                uint32 diffAI = getMSTime();
+
                 i_AI->UpdateAI(diff);
+
+                if ((getMSTime() - diffAI) > 15)
+                    sLog->OutSpecialLog("CreatureScript [%u] take more than 15 ms to execute", GetEntry());
+
                 m_AI_locked = false;
             }
 
@@ -759,13 +764,13 @@ void Creature::DoFleeToGetAssistance()
     {
         Creature* creature = NULL;
 
-        CellCoord p(WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY()));
+        CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
         Cell cell(p);
         cell.SetNoCreate();
-        WoWSource::NearestAssistCreatureInCreatureRangeCheck u_check(this, getVictim(), radius);
-        WoWSource::CreatureLastSearcher<WoWSource::NearestAssistCreatureInCreatureRangeCheck> searcher(this, creature, u_check);
+        SkyMistCore::NearestAssistCreatureInCreatureRangeCheck u_check(this, getVictim(), radius);
+        SkyMistCore::CreatureLastSearcher<SkyMistCore::NearestAssistCreatureInCreatureRangeCheck> searcher(this, creature, u_check);
 
-        TypeContainerVisitor<WoWSource::CreatureLastSearcher<WoWSource::NearestAssistCreatureInCreatureRangeCheck>, GridTypeMapContainer > grid_creature_searcher(searcher);
+        TypeContainerVisitor<SkyMistCore::CreatureLastSearcher<SkyMistCore::NearestAssistCreatureInCreatureRangeCheck>, GridTypeMapContainer > grid_creature_searcher(searcher);
 
         cell.Visit(p, grid_creature_searcher, *GetMap(), *this, radius);
 
@@ -1665,9 +1670,6 @@ bool Creature::canStartAttack(Unit const* who, bool force) const
 
 float Creature::GetAttackDistance(Unit const* player) const
 {
-    if (m_ReactDistance)
-        return m_ReactDistance;
-
     float aggroRate = sWorld->getRate(RATE_CREATURE_AGGRO);
     if (aggroRate == 0)
         return 0.0f;
@@ -2020,7 +2022,7 @@ SpellInfo const* Creature::reachWithSpellCure(Unit* victim)
 // select nearest hostile unit within the given distance (regardless of threat list).
 Unit* Creature::SelectNearestTarget(float dist) const
 {
-    CellCoord p(WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY()));
+    CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
     Cell cell(p);
     cell.SetNoCreate();
 
@@ -2030,11 +2032,11 @@ Unit* Creature::SelectNearestTarget(float dist) const
         if (dist == 0.0f)
             dist = MAX_VISIBILITY_DISTANCE;
 
-        WoWSource::NearestHostileUnitCheck u_check(this, dist);
-        WoWSource::UnitLastSearcher<WoWSource::NearestHostileUnitCheck> searcher(this, target, u_check);
+        SkyMistCore::NearestHostileUnitCheck u_check(this, dist);
+        SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileUnitCheck> searcher(this, target, u_check);
 
-        TypeContainerVisitor<WoWSource::UnitLastSearcher<WoWSource::NearestHostileUnitCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
-        TypeContainerVisitor<WoWSource::UnitLastSearcher<WoWSource::NearestHostileUnitCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+        TypeContainerVisitor<SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileUnitCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+        TypeContainerVisitor<SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileUnitCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
 
         cell.Visit(p, world_unit_searcher, *GetMap(), *this, dist);
         cell.Visit(p, grid_unit_searcher, *GetMap(), *this, dist);
@@ -2046,7 +2048,7 @@ Unit* Creature::SelectNearestTarget(float dist) const
 // select nearest hostile unit within the given distance and without cc on it (regardless of threat list).
 Unit* Creature::SelectNearestTargetNoCC(float dist) const
 {
-    CellCoord p(WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY()));
+    CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
     Cell cell(p);
     cell.SetNoCreate();
 
@@ -2056,11 +2058,11 @@ Unit* Creature::SelectNearestTargetNoCC(float dist) const
         if (dist == 0.0f)
             dist = MAX_VISIBILITY_DISTANCE;
 
-        WoWSource::NearestHostileNoCCUnitCheck u_check(this, dist);
-        WoWSource::UnitLastSearcher<WoWSource::NearestHostileNoCCUnitCheck> searcher(this, target, u_check);
+        SkyMistCore::NearestHostileNoCCUnitCheck u_check(this, dist);
+        SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileNoCCUnitCheck> searcher(this, target, u_check);
 
-        TypeContainerVisitor<WoWSource::UnitLastSearcher<WoWSource::NearestHostileNoCCUnitCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
-        TypeContainerVisitor<WoWSource::UnitLastSearcher<WoWSource::NearestHostileNoCCUnitCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+        TypeContainerVisitor<SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileNoCCUnitCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+        TypeContainerVisitor<SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileNoCCUnitCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
 
         cell.Visit(p, world_unit_searcher, *GetMap(), *this, dist);
         cell.Visit(p, grid_unit_searcher, *GetMap(), *this, dist);
@@ -2072,7 +2074,7 @@ Unit* Creature::SelectNearestTargetNoCC(float dist) const
 // select nearest hostile unit within the given attack distance (i.e. distance is ignored if > than ATTACK_DISTANCE), regardless of threat list.
 Unit* Creature::SelectNearestTargetInAttackDistance(float dist) const
 {
-    CellCoord p(WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY()));
+    CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
     Cell cell(p);
     cell.SetNoCreate();
 
@@ -2085,11 +2087,11 @@ Unit* Creature::SelectNearestTargetInAttackDistance(float dist) const
     }
 
     {
-        WoWSource::NearestHostileUnitInAttackDistanceCheck u_check(this, dist);
-        WoWSource::UnitLastSearcher<WoWSource::NearestHostileUnitInAttackDistanceCheck> searcher(this, target, u_check);
+        SkyMistCore::NearestHostileUnitInAttackDistanceCheck u_check(this, dist);
+        SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileUnitInAttackDistanceCheck> searcher(this, target, u_check);
 
-        TypeContainerVisitor<WoWSource::UnitLastSearcher<WoWSource::NearestHostileUnitInAttackDistanceCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
-        TypeContainerVisitor<WoWSource::UnitLastSearcher<WoWSource::NearestHostileUnitInAttackDistanceCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+        TypeContainerVisitor<SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileUnitInAttackDistanceCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+        TypeContainerVisitor<SkyMistCore::UnitLastSearcher<SkyMistCore::NearestHostileUnitInAttackDistanceCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
 
         cell.Visit(p, world_unit_searcher, *GetMap(), *this, ATTACK_DISTANCE > dist ? ATTACK_DISTANCE : dist);
         cell.Visit(p, grid_unit_searcher, *GetMap(), *this, ATTACK_DISTANCE > dist ? ATTACK_DISTANCE : dist);
@@ -2102,8 +2104,8 @@ Player* Creature::SelectNearestPlayer(float distance) const
 {
     Player* target = NULL;
 
-    WoWSource::NearestPlayerInObjectRangeCheck checker(this, distance);
-    WoWSource::PlayerLastSearcher<WoWSource::NearestPlayerInObjectRangeCheck> searcher(this, target, checker);
+    SkyMistCore::NearestPlayerInObjectRangeCheck checker(this, distance);
+    SkyMistCore::PlayerLastSearcher<SkyMistCore::NearestPlayerInObjectRangeCheck> searcher(this, target, checker);
     VisitNearbyObject(distance, searcher);
 
     return target;
@@ -2113,8 +2115,8 @@ Player* Creature::SelectNearestPlayerNotGM(float distance) const
 {
     Player* target = NULL;
 
-    WoWSource::NearestPlayerNotGMInObjectRangeCheck checker(this, distance);
-    WoWSource::PlayerLastSearcher<WoWSource::NearestPlayerNotGMInObjectRangeCheck> searcher(this, target, checker);
+    SkyMistCore::NearestPlayerNotGMInObjectRangeCheck checker(this, distance);
+    SkyMistCore::PlayerLastSearcher<SkyMistCore::NearestPlayerNotGMInObjectRangeCheck> searcher(this, target, checker);
     VisitNearbyObject(distance, searcher);
 
     return target;
@@ -2161,14 +2163,14 @@ void Creature::CallAssistance()
             std::list<Creature*> assistList;
 
             {
-                CellCoord p(WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY()));
+                CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
                 Cell cell(p);
                 cell.SetNoCreate();
 
-                WoWSource::AnyAssistCreatureInRangeCheck u_check(this, getVictim(), radius);
-                WoWSource::CreatureListSearcher<WoWSource::AnyAssistCreatureInRangeCheck> searcher(this, assistList, u_check);
+                SkyMistCore::AnyAssistCreatureInRangeCheck u_check(this, getVictim(), radius);
+                SkyMistCore::CreatureListSearcher<SkyMistCore::AnyAssistCreatureInRangeCheck> searcher(this, assistList, u_check);
 
-                TypeContainerVisitor<WoWSource::CreatureListSearcher<WoWSource::AnyAssistCreatureInRangeCheck>, GridTypeMapContainer >  grid_creature_searcher(searcher);
+                TypeContainerVisitor<SkyMistCore::CreatureListSearcher<SkyMistCore::AnyAssistCreatureInRangeCheck>, GridTypeMapContainer >  grid_creature_searcher(searcher);
 
                 cell.Visit(p, grid_creature_searcher, *GetMap(), *this, radius);
             }
@@ -2193,14 +2195,14 @@ void Creature::CallForHelp(float radius)
     if (radius <= 0.0f || !getVictim() || isPet() || isCharmed())
         return;
 
-    CellCoord p(WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY()));
+    CellCoord p(SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY()));
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::CallOfHelpCreatureInRangeDo u_do(this, getVictim(), radius);
-    WoWSource::CreatureWorker<WoWSource::CallOfHelpCreatureInRangeDo> worker(this, u_do);
+    SkyMistCore::CallOfHelpCreatureInRangeDo u_do(this, getVictim(), radius);
+    SkyMistCore::CreatureWorker<SkyMistCore::CallOfHelpCreatureInRangeDo> worker(this, u_do);
 
-    TypeContainerVisitor<WoWSource::CreatureWorker<WoWSource::CallOfHelpCreatureInRangeDo>, GridTypeMapContainer >  grid_creature_searcher(worker);
+    TypeContainerVisitor<SkyMistCore::CreatureWorker<SkyMistCore::CallOfHelpCreatureInRangeDo>, GridTypeMapContainer >  grid_creature_searcher(worker);
 
     cell.Visit(p, grid_creature_searcher, *GetMap(), *this, radius);
 }
@@ -2815,8 +2817,8 @@ Unit* Creature::SelectNearestHostileUnitInAggroRange(bool useLOS) const
     Unit* target = NULL;
 
     {
-        WoWSource::NearestHostileUnitInAggroRangeCheck u_check(this, useLOS);
-        WoWSource::UnitSearcher<WoWSource::NearestHostileUnitInAggroRangeCheck> searcher(this, target, u_check);
+        SkyMistCore::NearestHostileUnitInAggroRangeCheck u_check(this, useLOS);
+        SkyMistCore::UnitSearcher<SkyMistCore::NearestHostileUnitInAggroRangeCheck> searcher(this, target, u_check);
 
         VisitNearbyGridObject(MAX_AGGRO_RADIUS, searcher);
     }

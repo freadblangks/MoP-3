@@ -266,20 +266,10 @@ class spell_warr_shield_barrier : public SpellScriptLoader
                     GetCaster()->SetPower(POWER_RAGE, GetCaster()->GetPower(POWER_RAGE) - usedrage * 10);
                 }
             }
-            void Absorb(AuraEffectPtr /*auraEffect*/, DamageInfo& /*dmgInfo*/, uint32& absorbAmount)
-            {
-                Unit* target = GetTarget();
-                if (!target)
-                    return;
-                if (target->HasAura(144503))
-                    target->CastCustomSpell(144551, SPELLVALUE_BASE_POINT0, CalculatePct(30, absorbAmount), target, true);
-            }
-
 
             void Register()
             {
                 DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_warr_shield_barrier_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
-                AfterEffectAbsorb += AuraEffectAbsorbFn(spell_warr_shield_barrier_AuraScript::Absorb, EFFECT_0);
             }
         };
 
@@ -511,7 +501,7 @@ class spell_warr_staggering_shout : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(WoWSource::UnitAuraTypeCheck(false, SPELL_AURA_MOD_DECREASE_SPEED));
+                targets.remove_if(SkyMistCore::UnitAuraTypeCheck(false, SPELL_AURA_MOD_DECREASE_SPEED));
             }
 
             void Register()

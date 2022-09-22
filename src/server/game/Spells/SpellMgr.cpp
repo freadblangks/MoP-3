@@ -741,7 +741,7 @@ void SpellMgr::SetSpellDifficultyId(uint32 spellId, uint32 id)
 
 uint32 SpellMgr::GetSpellIdForDifficulty(uint32 spellId, Unit const* caster) const
 {
-    // Dbc supprimé–‘ au passage a MoP
+    // Dbc supprimée au passage a MoP
     return spellId;
     /*if (!GetSpellInfo(spellId))
     return spellId;
@@ -795,77 +795,77 @@ SpellInfo const* SpellMgr::GetSpellForDifficultyFromSpell(SpellInfo const* spell
     return GetSpellInfo(spell->Id, (Difficulty)mode);
 }
 
-SpellChainNode const* SpellMgr::GetSpellChainNode(uint32 spellId) const
+SpellChainNode const* SpellMgr::GetSpellChainNode(uint32 spell_id) const
 {
-    SpellChainMap::const_iterator itr = mSpellChains.find(spellId);
+    SpellChainMap::const_iterator itr = mSpellChains.find(spell_id);
     if (itr == mSpellChains.end())
         return NULL;
 
     return &itr->second;
 }
 
-uint32 SpellMgr::GetFirstSpellInChain(uint32 spellId) const
+uint32 SpellMgr::GetFirstSpellInChain(uint32 spell_id) const
 {
-    if (SpellChainNode const* node = GetSpellChainNode(spellId))
+    if (SpellChainNode const* node = GetSpellChainNode(spell_id))
         return node->first->Id;
 
-    return spellId;
+    return spell_id;
 }
 
-uint32 SpellMgr::GetLastSpellInChain(uint32 spellId) const
+uint32 SpellMgr::GetLastSpellInChain(uint32 spell_id) const
 {
-    if (SpellChainNode const* node = GetSpellChainNode(spellId))
+    if (SpellChainNode const* node = GetSpellChainNode(spell_id))
         return node->last->Id;
 
-    return spellId;
+    return spell_id;
 }
 
-uint32 SpellMgr::GetNextSpellInChain(uint32 spellId) const
+uint32 SpellMgr::GetNextSpellInChain(uint32 spell_id) const
 {
-    if (SpellChainNode const* node = GetSpellChainNode(spellId))
+    if (SpellChainNode const* node = GetSpellChainNode(spell_id))
         if (node->next)
             return node->next->Id;
 
     return 0;
 }
 
-uint32 SpellMgr::GetPrevSpellInChain(uint32 spellId) const
+uint32 SpellMgr::GetPrevSpellInChain(uint32 spell_id) const
 {
-    if (SpellChainNode const* node = GetSpellChainNode(spellId))
+    if (SpellChainNode const* node = GetSpellChainNode(spell_id))
         if (node->prev)
             return node->prev->Id;
 
     return 0;
 }
 
-uint8 SpellMgr::GetSpellRank(uint32 spellId) const
+uint8 SpellMgr::GetSpellRank(uint32 spell_id) const
 {
-    if (SpellChainNode const* node = GetSpellChainNode(spellId))
+    if (SpellChainNode const* node = GetSpellChainNode(spell_id))
         return node->rank;
 
     return 0;
 }
 
-uint32 SpellMgr::GetSpellWithRank(uint32 spellId, uint32 rank, bool strict) const
+uint32 SpellMgr::GetSpellWithRank(uint32 spell_id, uint32 rank, bool strict) const
 {
-    if (SpellChainNode const* node = GetSpellChainNode(spellId))
+    if (SpellChainNode const* node = GetSpellChainNode(spell_id))
     {
         if (rank != node->rank)
             return GetSpellWithRank(node->rank < rank ? node->next->Id : node->prev->Id, rank, strict);
     }
     else if (strict && rank > 1)
         return 0;
-    return spellId;
+    return spell_id;
 }
 
-SpellRequiredMapBounds SpellMgr::GetSpellsRequiredForSpellBounds(uint32 spellId) const
+SpellRequiredMapBounds SpellMgr::GetSpellsRequiredForSpellBounds(uint32 spell_id) const
 {
-    return SpellRequiredMapBounds(mSpellReq.lower_bound(spellId), mSpellReq.upper_bound(spellId));
+    return SpellRequiredMapBounds(mSpellReq.lower_bound(spell_id), mSpellReq.upper_bound(spell_id));
 }
 
-SpellsRequiringSpellMapBounds SpellMgr::GetSpellsRequiringSpellBounds(uint32 spellId) const
+SpellsRequiringSpellMapBounds SpellMgr::GetSpellsRequiringSpellBounds(uint32 spell_id) const
 {
-    return SpellsRequiringSpellMapBounds(mSpellsReqSpell.lower_bound(spellId), mSpellsReqSpell.upper_bound(spellId));
+    return SpellsRequiringSpellMapBounds(mSpellsReqSpell.lower_bound(spell_id), mSpellsReqSpell.upper_bound(spell_id));
 }
 
 bool SpellMgr::IsSpellRequiringSpell(uint32 spellid, uint32 req_spellid) const
@@ -884,9 +884,9 @@ const SpellsRequiringSpellMap SpellMgr::GetSpellsRequiringSpell()
     return this->mSpellsReqSpell;
 }
 
-uint32 SpellMgr::GetSpellRequired(uint32 spellId) const
+uint32 SpellMgr::GetSpellRequired(uint32 spell_id) const
 {
-    SpellRequiredMap::const_iterator itr = mSpellReq.find(spellId);
+    SpellRequiredMap::const_iterator itr = mSpellReq.find(spell_id);
 
     if (itr == mSpellReq.end())
         return 0;
@@ -894,46 +894,46 @@ uint32 SpellMgr::GetSpellRequired(uint32 spellId) const
     return itr->second;
 }
 
-SpellLearnSkillNode const* SpellMgr::GetSpellLearnSkill(uint32 spellId) const
+SpellLearnSkillNode const* SpellMgr::GetSpellLearnSkill(uint32 spell_id) const
 {
-    SpellLearnSkillMap::const_iterator itr = mSpellLearnSkills.find(spellId);
+    SpellLearnSkillMap::const_iterator itr = mSpellLearnSkills.find(spell_id);
     if (itr != mSpellLearnSkills.end())
         return &itr->second;
     else
         return NULL;
 }
 
-SpellLearnSpellMapBounds SpellMgr::GetSpellLearnSpellMapBounds(uint32 spellId) const
+SpellLearnSpellMapBounds SpellMgr::GetSpellLearnSpellMapBounds(uint32 spell_id) const
 {
-    return SpellLearnSpellMapBounds(mSpellLearnSpells.lower_bound(spellId), mSpellLearnSpells.upper_bound(spellId));
+    return SpellLearnSpellMapBounds(mSpellLearnSpells.lower_bound(spell_id), mSpellLearnSpells.upper_bound(spell_id));
 }
 
-bool SpellMgr::IsSpellLearnSpell(uint32 spellId) const
+bool SpellMgr::IsSpellLearnSpell(uint32 spell_id) const
 {
-    return mSpellLearnSpells.find(spellId) != mSpellLearnSpells.end();
+    return mSpellLearnSpells.find(spell_id) != mSpellLearnSpells.end();
 }
 
-bool SpellMgr::IsSpellLearnToSpell(uint32 spellId1, uint32 spellId2) const
+bool SpellMgr::IsSpellLearnToSpell(uint32 spell_id1, uint32 spell_id2) const
 {
-    SpellLearnSpellMapBounds bounds = GetSpellLearnSpellMapBounds(spellId1);
+    SpellLearnSpellMapBounds bounds = GetSpellLearnSpellMapBounds(spell_id1);
     for (SpellLearnSpellMap::const_iterator i = bounds.first; i != bounds.second; ++i)
-        if (i->second.spell == spellId2)
+        if (i->second.spell == spell_id2)
             return true;
     return false;
 }
 
-SpellTargetPosition const* SpellMgr::GetSpellTargetPosition(uint32 spellId, SpellEffIndex effIndex) const
+SpellTargetPosition const* SpellMgr::GetSpellTargetPosition(uint32 spell_id, SpellEffIndex effIndex) const
 {
-    SpellTargetPositionMap::const_iterator itr = mSpellTargetPositions.find(std::make_pair(spellId, effIndex));
+    SpellTargetPositionMap::const_iterator itr = mSpellTargetPositions.find(std::make_pair(spell_id, effIndex));
     if (itr != mSpellTargetPositions.end())
         return &itr->second;
     return NULL;
 }
 
-SpellSpellGroupMapBounds SpellMgr::GetSpellSpellGroupMapBounds(uint32 spellId) const
+SpellSpellGroupMapBounds SpellMgr::GetSpellSpellGroupMapBounds(uint32 spell_id) const
 {
-    spellId = GetFirstSpellInChain(spellId);
-    return SpellSpellGroupMapBounds(mSpellSpellGroup.lower_bound(spellId), mSpellSpellGroup.upper_bound(spellId));
+    spell_id = GetFirstSpellInChain(spell_id);
+    return SpellSpellGroupMapBounds(mSpellSpellGroup.lower_bound(spell_id), mSpellSpellGroup.upper_bound(spell_id));
 }
 
 uint32 SpellMgr::IsSpellMemberOfSpellGroup(uint32 spellid, SpellGroup groupid) const
@@ -1297,14 +1297,14 @@ SpellThreatEntry const* SpellMgr::GetSpellThreatEntry(uint32 spellID) const
     return NULL;
 }
 
-SkillLineAbilityMapBounds SpellMgr::GetSkillLineAbilityMapBounds(uint32 spellId) const
+SkillLineAbilityMapBounds SpellMgr::GetSkillLineAbilityMapBounds(uint32 spell_id) const
 {
-    return SkillLineAbilityMapBounds(mSkillLineAbilityMap.lower_bound(spellId), mSkillLineAbilityMap.upper_bound(spellId));
+    return SkillLineAbilityMapBounds(mSkillLineAbilityMap.lower_bound(spell_id), mSkillLineAbilityMap.upper_bound(spell_id));
 }
 
-PetAura const* SpellMgr::GetPetAura(uint32 spellId, uint8 eff)
+PetAura const* SpellMgr::GetPetAura(uint32 spell_id, uint8 eff)
 {
-    SpellPetAuraMap::const_iterator itr = mSpellPetAuraMap.find((spellId<<8) + eff);
+    SpellPetAuraMap::const_iterator itr = mSpellPetAuraMap.find((spell_id<<8) + eff);
     if (itr != mSpellPetAuraMap.end())
         return &itr->second;
     else
@@ -1324,9 +1324,9 @@ bool SpellMgr::IsArenaAllowedEnchancment(uint32 ench_id) const
     return mEnchantCustomAttr[ench_id];
 }
 
-const std::vector<int32>* SpellMgr::GetSpellLinked(int32 spellId) const
+const std::vector<int32>* SpellMgr::GetSpellLinked(int32 spell_id) const
 {
-    SpellLinkedMap::const_iterator itr = mSpellLinkedMap.find(spellId);
+    SpellLinkedMap::const_iterator itr = mSpellLinkedMap.find(spell_id);
     return itr != mSpellLinkedMap.end() ? &(itr->second) : NULL;
 }
 
@@ -1347,9 +1347,9 @@ PetDefaultSpellsEntry const* SpellMgr::GetPetDefaultSpellsEntry(int32 id) const
     return NULL;
 }
 
-SpellAreaMapBounds SpellMgr::GetSpellAreaMapBounds(uint32 spellId) const
+SpellAreaMapBounds SpellMgr::GetSpellAreaMapBounds(uint32 spell_id) const
 {
-    return mSpellAreaMap.equal_range(spellId);
+    return mSpellAreaMap.equal_range(spell_id);
 }
 
 SpellAreaForQuestMapBounds SpellMgr::GetSpellAreaForQuestMapBounds(uint32 quest_id) const
@@ -1362,9 +1362,9 @@ SpellAreaForQuestMapBounds SpellMgr::GetSpellAreaForQuestEndMapBounds(uint32 que
     return mSpellAreaForQuestEndMap.equal_range(quest_id);
 }
 
-SpellAreaForAuraMapBounds SpellMgr::GetSpellAreaForAuraMapBounds(uint32 spellId) const
+SpellAreaForAuraMapBounds SpellMgr::GetSpellAreaForAuraMapBounds(uint32 spell_id) const
 {
-    return mSpellAreaForAuraMap.equal_range(spellId);
+    return mSpellAreaForAuraMap.equal_range(spell_id);
 }
 
 SpellAreaForAreaMapBounds SpellMgr::GetSpellAreaForAreaMapBounds(uint32 area_id) const
@@ -1512,7 +1512,7 @@ void SpellMgr::LoadSpellRanks()
     }
     mSpellChains.clear();
     //                                                     0             1      2
-    QueryResult result = WorldDatabase.Query("SELECT first_spellId, spellId, rank from spell_ranks ORDER BY first_spellId, rank");
+    QueryResult result = WorldDatabase.Query("SELECT first_spell_id, spell_id, rank from spell_ranks ORDER BY first_spell_id, rank");
 
     if (!result)
     {
@@ -1539,13 +1539,13 @@ void SpellMgr::LoadSpellRanks()
             currentSpell = fields[0].GetUInt32();
             if (lastSpell == -1)
                 lastSpell = currentSpell;
-            uint32 spellId = fields[1].GetUInt32();
+            uint32 spell_id = fields[1].GetUInt32();
             uint32 rank = fields[2].GetUInt8();
 
             // don't drop the row if we're moving to the next rank
             if (currentSpell == lastSpell)
             {
-                rankChain.push_back(std::make_pair(spellId, rank));
+                rankChain.push_back(std::make_pair(spell_id, rank));
                 if (!result->NextRow())
                     finished = true;
             }
@@ -1556,13 +1556,13 @@ void SpellMgr::LoadSpellRanks()
         SpellInfo const* first = GetSpellInfo(lastSpell);
         if (!first)
         {
-            sLog->outError(LOG_FILTER_SQL, "Spell rank identifier(first_spellId) %u listed in `spell_ranks` does not exist!", lastSpell);
+            sLog->outError(LOG_FILTER_SQL, "Spell rank identifier(first_spell_id) %u listed in `spell_ranks` does not exist!", lastSpell);
             continue;
         }
         // check if chain is long enough
         if (rankChain.size() < 2)
         {
-            sLog->outError(LOG_FILTER_SQL, "There is only 1 spell rank for identifier(first_spellId) %u in `spell_ranks`, entry is not needed!", lastSpell);
+            sLog->outError(LOG_FILTER_SQL, "There is only 1 spell rank for identifier(first_spell_id) %u in `spell_ranks`, entry is not needed!", lastSpell);
             continue;
         }
         int32 curRank = 0;
@@ -1628,7 +1628,7 @@ void SpellMgr::LoadSpellRequired()
     mSpellReq.clear();                                         // need for reload case
 
     //                                                   0        1
-    QueryResult result = WorldDatabase.Query("SELECT spellId, req_spell from spell_required");
+    QueryResult result = WorldDatabase.Query("SELECT spell_id, req_spell from spell_required");
 
     if (!result)
     {
@@ -1642,14 +1642,14 @@ void SpellMgr::LoadSpellRequired()
     {
         Field* fields = result->Fetch();
 
-        uint32 spellId = fields[0].GetUInt32();
+        uint32 spell_id = fields[0].GetUInt32();
         uint32 spell_req = fields[1].GetUInt32();
 
         // check if chain is made with valid first spell
-        SpellInfo const* spell = GetSpellInfo(spellId);
+        SpellInfo const* spell = GetSpellInfo(spell_id);
         if (!spell)
         {
-            sLog->outError(LOG_FILTER_SQL, "spellId %u in `spell_required` table is not found in dbcs, skipped", spellId);
+            sLog->outError(LOG_FILTER_SQL, "spell_id %u in `spell_required` table is not found in dbcs, skipped", spell_id);
             continue;
         }
 
@@ -1660,20 +1660,20 @@ void SpellMgr::LoadSpellRequired()
             continue;
         }
 
-        if (GetFirstSpellInChain(spellId) == GetFirstSpellInChain(spell_req))
+        if (GetFirstSpellInChain(spell_id) == GetFirstSpellInChain(spell_req))
         {
-            sLog->outError(LOG_FILTER_SQL, "req_spell %u and spellId %u in `spell_required` table are ranks of the same spell, entry not needed, skipped", spell_req, spellId);
+            sLog->outError(LOG_FILTER_SQL, "req_spell %u and spell_id %u in `spell_required` table are ranks of the same spell, entry not needed, skipped", spell_req, spell_id);
             continue;
         }
 
-        if (IsSpellRequiringSpell(spellId, spell_req))
+        if (IsSpellRequiringSpell(spell_id, spell_req))
         {
-            sLog->outError(LOG_FILTER_SQL, "duplicated entry of req_spell %u and spellId %u in `spell_required`, skipped", spell_req, spellId);
+            sLog->outError(LOG_FILTER_SQL, "duplicated entry of req_spell %u and spell_id %u in `spell_required`, skipped", spell_req, spell_id);
             continue;
         }
 
-        mSpellReq.insert (std::pair<uint32, uint32>(spellId, spell_req));
-        mSpellsReqSpell.insert (std::pair<uint32, uint32>(spell_req, spellId));
+        mSpellReq.insert (std::pair<uint32, uint32>(spell_id, spell_req));
+        mSpellsReqSpell.insert (std::pair<uint32, uint32>(spell_req, spell_id));
         ++count;
     }
     while (result->NextRow());
@@ -1738,32 +1738,32 @@ void SpellMgr::LoadSpellLearnSpells()
     {
         Field* fields = result->Fetch();
 
-        uint32 spellId = fields[0].GetUInt32();
+        uint32 spell_id = fields[0].GetUInt32();
 
         SpellLearnSpellNode node;
         node.spell       = fields[1].GetUInt32();
         node.active      = fields[2].GetBool();
         node.autoLearned = false;
 
-        if (!GetSpellInfo(spellId))
+        if (!GetSpellInfo(spell_id))
         {
-            sLog->outError(LOG_FILTER_SQL, "Spell %u listed in `spell_learn_spell` does not exist", spellId);
+            sLog->outError(LOG_FILTER_SQL, "Spell %u listed in `spell_learn_spell` does not exist", spell_id);
             continue;
         }
 
         if (!GetSpellInfo(node.spell))
         {
-            sLog->outError(LOG_FILTER_SQL, "Spell %u listed in `spell_learn_spell` learning not existed spell %u", spellId, node.spell);
+            sLog->outError(LOG_FILTER_SQL, "Spell %u listed in `spell_learn_spell` learning not existed spell %u", spell_id, node.spell);
             continue;
         }
 
         /*if (GetTalentSpellCost(node.spell))
         {
-        sLog->outError(LOG_FILTER_SQL, "Spell %u listed in `spell_learn_spell` attempt learning talent spell %u, skipped", spellId, node.spell);
+        sLog->outError(LOG_FILTER_SQL, "Spell %u listed in `spell_learn_spell` attempt learning talent spell %u, skipped", spell_id, node.spell);
         continue;
         }*/
 
-        mSpellLearnSpells.insert(SpellLearnSpellMap::value_type(spellId, node));
+        mSpellLearnSpells.insert(SpellLearnSpellMap::value_type(spell_id, node));
 
         ++count;
     }
@@ -1840,7 +1840,7 @@ void SpellMgr::LoadSpellTargetPositions()
     {
         Field* fields = result->Fetch();
 
-        uint32 spellId = fields[0].GetUInt32();
+        uint32 Spell_ID = fields[0].GetUInt32();
         SpellEffIndex effIndex = SpellEffIndex(fields[1].GetUInt8());
 
         SpellTargetPosition st;
@@ -1854,59 +1854,71 @@ void SpellMgr::LoadSpellTargetPositions()
         MapEntry const* mapEntry = sMapStore.LookupEntry(st.target_mapId);
         if (!mapEntry)
         {
-            sLog->outError(LOG_FILTER_SQL, "Spell (Id: %u, EffectIndex: %u) target map (Id: %u) does not exist in `Map.dbc`.", spellId, effIndex, st.target_mapId);
+            sLog->outError(LOG_FILTER_SQL, "Spell (Id: %u, effIndex: %u) target map (ID: %u) does not exist in `Map.dbc`.", Spell_ID, effIndex, st.target_mapId);
             continue;
         }
 
         if (st.target_X == 0 && st.target_Y == 0 && st.target_Z == 0)
         {
-            sLog->outError(LOG_FILTER_SQL, "Spell (Id: %u, EffectIndex: %u) target coordinates not provided.", spellId, effIndex);
+            sLog->outError(LOG_FILTER_SQL, "Spell (Id: %u, effIndex: %u) target coordinates not provided.", Spell_ID, effIndex);
             continue;
         }
 
-        SpellInfo const* spellInfo = GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = GetSpellInfo(Spell_ID);
         if (!spellInfo)
         {
-            sLog->outError(LOG_FILTER_SQL, "Spell (Id:%u) listed in `spell_target_position` does not exist.", spellId);
+            sLog->outError(LOG_FILTER_SQL, "Spell (ID:%u) listed in `spell_target_position` does not exist.", Spell_ID);
             continue;
         }
 
         if (spellInfo->Effects[effIndex].TargetA.GetTarget() == TARGET_DEST_DB || spellInfo->Effects[effIndex].TargetB.GetTarget() == TARGET_DEST_DB)
         {
-            std::pair<uint32, SpellEffIndex> key = std::make_pair(spellId, effIndex);
+            std::pair<uint32, SpellEffIndex> key = std::make_pair(Spell_ID, effIndex);
             mSpellTargetPositions[key] = st;
             ++count;
         }
         else
         {
-            sLog;
+            sLog->outError(LOG_FILTER_SQL, "Spell (Id: %u, effIndex: %u) listed in `spell_target_position` does not have target TARGET_DEST_DB (17).", Spell_ID, effIndex);
+            continue;
         }
 
     } while (result->NextRow());
 
-    
     /*
     // Check all spells
-    for (uint32 i = 1; i < GetSpellInfoStoreSize(); ++i)
+    for (uint32 i = 1; i < GetSpellInfoStoreSize; ++i)
     {
     SpellInfo const* spellInfo = GetSpellInfo(i);
     if (!spellInfo)
     continue;
 
-    for (uint8 j = 0; j < MAX_SPELL_EFFECTS; ++j)
+    bool found = false;
+    for (int j = 0; j < MAX_SPELL_EFFECTS; ++j)
     {
-    SpellEffectInfo const* effect = spellInfo->GetEffect(j);
-    if (!effect)
-    continue;
-
-    if (effect->TargetA.GetTarget() != TARGET_DEST_DB && effect->TargetB.GetTarget() != TARGET_DEST_DB)
-    continue;
-
-    if (!GetSpellTargetPosition(i, SpellEffIndex(j)))
-    TC_LOG_DEBUG("spells", "Spell (Id: %u, EffectIndex: %u) does not have record in `spell_target_position`.", i, j);
+    switch (spellInfo->Effects[j].TargetA)
+    {
+    case TARGET_DEST_DB:
+    found = true;
+    break;
     }
+    if (found)
+    break;
+    switch (spellInfo->Effects[j].TargetB)
+    {
+    case TARGET_DEST_DB:
+    found = true;
+    break;
     }
-    */
+    if (found)
+    break;
+    }
+    if (found)
+    {
+    if (!sSpellMgr->GetSpellTargetPosition(i))
+    sLog->outDebug(LOG_FILTER_SPELLS_AURAS, "Spell (ID: %u) does not have record in `spell_target_position`", i);
+    }
+    }*/
 
     sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u spell teleport coordinates in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
@@ -1919,7 +1931,7 @@ void SpellMgr::LoadSpellGroups()
     mSpellGroupSpell.clear();
 
     //                                                0     1
-    QueryResult result = WorldDatabase.Query("SELECT id, spellId FROM spell_group");
+    QueryResult result = WorldDatabase.Query("SELECT id, spell_id FROM spell_group");
     if (!result)
     {
         sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded 0 spell group definitions. DB table `spell_group` is empty.");
@@ -1938,10 +1950,10 @@ void SpellMgr::LoadSpellGroups()
             sLog->outError(LOG_FILTER_SQL, "SpellGroup id %u listed in `spell_group` is in core range, but is not defined in core!", group_id);
             continue;
         }
-        int32 spellId = fields[1].GetInt32();
+        int32 spell_id = fields[1].GetInt32();
 
         groups.insert(std::set<uint32>::value_type(group_id));
-        mSpellGroupSpell.insert(SpellGroupSpellMap::value_type((SpellGroup)group_id, spellId));
+        mSpellGroupSpell.insert(SpellGroupSpellMap::value_type((SpellGroup)group_id, spell_id));
 
     }
     while (result->NextRow());
@@ -2044,7 +2056,7 @@ void SpellMgr::LoadForbiddenSpells()
 
     uint32 count = 0;
 
-    QueryResult result = WorldDatabase.Query("SELECT spellId FROM spell_forbidden");
+    QueryResult result = WorldDatabase.Query("SELECT spell_id FROM spell_forbidden");
     if (!result)
     {
         sLog->outInfo(LOG_FILTER_SERVER_LOADING, ">> Loaded %u spell group definitions", count);
@@ -3446,9 +3458,6 @@ void SpellMgr::LoadSpellCustomAttr()
                 case 1329:  // Mutilate
                     spellInfo->AttributesEx3 &= ~SPELL_ATTR3_CANT_TRIGGER_PROC;
                     break;
-				case 20740:
-					spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(9); // 8s
-					break;
                 case 53651: // Beacon of Light (dummy)
                     spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(39); // 2s
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER_AREA_RAID;
@@ -4390,9 +4399,6 @@ void SpellMgr::LoadSpellCustomAttr()
                     break;
                 case 145109:// Ysera's Gift
                     spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ALLY;
-                    break;
-                case 145110: // Ysera's Gift (Party Heal)
-                    spellInfo->Effects[EFFECT_0].SetRadiusIndex(EFFECT_RADIUS_100_YARDS);
                     break;
                 case 117050:// Glaive Toss (talent)
                     spellInfo->Effects[1].TargetA = TARGET_UNIT_TARGET_ENEMY;

@@ -581,7 +581,7 @@ class boss_algalon_the_observer : public CreatureScript
                             me->GetCreatureListWithEntryInGrid(stalkers, NPC_ALGALON_STALKER, 200.0f);
                             if (!stalkers.empty())
                             {
-                                Unit* stalker = WoWSource::Containers::SelectRandomContainerElement(stalkers);
+                                Unit* stalker = SkyMistCore::Containers::SelectRandomContainerElement(stalkers);
                                 stalker->m_Events.AddEvent(new ActivateLivingConstellation(stalker), stalker->m_Events.CalculateTime(urand(45000, 50000)));
                             }
                             break;
@@ -1195,7 +1195,7 @@ class spell_algalon_big_bang : public SpellScriptLoader
             bool Load()
             {
                 _targetCount = 0;
-                return GetCaster()->GetTypeId() == TYPEID_UNIT && GetCaster()->IsAIEnabled;
+                return true;
             }
 
             void CountTargets(std::list<WorldObject*>& targets)

@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2011-2015 SkyMist Gaming
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -14,221 +13,210 @@
  *
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+ *
+ * World Boss: Xuen <The White Tiger>.
+ *
+ * ======= QUESTS =======
+ *
+ * [90] Celestial Blessings
+ *
+ * Quest accept:
+ * 
+ * Wrathion says: I will meet you at each of the four shrines, champion.
+ * Wrathion says: Remember, we must visit all four, but we only need to complete ONE of the four challenges.
+ * Wrathion says: Choose the challenge most appropriate for your unique talents.
+ * // Wrathion transforms into his whelp form.
+ * Wrathion says: Good luck! 
+ *
+ * Quest complete:
+ *
+ * Wrathion says: We have done it, hero! We have the blessings of the celestials, and we have completed their challenge.
+ * Wrathion says: I know our next step. Meet me back atop Mason's folly - you'll be pleasantly surprised at what I have in store for you! 
+ *
+ * Temple of the White Tiger - ! Melee DPS spec challenge.
+ *
+ * Wrathion says: I am looking forward to this. The White Tiger is the embodiment of strength in Pandaria!
+ * Wrathion says: Great White Tiger! Hear our plea.
+ * Wrathion says: My champion and I seek the blessing of your strength.
+ * Xuen says: Ah, the young black dragon graces my temple. The deeds of you and your champion are quickly becoming Pandaren legend.
+ * Wrathion says: I take great pride in the company I keep.
+ * Xuen says: Tell me, young prince: What is the nature of strength?
+ * Wrathion says: The power to crush one's foe. That is strength.
+ * Xuen says: You speak only in terms of one's enemies.
+ * Wrathion says: Certainly, strength can benefit one's allies.
+ * Xuen says: How so?
+ * Wrathion says: ...by using it to crush their enemies!
+ * Xuen says: A black dragon, through and through. Very well, I will give you my blessing, but also some advice:
+ * Xuen says: Strength used in the service of others is twice as powerful as strength spent on one's foes.
+ * Xuen says: Now. My challenge, should you accept it, will test your ability to stand right in the face of danger and persevere. 
+ *
+ * - Melee DPS Challenge -
+ *
+ * Xuen says: Let the challenge begin! Hero, you must defeat the Black Prince in close quarters combat.
+ * Wrathion says: Wait - that's absurd. I would annihilate my own champion!
+ * Xuen says: You, Wrathion, will be blindfolded.
+ * Wrathion says: ...interesting. But the outcome is unlikely to change.
+ * Xuen says: Black Prince. You are very strong, but what good is strength without the vision to guide it?
+ * Wrathion says: Very well. I am sorry, champion - But I will not be the one learning a lesson today.
+ * // Wrathion mutters to himself as he ties the blindfold.
+ * Wrathion says: A blind dragon. Ridiculous!
+ * Xuen yells: Begin!
+ * 
+ * Xuen yells: Seek out your true enemy! Do not be fooled of his false images!
+ * Xuen yells: The dragon is stronger than you, hero! Do not let him finish his attacks!
+ * Xuen yells: Disarm him if you can! Use every advantage!
+ * Xuen yells: Stay behind your foe! He cannot see you! Move quickly!
+ * Xuen yells: Dodge his attacks! Use his strength against him!
+ * Xuen yells: The elements will not die! Make use of your time before they rise again!
+ * 
+ * Wrathion says: The legendary power of the Titans is mine to command!
+ * Wrathion says: Where did you go? Come back!
+ * Wrathion says: Stand still, I am trying to kill you here!
+ * Wrathion says: Ahhh... Hah!
+ * Wrathion yells: Your lucky that I'm not those Green Dragons that can see with their eyes closed!
+ * Wrathion yells: Your eyes fail you yet!
+ * Wrathion yells: But can you find me again?
+ * Wrathion yells: One final time!
+ * Wrathion says: Well done.
+ * 
+ * Defeated
+ * Xuen yells: That is enough!
+ * Wrathion says: Just as I expected. Did you want to give it another go?
+ * Xuen says: Champion, turn your foes strength and confidence against him. I believe in you.
+ * 
+ * Victory
+ * Xuen yells: Very good - lay down your weapons!
+ * Wrathion says: PAH! A lopsided challenge.
+ * Xuen says: I hope now you understand limits of strength without vision. It is one thing to change the world, but quite another to do what is right.
+ * Xuen says: Young prince, I hope you take this lesson to heart.
+ * Wrathion says: I am pleased that our hero is still alive. Thank you for your blessing, Mighty Tiger. 
+ *
+ * ===================================================================================================================
+ *
+ *[90] The Emperor's Way - Actual Boss fight.
+ *
+ * Intro
+ * Emperor Shaohao yells: When my journey began, I was reckless with my strength. The white tiger taught me control. My hatred, anger, and violence were vanquished.
+ * Xuen yells: Strength is far more than simple physical prowess. When you are truly tested, will you be able to tell the difference between strength and power?
+ *
+ * Aggro
+ * Haha! The trial commences.
+ *
+ * Agility
+ * Believe in your strength.
+ * You have the power to change your destiny.
+ * Do not mistake the power that darkness offers for true strength.
+ *
+ * Kills player
+ * Return twice as powerful.
+ *
+ * Death
+ * Xuen yells: You are strong, stronger even than you realize. Carry this thought with you into the darkness ahead. Let it shield you.
+ * Emperor Shaohao yells: You have walked the trial of strength, and learned of the path of the white tiger. May you remember this lesson always.
+*/
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "CreatureTextMgr.h"
+#include "SpellScript.h"
+#include "SpellAuras.h"
+#include "SpellAuraEffects.h"
+#include "Player.h"
 
-#define MAX_HEALTH 360000000
-#define INITIAL_HEALTH_POINTS 93100000
-#define MAX_HEALTH_POINTS 392000000
-#define INCREMENTAL 3000000
-
-class PlayerCheck
+enum Texts
 {
-public:
-    bool operator()(Unit* target) const
-    {
-        return !target->ToPlayer();
-    }
+    // Xuen
+    SAY_INTRO               = 0, // Strength is far more than simple physical prowess. When you are truly tested, will you be able to tell the difference between strength and power?
+    SAY_AGGRO               = 1, // Haha! The trial commences.
+    SAY_DEATH               = 2, // You are strong, stronger even than you realize. Carry this thought with you into the darkness ahead. Let it shield you.
+    SAY_SLAY                = 3, // Return twice as powerful.
+    SAY_AGILITY             = 4  // 0 - Believe in your strength. ; 1 - You have the power to change your destiny. ; 2 - Do not mistake the power that darkness offers for true strength.
 };
 
 enum Spells
 {
-	SPELL_AGILITY                   = 144631,
-    SPELL_CHI_BARRAGE_TRIGGER       = 144643,
-    SPELL_CHI_BARRAGE               = 144642,
-    SPELL_CRACKLING_LIGHTNING       = 144635,
-    SPELL_LEAP                      = 144640,
-    SPELL_SPECTRAL_SWIPE_TRIGGER    = 144652,
-    SPELL_SPECTRAL_SWIPE            = 144638
+    // Xuen
+    SPELL_LEAP              = 144640, // Jump spell.
+    SPELL_SPECTRAL_SWIPE    = 144652, // Damage and armor reduction. Triggered by above.
+    SPELL_CRACK_LIGHTNING   = 144635, // Cast time and aura.
+    SPELL_CRACK_LIGHTNING_S = 144634, // Script effect to cast each sec in 60y. Triggered by above.
+    SPELL_CRACK_LIGHTNING_D = 144633, // Damage, on above SE. Jumps to 5 targets.
+    SPELL_CHI_BARRAGE       = 144642, // Cast time and aura. Script effect to cast in 100y.
+    SPELL_CHI_BARRAGE_M     = 144643, // Triggers missiles.
+    SPELL_CHI_BARRAGE_D     = 144644, // Damage spell for impact zone, 3y. Triggered by above.
+    SPELL_AGILITY           = 144631  // Boss buff spell.
 };
 
 enum Events
 {
-    EVENT_SPECTRAL_SWIPES           = 1,
-    EVENT_CHI_BARRAGE_AOE,
-    EVENT_CRACKLING_LIGHTNING,
-    EVENT_AGILITY_SELF_BUFF,
-    EVENT_LEAP,
-    EVENT_DEFEATED,
-    EVENT_DEATH ,
-    EVENT_SHAO_DO_INTRO,
-    EVENT_SHAO_DO_INTRO_ATTACKABLE,
-    EVENT_SHAO_DO_OUTRO
+    // Xuen
+    EVENT_LEAP              = 1, // 20s from aggro, 30s after.
+    EVENT_CRACK_LIGHTNING   = 2, // 12s from aggro, 45s after.
+    EVENT_CHI_BARRAGE       = 3, // 45s from aggro, 65s after.
+    EVENT_AGILITY           = 4
 };
 
-enum Timers
-{
-    TIMER_SPECTRAL_SWIPES           = 5000,
-    TIMER_CHI_BARRAGE_AOE           = 20000,
-    TIMER_CRACKLING_LIGHTNING       = 30000,
-    TIMER_AGILITY_SELF_BUFF         = 40000,
-    TIMER_LEAP                      = 30000,
-    TIMER_DEFEATED                  = 1000
-};
-
-enum Actions
-{
-	ACTION_DEFEATED					= 0
-};
-
-enum Says
-{
-    SAY_AGGRO = 0,
-    SAY_INTRO = 1,
-    SAY_DEATH = 2,
-    SAY_KILL = 3,
-    SAY_AGILITY = 4,
-    SAY_CHI = 5,
-    SAY_CRACKLING = 6
-};
-
-enum Factions
-{
-    FACTION_FRIENDLY = 35,
-    FACTION_HOSTILE_NEUTRAL = 31
-};
-
-#define MIDDLE_FACING_ANGLE 1.573f
-
-enum Datas
-{
-    DATA_XUEN = 0,
-};
-
-enum Bosses
-{
-    BOSS_CHI_JI = 71952,
-    BOSS_NIUZAO = 71954,
-    BOSS_YU_LON = 71955,
-    BOSS_XUEN = 71953,
-    BOSS_ORDOS = 72057
-};
-
-#define CELESTIAL_COURT_BOSS_INTRO_TIMER_1 1000
-#define CELESTIAL_COURT_BOSS_INTRO_TIMER_2 15000
-
-static Position _timelessIsleMiddle = { -650.04f, -5016.84f, -6.27f, 1.573f };
-
-enum EmperorActions
-{
-    ACTION_XUEN = 1,
-    ACTION_CHIJI = 2,
-    ACTION_NIUZAO = 3,
-    ACTION_YULON = 4,
-    ACTION_MOVE_TO_MIDDLE = 100
-};
-
-enum EmprerorTalk
-{
-    EMPEROR_TALK_INTRO_YULON,
-    EMPEROR_TALK_INTRO_XUEN,
-    EMPEROR_TALK_INTRO_CHIJI,
-    EMPEROR_TALK_INTRO_NIUZAO,
-    EMPEROR_TALK_OUTRO_YULON,
-    EMPEROR_TALK_OUTRO_XUEN,
-    EMPEROR_TALK_OUTRO_CHIJI,
-    EMPEROR_TALK_OUTRO_NIUZAO,
-    EMPEROR_TALK_INTRO
-};
-
-enum Creatures
-{
-    NPC_SKUNKY_ALEMENTAL = 71908,
-    NPC_EMPEROR_SHAOHAO_TI = 73303,
-    NPC_ETERNAL_KILNMASTER = 72896,
-    NPC_HIGH_PRIEST_OF_ORDOS = 72898,
-    NPC_BLAZEBOUND_CHANTER = 72897,
-
-    // Generic (Invisible)
-    NPC_TIME_LOST_SHRINE_TRIGGER = 73461 // I think this is the correct ID :P
-};
-
+// ToDo : Script Crackling Lightning + Chi Barrage, fix timers.
 class boss_xuen : public CreatureScript
 {
     public:
         boss_xuen() : CreatureScript("boss_xuen") { }
 
-        struct boss_xuenAI : public BossAI
+        struct boss_xuenAI : public ScriptedAI
         {
-            boss_xuenAI(Creature* creature) : BossAI(creature, DATA_XUEN) { }
+            boss_xuenAI(Creature* creature) : ScriptedAI(creature) { }
+
+            EventMap events;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
 
             void Reset()
             {
                 events.Reset();
-                _Reset();
-
-                if (me->getFaction() == FACTION_HOSTILE_NEUTRAL)
-                {
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                    me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                }
-
-                me->SetWalk(true);
-                me->setActive(true);
             }
 
-            void EnterCombat(Unit* /*target*/)
+            void EnterCombat(Unit* /*who*/)
             {
-                me->SetWalk(false);
-                death = false;
                 Talk(SAY_AGGRO);
-                events.ScheduleEvent(urand(EVENT_CHI_BARRAGE_AOE, EVENT_AGILITY_SELF_BUFF), urand(15000, 25000));
-                events.ScheduleEvent(EVENT_SPECTRAL_SWIPES, urand(5000, 15000));
+
+                events.ScheduleEvent(EVENT_CRACK_LIGHTNING, urand(18000, 23000));
+                events.ScheduleEvent(EVENT_LEAP, urand(12000, 14000));
+                events.ScheduleEvent(EVENT_CHI_BARRAGE, urand(44000, 48000));
+                events.ScheduleEvent(EVENT_AGILITY, urand(60000, 70000));
             }
 
-            void MovementInform(uint32 type, uint32 point)
+            void KilledUnit(Unit* victim)
             {
-                if (type != POINT_MOTION_TYPE)
-                    return;
-
-                if (point == 1)
-                {
-                    events.ScheduleEvent(EVENT_SHAO_DO_INTRO, CELESTIAL_COURT_BOSS_INTRO_TIMER_1);
-                    me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                    me->setFaction(FACTION_HOSTILE_NEUTRAL);
-                    me->SetHomePosition(_timelessIsleMiddle);
-                }
+                if (victim->GetTypeId() == TYPEID_PLAYER)
+                    Talk(SAY_SLAY);
             }
 
-            void KilledUnit(Unit* who)
+            void EnterEvadeMode()
             {
-                if (who->GetTypeId() == TYPEID_PLAYER)
-                    Talk(SAY_KILL);
-                        return;
+                me->RemoveAllAuras();
+                Reset();
+                me->DeleteThreatList();
+                me->CombatStop(true);
+                me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void UpdateHealth()
+            void JustDied(Unit* /*killer*/)
             {
-                if (!me->isInCombat())
-                    return;
-
-                // Get the Threat List
-                std::list<HostileReference*> threatlist = me->getThreatManager().getThreatList();
-                if (threatlist.empty()) // He doesn't have anyone in his threatlist, useless to continue
-                    return;
-
-                uint8 count = 0;
-                for (auto itr = threatlist.begin(); itr != threatlist.end(); ++itr)
-                    if (Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
-                        if (unit->IsWithinDist(me, 100.0f))
-                            count++;
-
-                uint32 hp = me->GetMaxHealth() - me->GetHealth();
-                uint32 newhp = std::min<uint32>((INCREMENTAL * count), MAX_HEALTH_POINTS);
-                if (newhp != me->GetMaxHealth() && newhp > INITIAL_HEALTH_POINTS)
-                {
-                    me->SetMaxHealth(std::min<uint32>((me->GetMaxHealth() * count), MAX_HEALTH_POINTS));
-                    me->SetHealth(newhp - hp);
-                }
-            }; 
+                Talk(SAY_DEATH);
+            }
 
             void UpdateAI(const uint32 diff)
             {
+                if (!UpdateVictim())
+                    return;
+
                 events.Update(diff);
+
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
@@ -236,91 +224,35 @@ class boss_xuen : public CreatureScript
                 {
                     switch (eventId)
                     {
-                        case EVENT_SHAO_DO_INTRO:
-                        {
-                            Talk(SAY_INTRO);
-                            events.ScheduleEvent(EVENT_SHAO_DO_INTRO_ATTACKABLE, CELESTIAL_COURT_BOSS_INTRO_TIMER_2);
-                            break;
-                        }
-                        case EVENT_SHAO_DO_INTRO_ATTACKABLE:
-                        {
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                            me->SetMaxHealth(INITIAL_HEALTH_POINTS);
-                            break;
-                        }
-                        case EVENT_SPECTRAL_SWIPES:
-                        {
-                            DoCast(SPELL_SPECTRAL_SWIPE);
-                            events.ScheduleEvent(EVENT_SPECTRAL_SWIPES, urand(10000, 15000)); 
-                            break;
-                        }
-                        case EVENT_AGILITY_SELF_BUFF:
-                        {
-                            DoCast(me, SPELL_AGILITY);
-                            Talk(SAY_AGILITY);
-                            events.ScheduleEvent(urand(EVENT_CHI_BARRAGE_AOE, EVENT_AGILITY_SELF_BUFF), urand(15000, 25000));
-                            break;
-                        }
                         case EVENT_LEAP:
-                        {
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 50.0f))
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
                                 DoCast(target, SPELL_LEAP);
+                            events.ScheduleEvent(EVENT_LEAP, urand(35000, 40000));
                             break;
-                        }
-                        case EVENT_CRACKLING_LIGHTNING:
-                        {
-                            if (Unit* random_target = SelectTarget(SELECT_TARGET_RANDOM, 0))
-                            {
-                                Talk(SAY_CRACKLING);
-                                DoCast(random_target, SPELL_CRACKLING_LIGHTNING, false);
-                            }
 
-                            events.ScheduleEvent(urand(EVENT_CHI_BARRAGE_AOE, EVENT_AGILITY_SELF_BUFF), urand(15000, 25000));
-                            events.ScheduleEvent(EVENT_LEAP, 30000);
+                        case EVENT_CRACK_LIGHTNING:
+                            DoCast(me, SPELL_CRACK_LIGHTNING);
+                            events.ScheduleEvent(EVENT_CRACK_LIGHTNING, urand(35000, 40000));
                             break;
-                        }
-                        case EVENT_CHI_BARRAGE_AOE:
-                        {
-                            Talk(SAY_CHI);
-                            DoCast(SPELL_CHI_BARRAGE);
-                            events.ScheduleEvent(urand(EVENT_CHI_BARRAGE_AOE, EVENT_AGILITY_SELF_BUFF), urand(15000, 25000));
-                            break;
-                        }
-                        case EVENT_SHAO_DO_OUTRO:
-                        {
-                            if (Creature* shao = me->FindNearestCreature(NPC_EMPEROR_SHAOHAO_TI, 300.0f, true))
-                                shao->AI()->Talk(EMPEROR_TALK_OUTRO_XUEN);
-                            break;
-                        }
-                        case EVENT_DEATH:
-                        {
-                            if (death)
-                            {
-                                if (Creature* shao = me->FindNearestCreature(NPC_EMPEROR_SHAOHAO_TI, 300.0f, true))
-                                    shao->AI()->DoAction(ACTION_CHIJI);
 
-                                me->DisappearAndDie();
-                                death = false;
-                            }
+                        case EVENT_CHI_BARRAGE:
+                            DoCast(me, SPELL_CHI_BARRAGE);
+                            events.ScheduleEvent(EVENT_CHI_BARRAGE, urand(43000, 47000));
                             break;
-                        }
-                        default:
+
+                        case EVENT_AGILITY:
+                            Talk(SAY_AGILITY);
+                            DoCast(me, SPELL_AGILITY);
+                            events.ScheduleEvent(EVENT_AGILITY, urand(113000, 127000));
                             break;
+
+                        default: break;
                     }
                 }
 
-                if (!death)
-                    if (!UpdateVictim())
-                        return;
-
                 DoMeleeAttackIfReady();
             }
-
-            private:
-                bool death = false;
-                EventMap events;
         };
-
 
         CreatureAI* GetAI(Creature* creature) const
         {
@@ -328,67 +260,7 @@ class boss_xuen : public CreatureScript
         }
 };
 
-// Chi Barrage - 144642
-class spell_xuen_ti_chi_barrage : public SpellScriptLoader
-{
-    public:
-        spell_xuen_ti_chi_barrage() : SpellScriptLoader("spell_xuen_ti_chi_barrage") { }
-
-        class spell_xuen_ti_chi_barrage_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_xuen_ti_chi_barrage_SpellScript);
-
-            void HandleDummy(SpellEffIndex effIndex)
-            {
-                if (Unit* target = GetHitUnit())
-                    if (target->GetTypeId() == TYPEID_PLAYER)
-                        GetCaster()->CastSpell(target, GetSpellInfo()->Effects[effIndex].BasePoints, true);
-            }
-
-            void Register()
-            {
-                OnEffectHitTarget += SpellEffectFn(spell_xuen_ti_chi_barrage_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_xuen_ti_chi_barrage_SpellScript();
-        }
-};
-
-// Crackling Lightning - 144634
-class spell_xuen_ti_crackling_lightning : public SpellScriptLoader
-{
-    public:
-        spell_xuen_ti_crackling_lightning() : SpellScriptLoader("spell_xuen_ti_crackling_lightning") { }
-
-        class spell_xuen_ti_crackling_lightning_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_xuen_ti_crackling_lightning_SpellScript);
-
-            void HandleChain(SpellEffIndex effIndex)
-            {
-                if (Unit* target = GetHitUnit())
-                    if (target->GetTypeId() == TYPEID_PLAYER)
-                        GetCaster()->CastSpell(target, GetSpellInfo()->Effects[effIndex].BasePoints, true);
-            }
-
-            void Register()
-            {
-                OnEffectHitTarget += SpellEffectFn(spell_xuen_ti_crackling_lightning_SpellScript::HandleChain, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_xuen_ti_crackling_lightning_SpellScript();
-        }
-};
-
 void AddSC_boss_xuen()
 {
-    new spell_xuen_ti_crackling_lightning();
-    new spell_xuen_ti_chi_barrage();
     new boss_xuen();
 }

@@ -48,7 +48,6 @@ void AddSC_quest_spell_scripts();
 void AddSC_item_spell_scripts();
 void AddSC_example_spell_scripts();
 void AddSC_holiday_spell_scripts();
-void AddSC_t16_spell_scripts();
 
 void AddSC_SmartSCripts();
 
@@ -85,7 +84,6 @@ void AddSC_tele_commandscript();
 void AddSC_ticket_commandscript();
 void AddSC_titles_commandscript();
 void AddSC_wp_commandscript();
-void AddSC_vip_commandscript();
 
 #ifdef SCRIPTS
 //world
@@ -100,6 +98,7 @@ void AddSC_npcs_special();
 void AddSC_npc_taxi();
 void AddSC_npc_companions();
 void AddSC_achievement_scripts();
+void AddSC_mine_cart();
 
 //eastern kingdoms
 void AddSC_alterac_valley();                 //Alterac Valley
@@ -313,10 +312,6 @@ void AddSC_boss_celebras_the_cursed();       //Maraudon
 void AddSC_boss_landslide();
 void AddSC_boss_noxxion();
 void AddSC_boss_ptheradras();
-void AddSC_boss_adarogg();                   // RageFire Chasm
-void AddSC_boss_gordoth();
-void AddSC_boss_koranthal();
-void AddSC_boss_slagmaw();
 void AddSC_boss_onyxia();                    //Onyxia's Lair
 void AddSC_instance_onyxias_lair();
 void AddSC_boss_amnennar_the_coldbringer();  //Razorfen Downs
@@ -343,9 +338,6 @@ void AddSC_mob_anubisath_sentinel();
 void AddSC_instance_temple_of_ahnqiraj();
 void AddSC_wailing_caverns();                //Wailing caverns
 void AddSC_instance_wailing_caverns();
-void AddSC_boss_lord_pythas();
-void AddSC_boss_lord_cobrahn();
-void AddSC_boss_lady_anacondra();
 void AddSC_zulfarrak();                     //Zul'Farrak generic
 void AddSC_instance_zulfarrak();            //Zul'Farrak instance script
 void AddSC_gilneas();
@@ -373,11 +365,6 @@ void AddSC_thousand_needles();
 void AddSC_thunder_bluff();
 void AddSC_ungoro_crater();
 void AddSC_winterspring();
-
-//maelstrom
-void AddSC_kezan();
-void AddSC_deepholm();
-void AddSC_lost_isle();
 
 //northrend
 void AddSC_boss_slad_ran();
@@ -461,7 +448,6 @@ void AddSC_boss_assembly_of_iron();
 void AddSC_boss_kologarn();
 void AddSC_boss_auriaya();              
 void AddSC_boss_hodir();
-void AddSC_boss_yogg_saron();
 void AddSC_boss_freya();
 void AddSC_boss_mimiron();
 void AddSC_boss_thorim();
@@ -551,7 +537,6 @@ void AddSC_boss_shirrak_the_dead_watcher();
 void AddSC_boss_nexusprince_shaffar();       //Auchindoun Mana Tombs
 void AddSC_boss_pandemonius();
 void AddSC_boss_darkweaver_syth();           //Auchindoun Sekketh Halls
-void AddSC_boss_anzu();
 void AddSC_boss_talon_king_ikiss();
 void AddSC_instance_sethekk_halls();
 void AddSC_instance_shadow_labyrinth();      //Auchindoun Shadow Labyrinth
@@ -825,21 +810,12 @@ void AddSC_boss_tsulong();
 void AddSC_boss_lei_shi();
 void AddSC_boss_sha_of_fear();
 
-                                                   // Throne of Thunder
-void AddSC_instance_throne_of_thunder();
-void AddSC_boss_jin_rokh_breaker();
+void AddSC_boss_jin_rokh_breaker();                 // Throne of Thunder
 void AddSC_boss_horridon();
 void AddSC_boss_tortos();
 void AddSC_boss_council_of_elders();
 void AddSC_boss_megaera();
-void AddSC_boss_darkanimus();
-void AddSC_boss_durumu();
-void AddSC_boss_ironqon();
-void AddSC_boss_jikun();
-void AddSC_boss_leishen();
-void AddSC_boss_primordius();
-void AddSC_boss_raden();
-void AddSC_boss_twinconsorts();
+void AddSC_instance_throne_of_thunder();
 
 void AddSC_instance_siege_of_orgrimmar();           // Siege of Orgrimmar
 void AddSC_siege_of_orgrimmar();
@@ -872,7 +848,6 @@ void AddSC_WanderingIsland_West();
 void AddSC_WanderingIsland_South();
 
 // battlegrounds
-void AddSC_BattlegroundSSMScripts();
 
 // outdoor pvp
 void AddSC_outdoorpvp_hp();
@@ -897,7 +872,6 @@ void AddScripts()
     AddEasternKingdomsScripts();
     AddKalimdorScripts();
     AddOutlandScripts();
-	AddMaelstromScripts();
     AddNorthrendScripts();
     AddPandariaScripts();
     AddBattlegroundScripts();
@@ -936,7 +910,6 @@ void AddSpellScripts()
     AddSC_item_spell_scripts();
     AddSC_example_spell_scripts();
     AddSC_holiday_spell_scripts();
-    AddSC_t16_spell_scripts();
 }
 
 void AddCommandScripts()
@@ -973,7 +946,6 @@ void AddCommandScripts()
     AddSC_ticket_commandscript();
     AddSC_titles_commandscript();
     AddSC_wp_commandscript();
-	AddSC_vip_commandscript();
 }
 
 void AddWorldScripts()
@@ -991,6 +963,7 @@ void AddWorldScripts()
     AddSC_npc_companions();
     AddSC_achievement_scripts();
     AddSC_chat_log();
+    AddSC_mine_cart();
 #endif
 }
 
@@ -1211,16 +1184,7 @@ void AddEasternKingdomsScripts()
     AddSC_instance_baradin_hold(); // Baradin Hold
     AddSC_boss_argaloth();
     AddSC_boss_occuthar();
-	AddSC_boss_alizabal();
-#endif
-}
-
-void AddMaelstromScripts()
-{
-#ifdef SCRIPTS
-	AddSC_kezan();
-	AddSC_deepholm();
-	AddSC_lost_isle();
+    AddSC_boss_alizabal();
 #endif
 }
 
@@ -1261,10 +1225,6 @@ void AddKalimdorScripts()
     AddSC_boss_landslide();
     AddSC_boss_noxxion();
     AddSC_boss_ptheradras();
-	AddSC_boss_adarogg();                   // RageFire Chasm
-	AddSC_boss_gordoth();
-	AddSC_boss_koranthal();
-	AddSC_boss_slagmaw();
     AddSC_boss_onyxia();                    //Onyxia's Lair
     AddSC_instance_onyxias_lair();
     AddSC_boss_amnennar_the_coldbringer();  //Razorfen Downs
@@ -1291,10 +1251,6 @@ void AddKalimdorScripts()
     AddSC_instance_temple_of_ahnqiraj();
     AddSC_wailing_caverns();                //Wailing caverns
     AddSC_instance_wailing_caverns();
-	AddSC_boss_lord_pythas();
-	AddSC_boss_lord_cobrahn();
-	AddSC_boss_lady_anacondra();
-	
     AddSC_zulfarrak();                      //Zul'Farrak generic
     AddSC_instance_zulfarrak();             //Zul'Farrak instance script
     AddSC_gilneas();
@@ -1413,7 +1369,6 @@ void AddOutlandScripts()
     AddSC_boss_nexusprince_shaffar();       //Auchindoun Mana Tombs
     AddSC_boss_pandemonius();
     AddSC_boss_darkweaver_syth();           //Auchindoun Sekketh Halls
-	AddSC_boss_anzu();
     AddSC_boss_talon_king_ikiss();
     AddSC_instance_sethekk_halls();
     AddSC_instance_shadow_labyrinth();      //Auchindoun Shadow Labyrinth
@@ -1576,8 +1531,7 @@ void AddNorthrendScripts()
     AddSC_boss_xt002();
     AddSC_boss_assembly_of_iron();
     AddSC_boss_kologarn();
-    AddSC_boss_auriaya();    
-	AddSC_boss_yogg_saron();
+    AddSC_boss_auriaya();              
     AddSC_boss_hodir();
     AddSC_boss_freya();
     AddSC_boss_mimiron();
@@ -1740,23 +1694,13 @@ void AddPandariaScripts()
     AddSC_boss_tsulong();
     AddSC_boss_lei_shi();
     AddSC_boss_sha_of_fear();
-	                
 
-	AddSC_instance_throne_of_thunder();     // Throne of Thunder
-	AddSC_boss_jin_rokh_breaker();
-	AddSC_boss_horridon();
-	AddSC_boss_tortos();
-	AddSC_boss_council_of_elders();
-	AddSC_boss_megaera();
-	AddSC_boss_darkanimus();
-	AddSC_boss_durumu();
-	AddSC_boss_ironqon();
-	AddSC_boss_jikun();
-	AddSC_boss_leishen();
-	AddSC_boss_primordius();
-	AddSC_boss_raden();
-	AddSC_boss_twinconsorts();
-
+    AddSC_instance_throne_of_thunder();            // Throne of Thunder
+    AddSC_boss_jin_rokh_breaker();
+    AddSC_boss_horridon();
+    AddSC_boss_tortos();
+    AddSC_boss_council_of_elders();
+    AddSC_boss_megaera();
 
     AddSC_instance_siege_of_orgrimmar();           // Siege of Orgrimmar
     AddSC_siege_of_orgrimmar();
@@ -1804,7 +1748,6 @@ void AddOutdoorPvPScripts()
 void AddBattlegroundScripts()
 {
 #ifdef SCRIPTS
-AddSC_BattlegroundSSMScripts();
 #endif
 }
 

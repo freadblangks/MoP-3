@@ -120,10 +120,6 @@ enum GameObjects
     GO_ELEMENTIUM_FRAGMENT_25N          = 210218,
     GO_ELEMENTIUM_FRAGMENT_10H          = 210219,
     GO_ELEMENTIUM_FRAGMENT_25H          = 210220,
-    GO_ULTRAXION_LOOT_10N               = 210160, 	
-    GO_ULTRAXION_LOOT_25N               = 210161, 			
-    GO_ULTRAXION_LOOT_10H               = 210162, 			
-    GO_ULTRAXION_LOOT_25H               = 210163, 
 };
 
 enum SharedSpells

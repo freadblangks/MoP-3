@@ -1056,13 +1056,6 @@ bool Aura::ModCharges(int32 num, AuraRemoveMode removeMode)
 
         SetCharges(charges);
 
-        if (GetId() == 49222)
-        {
-            if (GetCaster()->HasAura(138197))
-            {
-                GetCaster()->CastSpell(GetCaster(), 138214, true);
-            }
-        }
         // Molten Core and Arcane Missiles ! : charges = stackAmount
         if (GetId() == 122355 || GetId() == 79683)
             SetStackAmount(charges);
@@ -1460,8 +1453,8 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
         if (apply && caster->HasAura(17076))
         {
             UnitList targets;
-            WoWSource::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 150.0f, 774, false);
-            WoWSource::UnitListSearcher<WoWSource::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
+            SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 150.0f, 774, false);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
             caster->VisitNearbyObject(150.0f, searcher);
 
             if (targets.size() >= 3)
@@ -1470,8 +1463,8 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
         else if (!apply)
         {
             UnitList targets;
-            WoWSource::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 150.0f, 774, false);
-            WoWSource::UnitListSearcher<WoWSource::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
+            SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 150.0f, 774, false);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
             caster->VisitNearbyObject(150.0f, searcher);
 
             if (targets.size() < 3)
@@ -1516,97 +1509,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             case SPELLFAMILY_GENERIC:
                 switch (GetId())
                 {
-                    case 145955://力量输出
-                        if (Player* player = target->ToPlayer())
-                        {
-                            uint32 spec = player->GetSpecializationId(player->GetActiveSpec());
-                            int32 amount = -GetEffect(0)->GetAmount();
-                            switch (spec)
-                            {
-                            case SPEC_PALADIN_RETRIBUTION:
-                                player->CastCustomSpell(145978, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_WARRIOR_ARMS:
-                            case SPEC_WARRIOR_FURY:
-                                player->CastCustomSpell(145991, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_DK_FROST:
-                                player->CastCustomSpell(145959, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_DK_UNHOLY:
-                                player->CastCustomSpell(145960, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            }
-                        }
-                        break;
-                    case 146019://敏捷输出型
-                        if (Player* player = target->ToPlayer())
-                        {
-                            uint32 spec = player->GetSpecializationId(player->GetActiveSpec());
-                            int32 amount = -GetEffect(0)->GetAmount();
-                            switch (spec)
-                            {
-                            case SPEC_HUNTER_BEASTMASTER:
-                                player->CastCustomSpell(145964, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_HUNTER_MARKSMAN:
-                                player->CastCustomSpell(145965, SPELLVALUE_BASE_POINT0, amount, player, true);
-                            case SPEC_HUNTER_SURVIVAL:
-                                player->CastCustomSpell(145966, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_SHAMAN_ENHANCEMENT:
-                                player->CastCustomSpell(197009, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_ROGUE_ASSASSINATION:
-                                player->CastCustomSpell(145983, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_ROGUE_COMBAT:
-                                player->CastCustomSpell(145984, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_ROGUE_SUBTLETY:
-                                player->CastCustomSpell(145985, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_MONK_WINDWALKER:
-                                player->CastCustomSpell(145964, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                player->CastSpell(player, 145969, true);
-                                break;
-                            case SPEC_DRUID_CAT:
-                                player->CastCustomSpell(145961, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            }
-                        }
-                        break;
-                    case 146025://坦克
-                        if (Player* player = target->ToPlayer())
-                        {
-                            uint32 spec = player->GetSpecializationId(player->GetActiveSpec());
-                            int32 amount = -GetEffect(0)->GetAmount();
-                            switch (spec)
-                            {
-                            case SPEC_PALADIN_PROTECTION:
-                                player->CastCustomSpell(145976, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_WARRIOR_PROTECTION:
-                                player->CastCustomSpell(145992, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_DK_BLOOD:
-                                player->CastCustomSpell(145958, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_DRUID_BEAR:
-                                player->CastCustomSpell(145962, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            case SPEC_MONK_BREWMASTER:
-                                player->CastCustomSpell(145967, SPELLVALUE_BASE_POINT0, amount, player, true);
-                                break;
-                            }
-                        }
-                    break;
-                    case 114206:
-                    {
-                        if (target->HasAura(138126))
-                            target->CastSpell(target, 138127, true);
-                        break;
-                    }
                     // Spark of Zandalar
                     case 138958:
                         if (target && target->GetTypeId() == TYPEID_PLAYER && target->HasAura(138958))
@@ -1692,31 +1594,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             case SPELLFAMILY_DRUID:
                 if (!caster)
                     break;
-                switch (GetId())
-                {
-                    case 5217:
-                    {
-                        if (target->HasAura(144841))
-                            target->CastSpell(target, 146874, true);
-                    }break;
-                    case 16870:
-                    {
-                        if (target->HasAura(144864))
-                            target->CastSpell(target, 144865, true);
-                    }break;
-                    case 48438:
-                    {
-                        if (caster->HasAura(144875))
-                            caster->CastSpell(target, 144876, true);
-                    }break;
-                    case 16886:
-                    {
-                        if (caster->HasAura(138350))
-                        {
-                            caster->CastSpell(caster, 138351, true);
-                        }
-                    }break;
-                }
                 // Rejuvenation
                 if (GetSpellInfo()->SpellFamilyFlags[0] & 0x10 && GetEffect(EFFECT_0))
                 {
@@ -1787,8 +1664,8 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                     case 44457: // Living Bomb
                     {
                         UnitList targets;
-                        WoWSource::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 300.0f, 44457, false);
-                        WoWSource::UnitListSearcher<WoWSource::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
+                        SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck u_check(caster, caster, 300.0f, 44457, false);
+                        SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(caster, targets, u_check);
                         caster->VisitNearbyObject(300.0f, searcher);
                         if (targets.size() >= 4)
                         {
@@ -1799,7 +1676,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
 
                             if (auras.size() >= 4)
                             {
-                                auras.sort(WoWSource::DurationOrderPred(false));
+                                auras.sort(SkyMistCore::DurationOrderPred(false));
                                 auras.pop_front();
                                 auras.pop_front();
                                 auras.pop_front();
@@ -1822,19 +1699,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             case SPELLFAMILY_PRIEST:
                 if (!caster)
                     break;
-                switch (GetId())
-                {
-                    case 63735:
-                    {
-                        if (target->HasAura(145306))
-                            target->CastSpell(target, 145327, true);
-                    }break;
-                    case 109964:
-                    {
-                        if (caster->HasAura(145334))
-                            caster->CastSpell(target, 145374, true);
-                    }break;
-                }
                 // Devouring Plague
                 if (GetSpellInfo()->SpellFamilyFlags[0] & 0x02000000 && GetEffect(0))
                 {
@@ -1872,17 +1736,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                     case 85416:
                         caster->ToPlayer()->RemoveSpellCooldown(31935, true);
                         break;
-                    case 114637:
-                        if (caster->HasAura(144566))
-                        {
-                            if (GetStackAmount() >= 3)
-                                caster->CastSpell(caster, 144569, true);
-                        }
-                        break;
-                    case 54149:
-                        if (caster->HasAura(144625))
-                            caster->CastSpell(caster, 144624, true);
-                        break;
                     default:
                         break;
                 }
@@ -1901,10 +1754,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
 
                 switch (GetId())
                 {
-                    case 121471:
-                        if (target->HasAura(138150))
-                            target->CastSpell(target, 138151, true);
-                    break;
                     // Blind
                     case 2094:
                     {
@@ -1958,16 +1807,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                         ModStackAmount(5);
                     else
                         ModStackAmount(2);
-                }
-                switch (GetId())
-                {
-                case 113858:
-                case  113860:
-                case  113861:
-                    if (caster && target)
-                        if (caster == target && caster->HasAura(138129))
-                            caster->CastSpell(caster, 138483, true);
-                    break;
                 }
                 break;
             case SPELLFAMILY_WARRIOR:
@@ -2133,12 +1972,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
             {
                 switch (GetId())
                 {
-                case 110909:
-                    if (caster->HasAura(138316))
-                    {
-                        caster->CastSpell(caster, 138317, true);
-                    }
-                    break;
                     // Blizzard
                     case 10:
                         target->UpdateSpeed(MOVE_RUN, true);
@@ -2293,11 +2126,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                         if (caster && caster->HasAura(99009) && (removeMode == AURA_REMOVE_BY_EXPIRE))
                             caster->CastSpell(caster, 99011, true);
 
-                        if (caster&& caster->HasAura(144879))
-                        {
-                            caster->CastSpell(caster, 62606, true);
-                            caster->CastSpell(caster, 22842, true);
-                        }
                         break;
                     }
                     default:
@@ -2349,15 +2177,6 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                 break;
             }
             case SPELLFAMILY_WARRIOR:
-                switch (GetId())
-                {
-                    case 125565:
-                    {
-                        if (target->HasAura(144502))
-                            target->CastSpell(target, 144500, true);
-                    }break;
-                }
-
                 // Shield Block
                 if (GetId() == 2565)
                     // Item - Item - Warrior T12 Protection 4P Bonus
@@ -3558,16 +3377,16 @@ void UnitAura::FillTargetMap(std::map<Unit*, uint32> & targets, Unit* caster)
                     case SPELL_EFFECT_APPLY_AREA_AURA_RAID:
                     {
                         targetList.push_back(GetUnitOwner());
-                        WoWSource::AnyGroupedUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius, GetSpellInfo()->Effects[effIndex].Effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID);
-                        WoWSource::UnitListSearcher<WoWSource::AnyGroupedUnitInObjectRangeCheck> searcher(GetUnitOwner(), targetList, u_check);
+                        SkyMistCore::AnyGroupedUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius, GetSpellInfo()->Effects[effIndex].Effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID);
+                        SkyMistCore::UnitListSearcher<SkyMistCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetUnitOwner(), targetList, u_check);
                         GetUnitOwner()->VisitNearbyObject(radius, searcher);
                         break;
                     }
                     case SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
                     {
                         targetList.push_back(GetUnitOwner());
-                        WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius);
-                        WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(GetUnitOwner(), targetList, u_check);
+                        SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius);
+                        SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(GetUnitOwner(), targetList, u_check);
                         GetUnitOwner()->VisitNearbyObject(radius, searcher);
                         break;
                     }
@@ -3575,8 +3394,8 @@ void UnitAura::FillTargetMap(std::map<Unit*, uint32> & targets, Unit* caster)
                     {
                         if (GetCaster() && GetCaster()->IsInWorld())
                         {
-                            WoWSource::AnyAoETargetUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius); // No GetCharmer in searcher
-                            WoWSource::UnitListSearcher<WoWSource::AnyAoETargetUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
+                            SkyMistCore::AnyAoETargetUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius); // No GetCharmer in searcher
+                            SkyMistCore::UnitListSearcher<SkyMistCore::AnyAoETargetUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
                             GetCaster()->VisitNearbyObject(radius, searcher);
                         }
                         else
@@ -3639,14 +3458,14 @@ void DynObjAura::FillTargetMap(std::map<Unit*, uint32> & targets, Unit* /*caster
         if (GetSpellInfo()->Effects[effIndex].TargetB.GetTarget() == TARGET_DEST_DYNOBJ_ALLY
             || GetSpellInfo()->Effects[effIndex].TargetB.GetTarget() == TARGET_UNIT_DEST_AREA_ALLY)
         {
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(GetDynobjOwner(), targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(GetDynobjOwner(), targetList, u_check);
             GetDynobjOwner()->VisitNearbyObject(radius, searcher);
         }
         else if (GetSpellInfo()->Effects[effIndex].Effect != SPELL_EFFECT_CREATE_AREATRIGGER)
         {
-            WoWSource::AnyAoETargetUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyAoETargetUnitInObjectRangeCheck> searcher(GetDynobjOwner(), targetList, u_check);
+            SkyMistCore::AnyAoETargetUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyAoETargetUnitInObjectRangeCheck> searcher(GetDynobjOwner(), targetList, u_check);
             GetDynobjOwner()->VisitNearbyObject(radius, searcher);
         }
 

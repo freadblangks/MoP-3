@@ -762,14 +762,10 @@ class spell_dk_soul_reaper : public SpellScriptLoader
             {
                 if (GetCaster())
                 {
-                    float pct = 35.0f;
-                    if (GetCaster()->HasAura(138347))
-                        pct = 45.0f;
-
                     AuraRemoveMode removeMode = GetTargetApplication()->GetRemoveMode();
                     if (removeMode == AURA_REMOVE_BY_DEATH)
                         GetCaster()->CastSpell(GetCaster(), DK_SPELL_SOUL_REAPER_HASTE, true);
-                    else if (removeMode == AURA_REMOVE_BY_EXPIRE && GetTarget()->GetHealthPct() < pct)
+                    else if (removeMode == AURA_REMOVE_BY_EXPIRE && GetTarget()->GetHealthPct() < 35.0f)
                         GetCaster()->CastSpell(GetTarget(), DK_SPELL_SOUL_REAPER_DAMAGE, true);
                 }
             }
@@ -1390,22 +1386,6 @@ class spell_dk_raise_dead : public SpellScriptLoader
         {
             PrepareSpellScript(spell_dk_raise_dead_SpellScript);
 
-            void HandleBeforeCast()
-            {
-                if (!GetCaster())
-                    return;
-
-                if (Player* _player = GetCaster()->ToPlayer())
-                {
-                    // Despawn if find old spirit
-                    std::list<Creature*> ghoul;
-                    GetCaster()->GetAllMinionsByEntry(ghoul, 26125);
-                    if (!ghoul.empty())
-                        for (auto itr : ghoul)
-                            itr->DespawnOrUnsummon();
-                }
-            }
-
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
                 if (Player* _player = GetCaster()->ToPlayer())
@@ -1419,7 +1399,6 @@ class spell_dk_raise_dead : public SpellScriptLoader
 
             void Register()
             {
-                BeforeCast += SpellCastFn(spell_dk_raise_dead_SpellScript::HandleBeforeCast);
                 OnEffectHitTarget += SpellEffectFn(spell_dk_raise_dead_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
             }
         };
@@ -2233,74 +2212,41 @@ class spell_dk_conversion_heal_aura : public SpellScriptLoader
         }
 };
 
-// 63560 - Dark Transformation
-class spell_dk_dark_transformation: public SpellScriptLoader
+// 47496 - Explode, Ghoul spell for Corpse Explosion
+class spell_dk_ghoul_explode : public SpellScriptLoader
 {
     public:
-        spell_dk_dark_transformation() : SpellScriptLoader("spell_dk_dark_transformation") { }
+        spell_dk_ghoul_explode() : SpellScriptLoader("spell_dk_ghoul_explode") { }
 
-        enum
+        class spell_dk_ghoul_explode_SpellScript : public SpellScript
         {
-            SPELL_DK_SHADOW_UNFUSION = 91342
-        };
+            PrepareSpellScript(spell_dk_ghoul_explode_SpellScript);
 
-        class spell_dk_dark_transformation_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_dk_dark_transformation_SpellScript);
-
-            SpellCastResult CheckClass()
+            bool Validate(SpellInfo const* /*spellEntry*/)
             {
-                if (AuraPtr aura = GetCaster()->GetAura(SPELL_DK_SHADOW_UNFUSION))
-                    if (aura->GetStackAmount() == 5)
-                        return SPELL_CAST_OK;
+                if (!sSpellMgr->GetSpellInfo(DK_SPELL_CORPSE_EXPLOSION_TRIGGERED))
+                    return false;
+                return true;
+            }
 
-                return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
+            void Suicide(SpellEffIndex /*effIndex*/)
+            {
+                if (Unit* unitTarget = GetHitUnit())
+                {
+                    // Corpse Explosion (Suicide)
+                    unitTarget->CastSpell(unitTarget, DK_SPELL_CORPSE_EXPLOSION_TRIGGERED, true);
+                }
             }
 
             void Register()
             {
-                OnCheckCast += SpellCheckCastFn(spell_dk_dark_transformation_SpellScript::CheckClass);
+                OnEffectHitTarget += SpellEffectFn(spell_dk_ghoul_explode_SpellScript::Suicide, EFFECT_1, SPELL_EFFECT_SCHOOL_DAMAGE);
             }
         };
 
         SpellScript* GetSpellScript() const
         {
-            return new spell_dk_dark_transformation_SpellScript();
-        }
-};
-
-// Shadow Infusion - 91342
-class spell_dk_shadow_infusion : public SpellScriptLoader
-{
-    public:
-        spell_dk_shadow_infusion() : SpellScriptLoader("spell_dk_shadow_infusion") { }
-
-        class spell_dk_shadow_infusion_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_dk_shadow_infusion_AuraScript);
-
-            enum
-            {
-                SPELL_DK_DARK_TRANS_DRIVER = 93426
-            };
-
-            void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (GetCaster()->GetTypeId() != TYPEID_UNIT)
-                    return;
-
-                GetCaster()->GetCharmerOrOwnerOrSelf()->RemoveAurasDueToSpell(SPELL_DK_DARK_TRANS_DRIVER);
-            }
-
-            void Register()
-            {
-                OnEffectRemove += AuraEffectRemoveFn(spell_dk_shadow_infusion_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const
-        {
-            return new spell_dk_shadow_infusion_AuraScript();
+            return new spell_dk_ghoul_explode_SpellScript();
         }
 };
 
@@ -2352,6 +2298,5 @@ void AddSC_deathknight_spell_scripts()
     new spell_dk_glyph_of_the_geist();
     new spell_dk_presences();
     new spell_dk_conversion_heal_aura();
-    new spell_dk_dark_transformation();
-    new spell_dk_shadow_infusion();
+    new spell_dk_ghoul_explode();
 }

@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2011-2015 SkyMist Gaming
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -14,331 +13,323 @@
  *
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+ *
+ * World Boss: Chi-Ji <The Red Crane>.
+ *
+ * ======= QUESTS =======
+ *
+ * [90] Celestial Blessings
+ *
+ * Quest accept:
+ * 
+ * Wrathion says: I will meet you at each of the four shrines, champion.
+ * Wrathion says: Remember, we must visit all four, but we only need to complete ONE of the four challenges.
+ * Wrathion says: Choose the challenge most appropriate for your unique talents.
+ * // Wrathion transforms into his whelp form.
+ * Wrathion says: Good luck! 
+ *
+ * Quest complete:
+ *
+ * Wrathion says: We have done it, hero! We have the blessings of the celestials, and we have completed their challenge.
+ * Wrathion says: I know our next step. Meet me back atop Mason's folly - you'll be pleasantly surprised at what I have in store for you! 
+ *
+ * Temple of the Red Crane - ! Healer spec challenge.
+ *
+ * Wrathion says: The Red Crane of Hope has inspired the citizens of Pandaria from the very dawn of history. I very much want to speak with him.
+ * // Wrathion runs down the right-hand set of stairs to the basement.
+ * Wrathion says: Great Red Crane! Hear our plea.
+ * Wrathion says: My champion and I seek your blessing of Hope.
+ * Chi-Ji says: My my, the child of the Worldbreaker, proof that none are beyond redemption. I am honored by your visit.
+ * Chi-Ji says: Tell me, Son of the Earth-Warder: What is the nature of hope?
+ * Wrathion says: Hope is...a belief of a better tomorrow.
+ * Chi-Ji says: You speak, but doubt your own words.
+ * // Wrathion kneels
+ * Wrathion says: ...Great Crane. You have not seen what I have seen.
+ * Chi-Ji says: You underestimate me.
+ * Wrathion says: ...the fire that once burned the sky will return. It is inevitable. The Burning Legion WILL find Azeroth.
+ * Wrathion says: Seas of blood, cities in ruins! Who are we - one divided world - to stand against a legion?
+ * Wrathion says: You speak of hope. Believe me, the thinnest silver of belief that we might somehow survive the coming devastation is all that sustains me.
+ * Chi-Ji says: Rise, son of Deathwing. I will give you my blessing, for you need it more than any I have ever met.
+ * // Wrathion stands
+ * Chi-Ji says: I challenge you not to think of hope as a vague and unimaginable future.
+ * Chi-Ji says: Live EVERY day with hope in your heart. In doing so, you CREATE the future you dream of.
+ * Wrathion says: ...thank you, Great Crane.
+ * Chi-Ji says: My challenge, should you accept it, tasks you with healing the most grievous of wounds.
+ *
+ * - Healer Challenge -
+ *
+ * Chi-Ji says: Let the challenge begin! Hero, you must keep the Black Prince alive with your skills as a healer.
+ * Wrathion says: I'm a black dragon. I won't need any help.
+ * Chi-Ji says: Are you certain? You are filled with doubts and fears, young Prince.
+ * Chi-Ji says: You have not fully reconciled with your past. Now is the time.
+ * Wrathion says: What - wait - father!?
+ * Vision of Deathwing yells: I shall tear this world apart!
+ * Wrathion says: Please - don't make me do this.
+ * Chi-Ji yells: Your champion will keep you alive. Begin!
+ * Vision of Deathwing yells: Your efforts are insignificant!
+ * 
+ * Chi-Ji yells: Heal the Prince, but don't forget to keep yourself alive!
+ * Chi-Ji yells: Do not miss any opportunity to heal the Black Prince!
+ * Chi-Ji yells: The Vale of shadows has lifted!
+ * Chi-Ji yells: Keep move! Your foe is dangerous, but you are smarter!
+ * Chi-Ji yells: Use the blood of the world to regenerate yourself. You can do this!
+ * Chi-Ji yells: The elements are undying! Make use of their time before they rise again!
+ * Chi-Ji yells: Do not fear his traps, champion! Your healing is more powerful than his magic!
+ * 
+ * Vision of Deathwing yells: Your tenacity is admirable, but pointless!
+ * Vision of Deathwing yells: There's no shelter from my fury!
+ * Vision of Deathwing yells: Your armor means nothing! Your faith - even less!
+ * 
+ * Failure
+ * Wrathion yells: Enough! Make it stop!
+ * Chi-Ji yells: Very well. The test is over.
+ * Chi-Ji says: But do not give in despair. You have the spirit to overcome this. Try again, I believe in you.
+ *
+ * Victory
+ * Chi-Ji yells: Very good! You have done it!
+ * Wrathion says: Such... madness...
+ * Chi-Ji says: Do not despair, young prince. You are not your father.
+ * Chi-Ji says: More importantly, your champion would not let you fall. Do you see, with the support of friends, nothing is impossible.
+ * Wrathion says: I understand. Thank you, Great Crane. 
+ *
+ * ===================================================================================================================
+ *
+ *[90] The Emperor's Way - Actual Boss fight.
+ *
+ * Intro
+ * Emperor Shaohao yells: The Red Crane saw hope in me, and instructed me to look inward. Despite my visage of despair, I found this hope, and the despair was vanquished.
+ * Chi-Ji yells: When faced with challenges, the like you have never seen, what do you hope for? What is the future you seek?
+ *
+ * Aggro
+ * Chi-Ji yells: Then let us begin!
+ *
+ * Beacon of Hope
+ * Believe in one another, and let others carry hope for you.
+ *
+ * Crane Rush
+ * Without hope, there is no brightness in the future.
+ * Create the destiny you seek.
+ *
+ * Kills player
+ * Do not give up on yourself! 
+ *
+ * Death
+ * Chi-Ji yells: Your hope shines brightly, and even more brightly when you work together to overcome. It will ever light your way, in even the darkest of places.
+ * Emperor Shaohao yells: You have walked the trial of hope, and learned of the path of the red crane. May it guide your footsteps through time.
+*/
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
-#include "MapManager.h"
+#include "ScriptedCreature.h"
+#include "CreatureTextMgr.h"
+#include "SpellScript.h"
+#include "SpellAuras.h"
+#include "SpellAuraEffects.h"
+#include "Player.h"
 
-#define MAX_HEALTH_POINTS 349000000
-#define INITIAL_HEALTH_POINTS 87250000
-#define INCREMENTAL 2800000
+enum Texts
+{
+    // Chi'ji
+    SAY_INTRO               = 0, // When faced with challenges, the like you have never seen, what do you hope for? What is the future you seek?
+    SAY_AGGRO               = 1, // Then let us begin!
+    SAY_DEATH               = 2, // Your hope shines brightly, and even more brightly when you work together to overcome. It will ever light your way, in even the darkest of places.
+    SAY_SLAY                = 3, // Do not give up on yourself!
+    SAY_BEACON_HOPE         = 4, // Believe in one another, and let others carry hope for you.
+    SAY_CRANE_RUSH          = 5  // 0 - Without hope, there is no brightness in the future. ; 1 - Create the destiny you seek.
+};
 
 enum Spells
 {
-	SPELL_FIRESTORM					= 144461,
-	SPELL_INSPIRING_SONG			= 144468,
-	SPELL_BEACON_OF_HOPE			= 144473,
-	SPELL_BLAZING_SONG				= 144471,
-	SPELL_CRANE_RUSH				= 144470,
-	SPELL_FIRESTORM_VISUAL			= 144463,
-    SPELL_BLAZING_NOVA_AURA         = 144493,
-	SPELL_BLAZING_NOVA				= 144494,
-    SPELL_BEACON_OF_HOPE_AURA       = 144475
+    // Chi'ji
+    SPELL_INSPIRING_SONG    = 144468, // Heal spell.
+    SPELL_FIRESTORM_SUMMON  = 144461, // Summons NPC_FIRESTORM in 15y.
+    SPELL_BEACON_OF_HOPE_S  = 144473, // Summons NPC_BEACON_OF_HOPE.
+    SPELL_BLAZING_SONG      = 144471, // Per. dmg. boss aura. Triggers 144472 dmg. each 2s, 65y radius.
+    SPELL_CRANE_RUSH        = 144470, // 66 and 33%. Triggers 144495 each sec, summoning NPC_CHILD_OF_CHIJI each 0.5s in 5y.
+
+    // NPCs
+    SPELL_FIRESTORM_AURA    = 144463, // Per. dmg. npc aura. Triggers 144462 dmg. each 2s.
+    SPELL_BEACON_OF_HOPE_A  = 144474, // Per. dmg. decrease npc aura. Triggers 144475 each 1s, 10y radius.
+    SPELL_BURNING_NOVA_A    = 144493, // Per. dmg. npc aura. Triggers 144494 dmg. each 2s, 4y radius.
 };
 
 enum Events
 {
-	EVENT_FIRESTORM					= 1,
-	EVENT_INSPIRING_SONG,
-	EVENT_BEACON_OF_HOPE,	
-    EVENT_HEALTH_66_PERCENT,
-    EVENT_HEALTH_33_PERCENT,
-    EVENT_SHAO_DO_OUTRO,
-    EVENT_DEATH,
-    EVENT_SHAO_DO_INTRO,
-    EVENT_SHAO_DO_INTRO_ATTACKABLE,
-    EVENT_HEALTH_POOL_TIMER
+    // Chi'ji
+    EVENT_INSPIRING_SONG    = 1, // 20s from aggro, 30s after.
+    EVENT_FIRESTORM         = 2, // 12s from aggro, 45s after.
+    EVENT_BEACON_OF_HOPE    = 3, // 45s from aggro, 65s after.
+    EVENT_BLAZING_SONG      = 4, // 9s after beacon of hope.
+    EVENT_CRANE_RUSH        = 5  // 66 and 33%.
 };
 
-enum Says
+enum Npcs
 {
-    SAY_AGGRO                       = 0,
-    SAY_INTRO                       = 1,
-    SAY_DEATH                       = 2,
-    SAY_KILL                        = 3,
-    SAY_SPELL                       = 4,
-    SAY_SPELL_2                     = 5,
-    SAY_SPELL_3                     = 6
+    NPC_FIRESTORM           = 71971,
+    NPC_BEACON_OF_HOPE      = 71978,
+    NPC_CHILD_OF_CHIJI      = 71990
 };
 
-enum Actions
+enum CraneRushStates
 {
-    ACTION_CHILDREN_OF_CHIJI_33 = 1,
-    ACTION_CHILDREN_OF_CHIJI_66 = 2
+    DONE_NONE               = 0, // No casts done.
+    DONE_66                 = 1, // First cast done.
+    DONE_33                 = 2  // Both casts done.
 };
 
-enum Factions
-{
-    FACTION_FRIENDLY = 35,
-    FACTION_HOSTILE_NEUTRAL = 31
-};
-
-#define MIDDLE_FACING_ANGLE 1.573f
-
-enum Datas
-{
-    DATA_CHI_JI = 0,
-};
-
-enum Bosses
-{
-    BOSS_CHI_JI = 71952,
-    BOSS_NIUZAO = 71954,
-    BOSS_YU_LON = 71955,
-    BOSS_XUEN = 71953,
-    BOSS_ORDOS = 72057
-};
-
-#define CELESTIAL_COURT_BOSS_INTRO_TIMER_1 1000
-#define CELESTIAL_COURT_BOSS_INTRO_TIMER_2 15000
-
-static Position _timelessIsleMiddle = { -650.04f, -5016.84f, -6.27f, 1.573f };
-
-enum EmperorActions
-{
-    ACTION_XUEN = 1,
-    ACTION_CHIJI = 2,
-    ACTION_NIUZAO = 3,
-    ACTION_YULON = 4,
-    ACTION_MOVE_TO_MIDDLE = 100
-};
-
-enum EmprerorTalk
-{
-    EMPEROR_TALK_INTRO_YULON,
-    EMPEROR_TALK_INTRO_XUEN,
-    EMPEROR_TALK_INTRO_CHIJI,
-    EMPEROR_TALK_INTRO_NIUZAO,
-    EMPEROR_TALK_OUTRO_YULON,
-    EMPEROR_TALK_OUTRO_XUEN,
-    EMPEROR_TALK_OUTRO_CHIJI,
-    EMPEROR_TALK_OUTRO_NIUZAO,
-    EMPEROR_TALK_INTRO
-};
-
-enum Creatures
-{
-    NPC_SKUNKY_ALEMENTAL = 71908,
-    NPC_EMPEROR_SHAOHAO_TI = 73303,
-    NPC_ETERNAL_KILNMASTER = 72896,
-    NPC_HIGH_PRIEST_OF_ORDOS = 72898,
-    NPC_BLAZEBOUND_CHANTER = 72897,
-
-    // Generic (Invisible)
-    NPC_TIME_LOST_SHRINE_TRIGGER = 73461 // I think this is the correct ID :P
-};
-
+// ToDo: Check and fix script.
 class boss_chi_ji : public CreatureScript
 {
     public:
         boss_chi_ji() : CreatureScript("boss_chi_ji") { }
 
-        struct boss_chi_jiAI : public BossAI
+        struct boss_chi_jiAI : public ScriptedAI
         {
-            boss_chi_jiAI(Creature* creature) : BossAI(creature, DATA_CHI_JI) {	}
+            boss_chi_jiAI(Creature* creature) : ScriptedAI(creature), summons(me) { }
+
+            EventMap _events;
+            SummonList summons;
+            uint8 craneRushDone;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
 
             void Reset()
             {
-                events.Reset();
-                _Reset();
-
-                if (me->getFaction() == FACTION_HOSTILE_NEUTRAL)
-                {
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                    me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                }
-
+                _events.Reset();
                 summons.DespawnAll();
-                me->SetWalk(true);
-                me->setActive(true);
-            }
 
-            void EnterCombat(Unit* /*target*/)
+                craneRushDone = DONE_NONE;
+            }
+    
+            void EnterCombat(Unit* /*who*/)
             {
-                me->SetWalk(false);
-                death = false;
                 Talk(SAY_AGGRO);
-                events.ScheduleEvent(urand(EVENT_FIRESTORM, EVENT_INSPIRING_SONG), urand(10000, 15000));
-                events.ScheduleEvent(EVENT_BEACON_OF_HOPE, 50000);
+
+                _events.ScheduleEvent(EVENT_INSPIRING_SONG, urand(18000, 23000)); // 18-23
+                _events.ScheduleEvent(EVENT_FIRESTORM, urand(12000, 14000));      // 12-14
+                _events.ScheduleEvent(EVENT_BEACON_OF_HOPE, urand(44000, 48000)); // 44-48
             }
 
-            void DoAction(const int32 action)
+            void KilledUnit(Unit* victim)
             {
-                switch (action)
+                if (victim->GetTypeId() == TYPEID_PLAYER)
+                    Talk(SAY_SLAY);
+            }
+
+            void EnterEvadeMode()
+            {
+                me->RemoveAllAuras();
+                Reset();
+                me->DeleteThreatList();
+                me->CombatStop(true);
+                me->GetMotionMaster()->MoveTargetedHome();
+            }
+
+            void JustDied(Unit* /*killer*/)
+            {
+                Talk(SAY_DEATH);
+                summons.DespawnAll();
+            }
+
+            void JustSummoned(Creature* summon)
+            {
+                summons.Summon(summon);
+                summon->setActive(true);
+
+		        if (me->isInCombat())
+                    summon->SetInCombatWithZone();
+
+                switch (summon->GetEntry())
                 {
-                    case ACTION_CHILDREN_OF_CHIJI_66:
+                    case NPC_FIRESTORM:
+                        summon->AddAura(SPELL_FIRESTORM_AURA, summon);
+                        summon->SetReactState(REACT_PASSIVE);
+						summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+                        summon->SetSpeed(MOVE_WALK, 0.7f);
+                        summon->SetSpeed(MOVE_RUN, 0.7f);
+                        summon->GetMotionMaster()->MoveRandom(20.0f);
+                        break;
+
+                    case NPC_BEACON_OF_HOPE:
+                        summon->AddAura(SPELL_BEACON_OF_HOPE_A, summon);
+                        summon->SetReactState(REACT_PASSIVE);
+                        break;
+
+                    case NPC_CHILD_OF_CHIJI:
                     {
-                        DoCast(SPELL_CRANE_RUSH);
-                        Talk(SAY_SPELL_3);
+                        summon->AddAura(SPELL_BURNING_NOVA_A, summon);
+                        summon->SetReactState(REACT_PASSIVE);
+                        summon->SetSpeed(MOVE_WALK, 0.85f);
+                        summon->SetSpeed(MOVE_RUN, 0.85f);
+                        float x, y, z;
+                        summon->GetClosePoint(x, y, z, summon->GetObjectSize() / 3, 50.0f);
+                        summon->GetMotionMaster()->MovePoint(1, x, y, z); // Move forward 50y (enough time to despawn properly).
+                        summon->DespawnOrUnsummon(30000); // Spell time is 1 minute, but it's too much to move the Child constantly.
                         break;
                     }
-                    case ACTION_CHILDREN_OF_CHIJI_33:
-                    {
-                        DoCast(SPELL_CRANE_RUSH);
-                        Talk(SAY_SPELL_2);
-                        break;
-                    }
+
                     default: break;
-                };
-            }
-
-            void DamageTaken(Unit* caster, uint32 &dmg)
-            {
-                if (me->GetHealthPct() > 66.6f)
-                {
-                    _children66 = false;
-                    _children33 = false;
-                }
-
-                if (me->GetHealthPct() < 66.6f && !_children66)
-                {
-                    _children66 = true;
-                    events.ScheduleEvent(EVENT_HEALTH_66_PERCENT, 500);
-                }
-
-                if (me->GetHealthPct() < 33.3f && !_children33)
-                {
-                    _children33 = true;
-                    events.ScheduleEvent(EVENT_HEALTH_33_PERCENT, 500);
                 }
             }
-
-            void MovementInform(uint32 type, uint32 point)
-            {
-                if (type != POINT_MOTION_TYPE)
-                    return;
-
-                if (point == 1)
-                {
-                    events.ScheduleEvent(EVENT_SHAO_DO_INTRO, CELESTIAL_COURT_BOSS_INTRO_TIMER_1);
-                    me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                    me->setFaction(FACTION_HOSTILE_NEUTRAL);
-                    me->SetHomePosition(_timelessIsleMiddle);
-                }
-            }
-
-            void KilledUnit(Unit* who)
-            {
-                if (who->GetTypeId() == TYPEID_PLAYER)
-                    Talk(SAY_KILL);
-                        return;
-            }
-
-            void UpdateHealth()
-            {
-                if (!me->isInCombat())
-                    return;
-
-                // Get the Threat List
-                std::list<HostileReference*> threatlist = me->getThreatManager().getThreatList();
-                if (threatlist.empty()) // He doesn't have anyone in his threatlist, useless to continue
-                    return;
-
-                uint8 count = 0;
-                for (auto itr = threatlist.begin(); itr != threatlist.end(); ++itr)
-                    if (Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
-                        if (unit->IsWithinDist(me, 100.0f))
-                            count++;
-
-                uint32 hp = me->GetMaxHealth() - me->GetHealth();
-                uint32 newhp = std::min<uint32>((INCREMENTAL * count), MAX_HEALTH_POINTS);
-                if (newhp != me->GetMaxHealth() && newhp > INITIAL_HEALTH_POINTS)
-                {
-                    me->SetMaxHealth(std::min<uint32>((me->GetMaxHealth() * count), MAX_HEALTH_POINTS));
-                    me->SetHealth(newhp - hp);
-                }
-            }; 
 
             void UpdateAI(const uint32 diff)
             {
-                events.Update(diff);
+                if (!UpdateVictim())
+                    return;
+
+                _events.Update(diff);
+
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                switch (events.ExecuteEvent())
+                // Set Crane Rush phases execution.
+                if (me->HealthBelowPct(67) && craneRushDone == DONE_NONE || me->HealthBelowPct(34) && craneRushDone == DONE_66)
                 {
-                    case EVENT_SHAO_DO_INTRO:
-                    {
-                        Talk(SAY_INTRO);
-                        events.ScheduleEvent(EVENT_SHAO_DO_INTRO_ATTACKABLE, CELESTIAL_COURT_BOSS_INTRO_TIMER_2);
-                        break;
-                    }
-                    case EVENT_SHAO_DO_INTRO_ATTACKABLE:
-                    {
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                        me->SetMaxHealth(INITIAL_HEALTH_POINTS);
-                        break;
-                    }
-                    case EVENT_INSPIRING_SONG:
-                    {
-                        DoCast(me, SPELL_INSPIRING_SONG);
-                        events.ScheduleEvent(urand(EVENT_FIRESTORM, EVENT_INSPIRING_SONG), urand(8000, 12000));
-                        break;
-                    }
-                    case EVENT_FIRESTORM:
-                    {
-                        DoCast(SPELL_FIRESTORM);
-                        events.ScheduleEvent(urand(EVENT_FIRESTORM, EVENT_INSPIRING_SONG), urand(8000, 12000));
-                        break;
-                    }
-                    case EVENT_BEACON_OF_HOPE:
-                    {
-                        if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 15.0f, true))
-                        {
-                            DoCast(target, SPELL_BEACON_OF_HOPE, true);
-
-                            DoCast(SPELL_BLAZING_SONG);
-                            Talk(SAY_SPELL);
-                        }
-                        events.ScheduleEvent(EVENT_BEACON_OF_HOPE, 50000);
-                        break;
-                    }
-                    case EVENT_HEALTH_66_PERCENT:
-                    {
-                        DoAction(ACTION_CHILDREN_OF_CHIJI_66);
-                        break;
-                    }
-                    case EVENT_HEALTH_33_PERCENT:
-                    {
-                        DoAction(ACTION_CHILDREN_OF_CHIJI_33);
-                        break;
-                    }
-                    case EVENT_SHAO_DO_OUTRO:
-                    {
-                        if (Creature* shao = me->FindNearestCreature(NPC_EMPEROR_SHAOHAO_TI, 300.0f, true))
-                            shao->AI()->Talk(EMPEROR_TALK_OUTRO_CHIJI);
-                        break;
-                    }
-                    case EVENT_DEATH:
-                    {
-                        if (death)
-                        {
-                            if (Creature* shao = me->FindNearestCreature(NPC_EMPEROR_SHAOHAO_TI, 300.0f, true))
-                                shao->AI()->DoAction(ACTION_NIUZAO);
-
-                            me->DisappearAndDie();
-                            death = false;
-                        }
-                        break;
-                    }
-                    default:
-                        break;
+                    _events.ScheduleEvent(EVENT_CRANE_RUSH, 2000);
+                    craneRushDone++;
                 }
 
-                if (!death)
-                    if (!UpdateVictim())
-                        return;
+                while (uint32 eventId = _events.ExecuteEvent())
+                {
+                    switch (eventId)
+                    {
+                        case EVENT_INSPIRING_SONG:
+                            DoCast(me, SPELL_INSPIRING_SONG);
+                            _events.ScheduleEvent(EVENT_INSPIRING_SONG, urand(35000, 40000));
+                            break;
+
+                        case EVENT_FIRESTORM:
+                            DoCast(me, SPELL_FIRESTORM_SUMMON);
+                            _events.ScheduleEvent(EVENT_FIRESTORM, urand(43000, 47000));
+                            break;
+
+                        case EVENT_BEACON_OF_HOPE:
+                            Talk(SAY_BEACON_HOPE);
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
+                                DoCast(target, SPELL_BEACON_OF_HOPE_S);
+                            _events.ScheduleEvent(EVENT_BLAZING_SONG, urand(8000, 9500));
+                            _events.ScheduleEvent(EVENT_BEACON_OF_HOPE, urand(70000, 75000)); // 65 + Blazing Song delay.
+                            break;
+
+                        case EVENT_BLAZING_SONG:
+                            DoCast(me, SPELL_BLAZING_SONG);
+                            break;
+
+                        case EVENT_CRANE_RUSH:
+                            Talk(SAY_CRANE_RUSH);
+                            DoCast(me, SPELL_CRANE_RUSH); // Channeled.
+                            break;
+
+                        default: break;
+                    }
+                }
 
                 DoMeleeAttackIfReady();
             }
-
-            private:
-                bool _children66, _children33 = false;
-                bool death = false;
-                EventMap events;
         };
 
         CreatureAI* GetAI(Creature* creature) const
@@ -347,162 +338,7 @@ class boss_chi_ji : public CreatureScript
         }
 };
 
-enum ChildEvents
-{
-    CHILD_EVENT_RUN = 1
-};
-
-enum ChildMovement
-{
-    CHILD_MOVEMENT = 1
-};
-
-enum ChildAction
-{
-    CHILD_ACTION_RUN_FORWARD = 1
-};
-
-class mob_child_of_chi_ji : public CreatureScript
-{
-    public:
-        mob_child_of_chi_ji() : CreatureScript("mob_child_of_chi_ji") { }
-
-        struct mob_child_of_chi_jiAI : public ScriptedAI
-        {
-            mob_child_of_chi_jiAI(Creature* creature) : ScriptedAI(creature) { }
-
-            void Reset()
-            {
-                me->setActive(true);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
-
-                events.ScheduleEvent(CHILD_EVENT_RUN, 1000);
-                DoCast(SPELL_BLAZING_NOVA_AURA);
-                _runCount = 1;
-            }
-
-            void EnterCombat(Unit* target)
-            {
-            }
-
-            void EnterEvadeMode()
-            {
-            }
-
-            void MovementInform(uint32 type, uint32 point)
-            {
-                if (type != POINT_MOTION_TYPE)
-                    return;
-
-                if (point == CHILD_MOVEMENT)
-                {
-                    if (_runCount > 3)
-                        me->DisappearAndDie();
-                    else
-                        events.ScheduleEvent(CHILD_EVENT_RUN, 1000);
-                }
-
-            }
-
-            void DoAction(const int32 action)
-            {
-                switch (action)
-                {
-                    case CHILD_ACTION_RUN_FORWARD:
-                    {
-                        Position pos;
-                        float x, y;
-                        GetPositionWithDistInOrientation(me, 15.0f, me->GetOrientation(), x, y);
-                        if (MapManager::IsValidMapCoord(me->GetMapId(), x, y))
-                        {
-                            if (me->IsWithinLOS(x, y, me->GetPositionZ()))
-                            {
-                                ++_runCount;
-                                pos.Relocate(x, y, me->GetPositionZ());
-                                me->GetMotionMaster()->MovePoint(CHILD_MOVEMENT, pos);
-                                return;
-                            }
-                        }
-
-                        me->DisappearAndDie();
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            };
-
-            void UpdateAI(const uint32 diff)
-            {
-                events.Update(diff);
-                switch (events.ExecuteEvent())
-                {
-                    case CHILD_EVENT_RUN:
-                    {
-                        DoAction(CHILD_ACTION_RUN_FORWARD);
-                        break;
-                    }
-                    default: break;
-                }
-            }
-
-            private:
-                uint8 _runCount;
-                EventMap events;
-        };
-
-        CreatureAI* GetAI(Creature* creature) const
-        {
-            return new mob_child_of_chi_jiAI(creature);
-        }
-};
-
-// Blazing Of Hope - 144475
-class spell_chi_ji_beacon_of_hope : public SpellScriptLoader
-{
-    public:
-        spell_chi_ji_beacon_of_hope() : SpellScriptLoader("spell_chi_ji_beacon_of_hope") { }
-
-        class spell_chi_ji_beacon_of_hope_Spellcript : public SpellScript
-        {
-            PrepareSpellScript(spell_chi_ji_beacon_of_hope_Spellcript);
-
-            void DeselectNonPlayer(std::list<WorldObject*>& targets)
-            {
-                targets.remove(GetCaster());
-
-                for (auto itr : targets)
-                {
-                    if (itr->GetTypeId() == TYPEID_UNIT)
-                    {
-                        if (itr->GetEntry() == BOSS_CHI_JI)
-                        {
-                            targets.remove(itr);
-                            continue;
-                        }
-
-                        if (Creature* unit = sObjectAccessor->GetCreature(*GetCaster(), itr->ToUnit()->GetOwnerGUID()))
-                            if (unit->GetEntry() == BOSS_CHI_JI || unit->GetEntry() == BOSS_CHI_JI)
-                                targets.remove(itr);
-                    }
-                }
-            }
-
-            void Register()
-            {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_chi_ji_beacon_of_hope_Spellcript::DeselectNonPlayer, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_chi_ji_beacon_of_hope_Spellcript();
-        }
-};
-
 void AddSC_boss_chi_ji()
 {
-    new spell_chi_ji_beacon_of_hope();
-    new mob_child_of_chi_ji();
     new boss_chi_ji();
 }

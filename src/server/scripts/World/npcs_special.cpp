@@ -2041,8 +2041,8 @@ public:
                 return;
 
             std::list<Unit*> targets;
-            WoWSource::AnyUnfriendlyUnitInObjectRangeCheck u_check(me, me, 60);
-            WoWSource::UnitListSearcher<WoWSource::AnyUnfriendlyUnitInObjectRangeCheck> searcher(me, targets, u_check);
+            SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(me, me, 60);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(me, targets, u_check);
             me->VisitNearbyObject(30, searcher);
             for (std::list<Unit*>::const_iterator itr = targets.begin(); itr != targets.end(); ++itr)
             {
@@ -3486,12 +3486,6 @@ class npc_feral_spirit : public CreatureScript
             void Reset()
             {
                 SpiritBiteTimer = 6000;
-
-				Unit* owner = me->GetOwner();
-
-				// Glyph of Spirit Raptors
-				if (owner->HasAura(147783))
-					me->CastSpell(me, 147908, true);
             }
 
             void UpdateAI(const uint32 diff)
@@ -3623,13 +3617,10 @@ class npc_demoralizing_banner : public CreatureScript
 
 enum frozenOrbSpells
 {
-    SPELL_MAGE_FROZEN_ORB_SELF_SNARE    = 82736,
-    SPELL_MAGE_FROZEN_ORB_VISUAL        = 123605,
-    SPELL_MAGE_FROZEN_ORB_PERIODIC_AURA = 84717,
-    SPELL_MAGE_FROZEN_ORB_DMG           = 84721,
-    SPELL_MAGE_FROZEN_ORB_VISUAL_DMG    = 113162,
-    SPELL_FINGERS_OF_FROST_VISUAL       = 44544,
-    SPELL_FINGERS_OF_FROST              = 126084,
+    SPELL_FINGERS_OF_FROST_VISUAL   = 44544,
+    SPELL_SELF_SNARE_90             = 82736,
+    SPELL_SNARE_DAMAGE              = 84721,
+    SPELL_FINGERS_OF_FROST          = 126084,
 };
 
 class npc_frozen_orb : public CreatureScript
@@ -3645,33 +3636,25 @@ class npc_frozen_orb : public CreatureScript
             }
 
             uint32 frozenOrbTimer;
-            bool CombatCheck;
             float angle;
 
             void IsSummonedBy(Unit* owner)
             {
                 if (owner && owner->GetTypeId() == TYPEID_PLAYER)
                 {
-                    me->CastSpell(me, SPELL_MAGE_FROZEN_ORB_VISUAL, true);
-                    me->CastSpell(me, SPELL_MAGE_FROZEN_ORB_PERIODIC_AURA, true);
+                    owner->CastSpell(me, SPELL_SNARE_DAMAGE, true);
+                    owner->CastSpell(owner, SPELL_FINGERS_OF_FROST_VISUAL, true);
+                    owner->CastSpell(owner, SPELL_FINGERS_OF_FROST, true);
                     angle = me->GetOwner()->GetOrientation();
                     me->SetReactState(REACT_PASSIVE);
-                    me->SetSpeed(MOVE_RUN, 1.0f);
-                    me->SetSpeed(MOVE_WALK, 1.0f);
-                    me->SetWalk(true);
+                    me->SetSpeed(MOVE_RUN, 0.50f);
+				    me->SetSpeed(MOVE_WALK, 0.50f);
+					me->SetWalk(true);
 
                     frozenOrbTimer = 2000;
                 }
                 else
                     me->DespawnOrUnsummon();
-            }
-
-            void EnterCombat(Unit* /*target*/) override
-            {
-                me->CastSpell(me, SPELL_MAGE_FROZEN_ORB_SELF_SNARE, true);
-                me->GetOwner()->CastSpell(me->GetOwner(), SPELL_FINGERS_OF_FROST_VISUAL, true);
-                me->GetOwner()->CastSpell(me->GetOwner(), SPELL_FINGERS_OF_FROST, true);
-                CombatCheck = true;
             }
 
             void UpdateAI(const uint32 diff)
@@ -3684,21 +3667,16 @@ class npc_frozen_orb : public CreatureScript
                 if (frozenOrbTimer <= diff)
                 {
                     if (owner && owner->ToPlayer())
-                        if (owner->ToPlayer()->HasSpellCooldown(SPELL_MAGE_FROZEN_ORB_DMG))
-                            owner->ToPlayer()->RemoveSpellCooldown(SPELL_MAGE_FROZEN_ORB_DMG);
+                        if (owner->ToPlayer()->HasSpellCooldown(SPELL_SNARE_DAMAGE))
+                            owner->ToPlayer()->RemoveSpellCooldown(SPELL_SNARE_DAMAGE);
 
-                    owner->CastSpell(me, SPELL_MAGE_FROZEN_ORB_DMG, true);
-
-                    if (CombatCheck)
-                        me->CastSpell(me, SPELL_MAGE_FROZEN_ORB_VISUAL_DMG, true);
-
+                    owner->CastSpell(me, SPELL_SNARE_DAMAGE, true);
                     frozenOrbTimer = 2000;
                 }
-                else 
-                    frozenOrbTimer -= diff;
+                else frozenOrbTimer -= diff;
 
-                me->GetMotionMaster()->Clear(false);
-                me->GetMotionMaster()->MovePoint(0, me->GetPositionX() + 60 * cos(angle), me->GetPositionY() + 60 * sin(angle), me->GetPositionZ());
+				me->GetMotionMaster()->Clear(false);
+				me->GetMotionMaster()->MovePoint(0, me->GetPositionX() + 60 * cos(angle), me->GetPositionY() + 60 * sin(angle), me->GetPositionZ());
             }
         };
 
@@ -3786,6 +3764,50 @@ class npc_guardian_of_ancient_kings : public CreatureScript
         }
 };
 
+/*######
+# npc_power_word_barrier
+######*/
+
+class npc_power_word_barrier : public CreatureScript
+{
+    public:
+        npc_power_word_barrier() : CreatureScript("npc_power_word_barrier") { }
+
+        struct npc_power_word_barrierAI : public ScriptedAI
+        {
+            uint32 frozenOrbTimer;
+
+            npc_power_word_barrierAI(Creature* creature) : ScriptedAI(creature)
+            {
+                Unit* owner = creature->GetOwner();
+
+                if (owner)
+                {
+                    creature->CastSpell(creature, 115725, true); // Barrier visual
+                    creature->CastSpell(creature, 81781, true);  // Periodic Trigger Spell
+                }
+            }
+
+            void UpdateAI(const uint32 diff)
+            {
+                Unit* owner = me->GetOwner();
+
+                if (!owner)
+                    return;
+
+                if (!me->HasAura(115725))
+                    me->CastSpell(me, 115725, true);
+                if (!me->HasAura(81781))
+                    me->CastSpell(me, 81781, true);
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_power_word_barrierAI(creature);
+        }
+};
+
 const int32 greenAuras[6] = { 113930, 113903, 113911, 113912, 113913, 113914 };
 const int32 purpleAuras[6] = { 113931, 113915, 113916, 113917, 113918, 113919 };
 
@@ -3846,7 +3868,7 @@ class npc_demonic_gateway_purple : public CreatureScript
                 if (greenGates.empty())
                     return;
 
-                greenGates.sort(WoWSource::DistanceCompareOrderPred(me));
+                greenGates.sort(SkyMistCore::DistanceCompareOrderPred(me));
                 for (auto itr : greenGates)
                 {
                     clicker->CastSpell(clicker, 113942, true);
@@ -3937,7 +3959,7 @@ class npc_demonic_gateway_green : public CreatureScript
                 if (purpleGates.empty())
                     return;
 
-                purpleGates.sort(WoWSource::DistanceCompareOrderPred(me));
+                purpleGates.sort(SkyMistCore::DistanceCompareOrderPred(me));
                 for (auto itr : purpleGates)
                 {
                     clicker->CastSpell(clicker, 113942, true);
@@ -4888,16 +4910,16 @@ class npc_psyfiend : public CreatureScript
                     std::list<Unit*> targetList;
                     float radius = 20.0f;
 
-                    WoWSource::NearestAttackableUnitInObjectRangeCheck u_check(me, me, radius);
-                    WoWSource::UnitListSearcher<WoWSource::NearestAttackableUnitInObjectRangeCheck> searcher(me, targetList, u_check);
+                    SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(me, me, radius);
+                    SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(me, targetList, u_check);
 
                     me->VisitNearbyObject(radius, searcher);
 
-                    targetList.remove_if(WoWSource::UnitAuraCheck(true, SPELL_PSYCHIC_HORROR));
+                    targetList.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_PSYCHIC_HORROR));
 
                     if (!targetList.empty())
                     {
-                        targetList.sort(WoWSource::ObjectDistanceOrderPred(me));
+                        targetList.sort(SkyMistCore::ObjectDistanceOrderPred(me));
                         targetList.resize(1);
 
                         for (auto itr : targetList)
@@ -5253,14 +5275,14 @@ class npc_custom_caster_guard : public CreatureScript
                         UnitList targets;
                         DebuffCheck u_check(me, me->GetOwnerGUID());
                         
-                        WoWSource::UnitListSearcher<DebuffCheck> searcher(me, targets, u_check);
+                        SkyMistCore::UnitListSearcher<DebuffCheck> searcher(me, targets, u_check);
                         me->VisitNearbyObject(100.0f, searcher);
                         if (!targets.empty())
                         {
                             if (targets.size() > 1)
                             {
-                                targets.sort(WoWSource::DistanceOrderPred(me));
-                                WoWSource::Containers::RandomResizeList(targets, 1);
+                                targets.sort(SkyMistCore::DistanceOrderPred(me));
+                                SkyMistCore::Containers::RandomResizeList(targets, 1);
                             }
                             Unit* newTarget = *(targets.begin());
                             if (me->getVictim() != newTarget)
@@ -5925,6 +5947,7 @@ void AddSC_npcs_special()
     new npc_demoralizing_banner();
     new npc_frozen_orb();
     new npc_guardian_of_ancient_kings();
+    new npc_power_word_barrier();
     new npc_demonic_gateway_purple();
     new npc_demonic_gateway_green();
     new npc_xuen_the_white_tiger();

@@ -270,13 +270,13 @@ inline GameObject* Map::_FindGameObject(WorldObject* searchObject, uint32 guid) 
 {
     GameObject* gameobject = NULL;
 
-    CellCoord p(WoWSource::ComputeCellCoord(searchObject->GetPositionX(), searchObject->GetPositionY()));
+    CellCoord p(SkyMistCore::ComputeCellCoord(searchObject->GetPositionX(), searchObject->GetPositionY()));
     Cell cell(p);
 
-    WoWSource::GameObjectWithDbGUIDCheck goCheck(*searchObject, guid);
-    WoWSource::GameObjectSearcher<WoWSource::GameObjectWithDbGUIDCheck> checker(searchObject, gameobject, goCheck);
+    SkyMistCore::GameObjectWithDbGUIDCheck goCheck(*searchObject, guid);
+    SkyMistCore::GameObjectSearcher<SkyMistCore::GameObjectWithDbGUIDCheck> checker(searchObject, gameobject, goCheck);
 
-    TypeContainerVisitor<WoWSource::GameObjectSearcher<WoWSource::GameObjectWithDbGUIDCheck>, GridTypeMapContainer > objectChecker(checker);
+    TypeContainerVisitor<SkyMistCore::GameObjectSearcher<SkyMistCore::GameObjectWithDbGUIDCheck>, GridTypeMapContainer > objectChecker(checker);
     cell.Visit(p, objectChecker, *searchObject->GetMap(), *searchObject, searchObject->GetGridActivationRange());
 
     return gameobject;
@@ -818,13 +818,13 @@ void Map::ScriptsProcess()
                 {
                     WorldObject* wSource = dynamic_cast <WorldObject*> (source);
 
-                    CellCoord p(WoWSource::ComputeCellCoord(wSource->GetPositionX(), wSource->GetPositionY()));
+                    CellCoord p(SkyMistCore::ComputeCellCoord(wSource->GetPositionX(), wSource->GetPositionY()));
                     Cell cell(p);
 
-                    WoWSource::CreatureWithDbGUIDCheck target_check(wSource, step.script->CallScript.CreatureEntry);
-                    WoWSource::CreatureSearcher<WoWSource::CreatureWithDbGUIDCheck> checker(wSource, cTarget, target_check);
+                    SkyMistCore::CreatureWithDbGUIDCheck target_check(wSource, step.script->CallScript.CreatureEntry);
+                    SkyMistCore::CreatureSearcher<SkyMistCore::CreatureWithDbGUIDCheck> checker(wSource, cTarget, target_check);
 
-                    TypeContainerVisitor<WoWSource::CreatureSearcher <WoWSource::CreatureWithDbGUIDCheck>, GridTypeMapContainer > unit_checker(checker);
+                    TypeContainerVisitor<SkyMistCore::CreatureSearcher <SkyMistCore::CreatureWithDbGUIDCheck>, GridTypeMapContainer > unit_checker(checker);
                     cell.Visit(p, unit_checker, *wSource->GetMap(), *wSource, wSource->GetGridActivationRange());
                 }
                 else //check hashmap holders

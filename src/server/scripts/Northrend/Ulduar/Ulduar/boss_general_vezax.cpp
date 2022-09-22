@@ -125,9 +125,9 @@ class boss_general_vezax : public CreatureScript
 
             void EnterCombat(Unit* /*who*/)
             {
-                //_EnterCombat();
+                _EnterCombat();
                 Talk(SAY_AGGRO);
-                //DoCast(me, SPELL_AURA_OF_DESPAIR);
+                DoCast(me, SPELL_AURA_OF_DESPAIR);
                 events.ScheduleEvent(EVENT_SHADOW_CRASH, urand(8*IN_MILLISECONDS, 10*IN_MILLISECONDS));
                 events.ScheduleEvent(EVENT_SEARING_FLAMES, 12*IN_MILLISECONDS);
                 events.ScheduleEvent(EVENT_MARK_OF_THE_FACELESS, urand(35*IN_MILLISECONDS, 40*IN_MILLISECONDS));
@@ -300,7 +300,7 @@ class boss_general_vezax : public CreatureScript
                     if (PlayerList.empty() || PlayerList.size()<playersMin)
                         return SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true);
 
-                    return WoWSource::Containers::SelectRandomContainerElement(PlayerList);
+                    return SkyMistCore::Containers::SelectRandomContainerElement(PlayerList);
                 }
                 return 0;
             }
@@ -568,10 +568,10 @@ class spell_saronite_vapors : public SpellScriptLoader // Spell 63323
                 if (Unit* caster = ObjectAccessor::FindUnit(_caster))
                 {
                     std::list<Player*> players;
-                    WoWSource::AnyPlayerInObjectRangeCheck u_check(caster, 150.0f, true);
-                    WoWSource::PlayerListSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(caster, players, u_check);
+                    SkyMistCore::AnyPlayerInObjectRangeCheck u_check(caster, 150.0f, true);
+                    SkyMistCore::PlayerListSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(caster, players, u_check);
                     caster->VisitNearbyObject(30.0f, searcher);
-                    players.sort(WoWSource::ObjectDistanceOrderPred(caster));
+                    players.sort(SkyMistCore::ObjectDistanceOrderPred(caster));
                     for (std::list<Player*>::iterator it = players.begin(); it != players.end(); ++it)
                     {
                         if (Player* player = *it)

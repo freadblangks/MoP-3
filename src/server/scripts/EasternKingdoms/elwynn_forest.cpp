@@ -1,3 +1,16 @@
+/*
+* Copyright (C) 2013 Skymist Project
+*
+* This file is NOT free software. You may NOT copy, redistribute it or modify it.
+*/
+
+/* ScriptData
+SDName: Elwynn_Forest
+SD%Complete: ??
+SDComment: Quest support.
+SDCategory: Elwynn Forest
+EndScriptData */
+
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
@@ -19,32 +32,50 @@
 #include "SpellScript.h"
 #include "Group.h"
 
-
 enum Northshire
 {
-    NPC_BLACKROCK_BATTLE_WORG = 49871,
-    NPC_STORMWIND_INFANTRY = 49869,
-    NPC_INJURED_SOLDIER_DUMMY = 50378,
+    NPC_BLACKROCK_BATTLE_WORG  = 49871,
+    NPC_STORMWIND_INFANTRY     = 49869,
+    NPC_BROTHER_PAXTON         = 951,
 
-    SAY_YELL = 1,
+    SAY_INFANTRY_NORMAL_1      = 0,
+    SAY_INFANTRY_NORMAL_2      = 1,
+    SAY_INFANTRY_NORMAL_3      = 2,
+    SAY_INFANTRY_NORMAL_4      = 3,
+    SAY_INFANTRY_NORMAL_5      = 4,
 
-    SPELL_SPYING = 92857,
-    SPELL_SNEAKING = 93046,
-    SPELL_SPYGLASS = 80676,
+    SAY_INFANTRY_COMBAT_1      = 5,
+    SAY_INFANTRY_COMBAT_2      = 6,
+    SAY_INFANTRY_COMBAT_3      = 7,
+    SAY_INFANTRY_COMBAT_4      = 8,
 
-    SPELL_RENEW = 93094,
-    SPELL_PRAYER_OF_HEALING = 93091,
-    SPELL_FORTITUDE = 13864,
-    SPELL_PENANCE = 47750,
-    SPELL_FLASH_HEAL = 17843,
-    SPELL_RENEWEDLIFE = 93097,
+    SAY_PAXTON_NORMAL_1        = 0,
+    SAY_PAXTON_NORMAL_2        = 1,
+    SAY_PAXTON_NORMAL_3        = 2,
+    SAY_PAXTON_NORMAL_4        = 3,
+    SAY_PAXTON_NORMAL_5        = 4,
 
-    ACTION_HEAL = 1,
-    EVENT_HEALED_1 = 1,
-    EVENT_HEALED_2 = 2,
+    SPELL_RENEW                = 93094,
+    SPELL_PRAYER_OF_HEALING    = 93091,
+    SPELL_FORTITUDE            = 13864,
+    SPELL_PENANCE              = 47750,
+    SPELL_FLASH_HEAL           = 17843,
 
-    SPELL_VISUAL_EXTINGUISHER = 96028
+    SPELL_RENEWEDLIFE          = 93097,
+
+    SPELL_SPYING               = 92857,
+    SPELL_SPYGLASS             = 80676,
+
+    SPELL_SNEAKING             = 93046,
+
+    SPELL_REVIVE_PAXTON        = 93799,
+
+    SPELL_VISUAL_EXTINGUISHER  = 96028
 };
+
+/*######
+## Stormwind Infantry 49869.
+######*/
 
 class npc_stormwind_infantry : public CreatureScript
 {
@@ -53,73 +84,167 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_stormwind_infantryAI(creature);
+        return new npc_stormwind_infantryAI (creature);
     }
 
     struct npc_stormwind_infantryAI : public ScriptedAI
     {
-        npc_stormwind_infantryAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_stormwind_infantryAI(Creature* creature) : ScriptedAI(creature) { }
 
-        bool HasATarget; 
-
-        uint32 tYell, SayChance, WillSay;
+        uint32 uiSayNormalTimer;
+        uint32 uiSayCombatTimer;
+        uint32 DamageCount;
 
         void Reset()
         {
-            HasATarget = false;
-            WillSay = urand(0, 100);
-            SayChance = 25;
-            tYell = urand(10000, 20000);
+            if (me->HasUnitState(UNIT_STATE_ROOT))
+                me->ClearUnitState(UNIT_STATE_ROOT);
+
+            uiSayNormalTimer = urand(20000, 90000);
+            uiSayCombatTimer = urand(10000, 80000);
+
+            DamageCount = 0;
         }
 
-        void DamageTaken(Unit* doneBy, uint32& damage)
+        void EnterCombat(Unit* /*who*/)
         {
-            if (doneBy->ToCreature())
-                if (me->GetHealth() <= damage || me->GetHealthPct() <= 80.0f)
-                    damage = 0;
+            if (!me->HasUnitState(UNIT_STATE_ROOT))
+                me->AddUnitState(UNIT_STATE_ROOT);
+        }
+
+        void DamageTaken(Unit* who, uint32 &uiDamage)
+        {
+            if (who->GetTypeId() == TYPEID_UNIT && who->GetEntry() == NPC_BLACKROCK_BATTLE_WORG && !me->isInCombat())
+                me->AI()->AttackStart(who);
+        }
+
+        void PaxtonCast(uint32 type)
+        {
+            if (Creature* Paxton = me->FindNearestCreature(NPC_BROTHER_PAXTON, 20.0f, true))
+            {
+                Paxton->SetOrientation(me->GetAngle(Paxton));
+                Paxton->AI()->Talk(RAND(SAY_PAXTON_NORMAL_1, SAY_PAXTON_NORMAL_2, SAY_PAXTON_NORMAL_3, SAY_PAXTON_NORMAL_4, SAY_PAXTON_NORMAL_5));
+
+                switch(type)
+                {
+                    case 1:
+                        Paxton->AI()->DoCast(me, SPELL_PRAYER_OF_HEALING);
+                        break;
+                    case 2:
+                        Paxton->AI()->DoCast(me, SPELL_PENANCE);
+                        break;
+                    case 3:
+                        Paxton->AI()->DoCast(me, SPELL_RENEW);
+                        break;
+                    case 4:
+                        Paxton->AI()->DoCast(me, SPELL_FLASH_HEAL);
+                        break;
+                    default: break;
+                }
+            }
         }
 
         void DamageDealt(Unit* target, uint32& damage, DamageEffectType damageType)
         {
-            if (target->ToCreature())
-                if (target->GetHealth() <= damage || target->GetHealthPct() <= 70.0f)
-                    damage = 0;
-        }
+            if (target->GetEntry() == NPC_BLACKROCK_BATTLE_WORG)
+                ++DamageCount;
 
-        void MoveInLineOfSight(Unit* who)
-        {
-            if (who && !HasATarget)
-                if (me->GetDistance(who) < 5.0f)
-                    if (Creature* creature = who->ToCreature())
-                        if (creature->GetEntry() == NPC_BLACKROCK_BATTLE_WORG)
-                            AttackStart(who);
+            if (DamageCount >= 2)
+            {
+                if (target->GetEntry() == NPC_BLACKROCK_BATTLE_WORG && target->HealthBelowPct(100))
+                    damage = 0;
+                else
+                    DamageCount = 0;
+            }
         }
 
         void EnterEvadeMode()
         {
-            HasATarget = false;
+            Reset();
+            me->DeleteThreatList();
+            me->CombatStop(false);
+            me->GetMotionMaster()->MoveTargetedHome();
         }
 
-        void UpdateAI(const uint32 diff)
+        void UpdateAI(uint32 const diff)
         {
+            if (!UpdateVictim())
+                return;
 
-            if (tYell <= diff)
+            if (uiSayNormalTimer <= diff)
             {
+                Talk(RAND(SAY_INFANTRY_NORMAL_1, SAY_INFANTRY_NORMAL_2, SAY_INFANTRY_NORMAL_3, SAY_INFANTRY_NORMAL_4, SAY_INFANTRY_NORMAL_5));
+                uiSayNormalTimer = urand(30000, 120000);
+            }else uiSayNormalTimer -= diff;
 
-                if (WillSay <= SayChance)
+            if (me->HealthBelowPct(100))
+            {
+                if (uiSayCombatTimer <= diff)
                 {
-                    Talk(SAY_YELL);
-                    tYell = urand(10000, 20000);
-                }
-
+                    if (Creature* Paxton = me->FindNearestCreature(NPC_BROTHER_PAXTON, 20.0f, true))
+                    {
+                        Talk(RAND(SAY_INFANTRY_COMBAT_1, SAY_INFANTRY_COMBAT_2, SAY_INFANTRY_COMBAT_3, SAY_INFANTRY_COMBAT_4));
+                        PaxtonCast(urand(1, 4));
+                    }
+                    uiSayCombatTimer = urand(10000, 100000);
+                }else uiSayCombatTimer -= diff;
             }
-            else tYell -= diff;
+
+            DoMeleeAttackIfReady();
+        }
+    };
+};
+
+/*######
+## Brother Paxton 951.
+######*/
+
+class npc_brother_paxton : public CreatureScript
+{
+public:
+    npc_brother_paxton() : CreatureScript("npc_brother_paxton") { }
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_brother_paxtonAI (creature);
+    }
+
+    struct npc_brother_paxtonAI : public ScriptedAI
+    {
+        npc_brother_paxtonAI(Creature* creature) : ScriptedAI(creature)
+        {
+            creature->GetMotionMaster()->MovePath(951, true);
+        }
+
+        void Reset()
+        {
+            if (!me->HasAura(SPELL_FORTITUDE))
+                DoCast(me, SPELL_FORTITUDE);
+            me->SetReactState(REACT_PASSIVE);
+        }
+
+        void EnterEvadeMode()
+        {
+            Reset();
+            me->DeleteThreatList();
+            me->CombatStop(false);
+            me->GetMotionMaster()->MoveTargetedHome();
+        }
+
+        void UpdateAI(uint32 const diff)
+        {
+            if (!me->HasAura(SPELL_FORTITUDE) && !me->HasUnitState(UNIT_STATE_CASTING))
+                DoCast(me, SPELL_FORTITUDE);
+
+            if (me->HasUnitState(UNIT_STATE_CASTING) && me->IsMoving())
+                me->StopMoving();
+            else if (!me->HasUnitState(UNIT_STATE_CASTING) && !me->IsMoving())
+                me->GetMotionMaster()->MovePath(951, true);
 
             if (!UpdateVictim())
                 return;
-            else
-                DoMeleeAttackIfReady();
 
+            DoMeleeAttackIfReady();
         }
     };
 };
@@ -135,474 +260,451 @@ public:
 
     CreatureAI* GetAI(Creature* creature) const
     {
-        return new npc_blackrock_battle_worgAI(creature);
+        return new npc_blackrock_battle_worgAI (creature);
     }
 
     struct npc_blackrock_battle_worgAI : public ScriptedAI
     {
-        npc_blackrock_battle_worgAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_blackrock_battle_worgAI(Creature* creature) : ScriptedAI(creature)  { }
 
-        void DamageTaken(Unit* who, uint32& damage)
-        {
-            if (who->GetEntry() == NPC_STORMWIND_INFANTRY && damage >= me->GetHealth())
-                me->SetHealth(me->GetMaxHealth());
-
-            if (who->GetTypeId() == TYPEID_PLAYER || who->isPet())
-            {
-                if (Creature* guard = me->FindNearestCreature(NPC_STORMWIND_INFANTRY, 6.0f, true))
-                {
-                    guard->getThreatManager().resetAllAggro();
-                    guard->CombatStop(true);
-                }
-
-                me->getThreatManager().resetAllAggro();
-                me->GetMotionMaster()->MoveChase(who);
-                me->AI()->AttackStart(who);
-            }
-        }
-
-        void UpdateAI(const uint32 diff)
-        {
-            if (!UpdateVictim())
-                if (Creature* guard = me->FindNearestCreature(NPC_STORMWIND_INFANTRY, 6.0f, true))
-                {
-                    me->SetReactState(REACT_AGGRESSIVE);
-                    me->AI()->AttackStart(guard);
-                }
-            DoMeleeAttackIfReady();
-        }
-    };
-};
-
-class npc_injured_soldier : public CreatureScript
-{
-public:
-    npc_injured_soldier() : CreatureScript("npc_injured_soldier") { }
-
-    struct npc_injured_soldierAI : public ScriptedAI
-    {
-        npc_injured_soldierAI(Creature* creature) : ScriptedAI(creature) { }
-
-        EventMap events;
-        Player* owner;
+        uint32 DamageCount;
+        uint32 AttackTimer;
+        bool isMovingHome;
 
         void Reset()
         {
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_14);
-            me->SetFlag(UNIT_FIELD_BYTES_1, 7);
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            DamageCount = 0;
+            AttackTimer = 1000;
+            isMovingHome = false;
         }
 
-        void SpellHit(Unit* /*target*/, SpellInfo const* spell)
+        void EnterEvadeMode()
         {
-            if (spell->Id == SPELL_RENEWEDLIFE)
+            Reset();
+            me->DeleteThreatList();
+            me->CombatStop(false);
+            me->GetMotionMaster()->MoveTargetedHome();
+            isMovingHome = true;
+        }
+
+        void JustReachedHome()
+        {
+            isMovingHome = false;
+        }
+
+        void DamageDealt(Unit* target, uint32& damage, DamageEffectType damageType)
+        {
+            if (target->GetEntry() == NPC_STORMWIND_INFANTRY)
+                ++DamageCount;
+
+            if (DamageCount >= 2)
             {
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_14);
-                me->RemoveFlag(UNIT_FIELD_BYTES_1, 7);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                DoAction(ACTION_HEAL);
-                owner = me->FindNearestPlayer(8.0f, true);
+                if (target->GetEntry() == NPC_STORMWIND_INFANTRY && target->HealthBelowPct(100))
+                    damage = 0;
+                else
+                    DamageCount = 0;
             }
         }
 
-        void DoAction(int32 const action)
+        void DamageTaken(Unit* who, uint32 &uiDamage)
         {
-            switch (action)
+            if (who->GetTypeId() == TYPEID_PLAYER || who->isPet())
             {
-            case ACTION_HEAL:
-                events.ScheduleEvent(EVENT_HEALED_1, 2000);
-                break;
+                me->getThreatManager().resetAllAggro();
+                me->AddThreat(who, 100.0f);
+                me->AI()->AttackStart(who);
+                DamageCount = 0;
             }
         }
 
         void UpdateAI(uint32 const diff)
         {
-            events.Update(diff);
-
-            while (uint32 eventId = events.ExecuteEvent())
+            if (AttackTimer <= diff)
             {
-                switch (eventId)
-                {
-                case EVENT_HEALED_1:
-                    if (owner)
-                    {
-                        switch (urand(0, 3))
-                        {
-                        case 0:
-                            me->MonsterSay("I will fear no evil!", 0, NULL);
-                            break;
-                        case 1:
-                            me->MonsterSay("I... I'm okay! I'm okay!", 0, NULL);
-                            break;
-                        case 2:
-                            me->MonsterSay("Bless you, hero!", 0, NULL);
-                            break;
-                        case 3:
-                            me->MonsterSay("You are $p! The hero that everyone has been talking about! Thank you!", 0, owner->GetGUID());
-                            break;
-                        default:
-                            break;
-                        }
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_CHEER);
-                        owner->KilledMonsterCredit(me->GetEntry(), NULL);
-                        events.ScheduleEvent(EVENT_HEALED_2, 2500);
-                    }
-                    break;
-                case EVENT_HEALED_2:
-                    me->GetMotionMaster()->MovePoint(0, -8914.525f, -133.963f, 80.534f);
-                    me->DespawnOrUnsummon(8000);
-                    break;
-                default:
-                    break;
-                }
-            }
+                if (!me->isInCombat() && !isMovingHome && me->FindNearestCreature(NPC_STORMWIND_INFANTRY, 7.0f))
+                if (Creature* infantry = me->FindNearestCreature(NPC_STORMWIND_INFANTRY, 7.0f))
+                    me->AI()->AttackStart(infantry);
+                AttackTimer = 2000;
+            } else AttackTimer -= diff;
+
+            if (!UpdateVictim())
+                return;
+
+            DoMeleeAttackIfReady();
         }
     };
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_injured_soldierAI(creature);
-    }
-};
-
-enum Marshal
-{
-    QUEST_REPORT_TO_GOLDSHIRE = 54,
-    SAY_DISMISSED = 0
 };
 
 /*######
-## npc_marshal_mcbride
+## Injured Stormwind Infantry 50047.
 ######*/
 
-class npc_marshal_mcbride : public CreatureScript
+class npc_injured_stormwind_infantry : public CreatureScript
 {
 public:
-    npc_marshal_mcbride() : CreatureScript("npc_marshal_mcbride") { }
+    npc_injured_stormwind_infantry() : CreatureScript("npc_injured_stormwind_infantry") { }
 
-    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest)
+    struct npc_injured_stormwind_infantryAI : public ScriptedAI
     {
-        if (quest->GetQuestId() == QUEST_REPORT_TO_GOLDSHIRE)
+        npc_injured_stormwind_infantryAI(Creature* creature) : ScriptedAI(creature) { }
+
+        uint32 RunTimer;
+        uint8 Phase;
+        bool IsHealed;
+
+        void Reset()
         {
-            creature->AI()->Talk(SAY_DISMISSED, player->GetGUID());
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_14);
+            me->SetStandState(UNIT_STAND_STATE_DEAD);
+            IsHealed = false;
+            RunTimer = -1;
+            Phase = 0;
         }
-        return true;
+
+        void SpellHit(Unit* caster, SpellInfo const* spell)
+        {
+            if (!IsHealed && spell->Id == SPELL_REVIVE_PAXTON)
+            {
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_15);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_14);
+                me->SetStandState(UNIT_STAND_STATE_STAND);
+                me->SetReactState(REACT_PASSIVE);
+                IsHealed = true;
+                RunTimer = 2000;
+            }
+        }
+
+        void UpdateAI(uint32 const diff)
+        {
+            if (IsHealed)
+            {
+                if (RunTimer <= diff)
+                {
+                    switch(Phase)
+                    {
+                        case 0:
+                        {
+                            switch(urand(0, 3))
+                            {
+                                case 0: me->MonsterSay("Bless you, hero!", LANG_UNIVERSAL, 0); break;
+                                case 1: me->MonsterSay("I will fear no evil!", LANG_UNIVERSAL, 0); break;
+                                case 2: me->MonsterSay("Thank the Light!", LANG_UNIVERSAL, 0); break;
+                                case 3: me->MonsterSay("You're the hero that everyone has been talking about! Thank you!", LANG_UNIVERSAL, 0); break;
+                                default: break;
+                            }
+
+                            me->HandleEmote(EMOTE_ONESHOT_WAVE);
+                            RunTimer = 2000;
+                            Phase++;
+                            break;
+                        }
+                        case 1:
+                        {
+                            float x, y, z;
+                            me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 8.0f);
+                            me->GetMotionMaster()->MovePoint(1, x, y, z);
+                            RunTimer = 6000;
+                            Phase++;
+                            break;
+                        }
+                        case 2: me->DespawnOrUnsummon(); break;
+                        default: break;
+                    }
+                } else RunTimer -= diff;
+            }
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_injured_stormwind_infantryAI (creature);
     }
-
 };
 
-/*################
-npc_hogger#
-################*/
-enum Spells
+/*######
+## Hogger 448.
+######*/
+
+enum Hogger
 {
-    SPELL_EATING = 87351,
+    SPELL_TELEPORT_VIS  = 87459,
+
+    SPELL_EATING        = 87351,
+    SPELL_UPSET_STOMACH = 87352,
     SPELL_VICIOUS_SLICE = 87337,
-    SPELL_SUMMON_MINIONS = 87366,
-    SPELL_SIMPLY_TELEPORT = 64446,
+
+    NPC_GENERAL_MARCUS  = 46942,
+    NPC_MAGINOR_DUMAS   = 46940, // His left
+    NPC_ANDROMATH       = 46941  // His right
 };
+
+#define SAY_HOGGER_A  "Grrrr... fresh meat!" 
+#define SAY_HOGGER_E  "Yipe! Help Hogger!" 
+#define SAY_EAT       "Hogger is eating! Stop him!" // Announce.
+#define SAY_HOGGER_HP "No hurt Hogger!"
+#define SAY_HOGGER_K  "More bones to gnaw on..."
 
 class npc_hogger : public CreatureScript
 {
 public:
     npc_hogger() : CreatureScript("npc_hogger") { }
 
-    CreatureAI* GetAI(Creature* pCreature) const
-    {
-        return new npc_hoggerAI(pCreature);
-    }
-
     struct npc_hoggerAI : public ScriptedAI
     {
-        uint8 phase;
+        npc_hoggerAI(Creature* creature) : ScriptedAI(creature) { }
 
-        uint32 m_uiViciousSliceTimer;
-        uint32 m_uiSummonMinions;
-        uint32 m_uiPhaseTimer;
-        uint32 m_uiDespawnTimer;
-
-        uint64 GeneralGUID;
-        uint64 Mage1GUID;
-        uint64 Mage2GUID;
-        uint64 Raga1GUID;
-        uint64 Raga2GUID;
-        uint64 PlayerGUID;
-
-        bool bSay;
-        bool bSay2;
-        bool bSay3;
-        bool Summon;
-        bool bSummoned;
-        bool bSummoned3;
-        bool bGo1;
-        bool bCasted;
-        bool Credit;
-
-        npc_hoggerAI(Creature *c) : ScriptedAI(c) {}
+        uint32 ViciousSliceTimer;
+        uint32 EatTimer;
+        uint32 MarcusSayTimer1; // Hold your blade, adventurer!
+        uint32 HoggerSayTimer1; // Grrr... - above + 5s.
+        uint32 MarcusSayTimer2; // This beast leads the Riverpaw Gnoll gang and may be the key to ending gnoll aggression in Elwynn. - above + 4s
+        uint32 MarcusSayTimer3; // We're taking him into custody in the name of King Varian Wrynn. - above + 8s
+        uint32 HoggerSayTimer2; // Nooooo... - above + 6s.
+        uint32 MarcusSayTimer4; // Take us to the Stockades, Andromath. - above + 4s.
+        uint32 DespawnTimer;
+        Creature* Marcus;
+        Creature* Maginor;
+        Creature* Andromath;
+        bool Eaten, MovedHome, MarcusSummoned;
 
         void Reset()
         {
-            me->RestoreFaction();
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            me->SetReactState(REACT_AGGRESSIVE);
 
-            m_uiViciousSliceTimer = 8000;
-            m_uiSummonMinions = 15000;
-            m_uiPhaseTimer = 0;
-            m_uiDespawnTimer = 500;
-
-            phase = 0;
-            GeneralGUID = 0;
-            Mage1GUID = 0;
-            Mage2GUID = 0;
-            Raga1GUID = 0;
-            Raga2GUID = 0;
-            PlayerGUID = 0;
-
-            Summon = false;
-            bSay = false;
-            bCasted = false;
-            bSay2 = false;
-            bSay3 = false;
-            bSummoned = false;
-            bSummoned3 = false;
-            bGo1 = false;
-            Credit = false;
+            ViciousSliceTimer = urand(2000, 3000);
+            EatTimer          = -1;
+            MarcusSayTimer1   = -1;
+            HoggerSayTimer1   = -1;
+            MarcusSayTimer2   = -1;
+            MarcusSayTimer3   = -1;
+            HoggerSayTimer2   = -1;
+            MarcusSayTimer4   = -1;
+            DespawnTimer      = -1;
+            Marcus            = NULL;
+            Maginor           = NULL;
+            Andromath         = NULL;
+            Eaten             = false;
+            MovedHome         = false;
+            MarcusSummoned    = false;
         }
 
-        void JustDied(Unit* /*killer*/)
+        void EnterEvadeMode()
         {
-            me->RestoreFaction();
+            me->RemoveAllAuras();
+            Reset();
+            me->DeleteThreatList();
+            me->CombatStop(false);
+            if (Eaten)
+                me->GetMotionMaster()->MovementExpired();
+
+            me->GetMotionMaster()->MoveTargetedHome();
         }
 
-        void AttackedBy(Unit* pAttacker)
+        void EnterCombat(Unit* who)
         {
-            if (me->getVictim() || me->IsFriendlyTo(pAttacker))
+            if (who->GetTypeId() == TYPEID_PLAYER || who->isPet())
+                me->MonsterYell(SAY_HOGGER_A, LANG_UNIVERSAL, 0);
+        }
+
+        void KilledUnit(Unit* victim)
+        {
+            if (victim->GetTypeId() == TYPEID_PLAYER)
+                me->MonsterYell(SAY_HOGGER_K, LANG_UNIVERSAL, 0);
+        }
+
+        void DamageTaken(Unit* who, uint32 &damage)
+        {
+            if (who->GetTypeId() == TYPEID_PLAYER || who->isPet())
+            {
+                if (me->HealthBelowPct(51) && !Eaten) // Eat phase
+                {
+                    me->MonsterYell(SAY_HOGGER_E, LANG_UNIVERSAL, 0);
+                    me->MonsterTextEmote(SAY_EAT, NULL, true);
+                    me->GetMotionMaster()->MovementExpired();
+                    me->GetMotionMaster()->MovePoint(1, -10144.489f, 668.569f, 35.971f);
+                    EatTimer = 3000;
+                    Eaten = true;
+                }
+
+                if (damage >= me->GetHealth()) // Final phase
+                {
+                    damage = me->GetHealth() - 1;
+
+                    if (!MovedHome && Eaten)
+                    {
+                        if (Player* player = (who->GetTypeId() == TYPEID_PLAYER) ? who->ToPlayer() : who->GetOwner()->ToPlayer())
+						{
+                            if (player->GetGroup())
+                            {
+                                if (Group* group = player->GetGroup())
+                                    for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                                        if (Player* member = itr->getSource())
+                                            member->KilledMonsterCredit(448, 0);
+                            }
+                            else player->KilledMonsterCredit(448, 0);
+						}
+
+                        me->MonsterYell(SAY_HOGGER_HP, LANG_UNIVERSAL, 0);
+                        if (me->HasAura(SPELL_EATING))
+                            me->RemoveAurasDueToSpell(SPELL_EATING);
+                        if (me->HasAura(SPELL_UPSET_STOMACH))
+                            me->RemoveAurasDueToSpell(SPELL_UPSET_STOMACH);
+                        me->SetReactState(REACT_PASSIVE);
+                        me->GetMotionMaster()->MovementExpired();
+                        me->GetMotionMaster()->MoveTargetedHome();
+                        MovedHome = true;
+                    }
+                }
+            }
+        }
+
+        void JustReachedHome()
+        {
+            if (!MarcusSummoned && MovedHome)
+            {
+                float x, y, z;
+                me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 12.0f);
+
+                if (Marcus = me->SummonCreature(NPC_GENERAL_MARCUS, x, y, z, 0, TEMPSUMMON_MANUAL_DESPAWN))
+                {
+                    Maginor = me->SummonCreature(NPC_MAGINOR_DUMAS, x, y + 5, z, Marcus->GetAngle(me), TEMPSUMMON_MANUAL_DESPAWN);
+                    Andromath = me->SummonCreature(NPC_ANDROMATH, x, y - 5, z, Marcus->GetAngle(me), TEMPSUMMON_MANUAL_DESPAWN);
+                    Maginor->SetReactState(REACT_PASSIVE);
+                    Andromath->SetReactState(REACT_PASSIVE);
+                    Maginor->CastSpell(Maginor, SPELL_TELEPORT_VIS, true);
+                    Andromath->CastSpell(Andromath, SPELL_TELEPORT_VIS, true);
+
+                    me->SetFacingTo(me->GetAngle(Marcus));
+                    Marcus->SetReactState(REACT_PASSIVE);
+                    Marcus->SetFacingTo(Marcus->GetAngle(me));
+                    Marcus->CastSpell(Marcus, SPELL_TELEPORT_VIS, true);
+                    Marcus->Mount(2410);
+                    MarcusSayTimer1 = 3000;
+
+                    if (Creature* Ragamuffin1 = me->SummonCreature(46943, x - 3, y - 6, z, Marcus->GetAngle(me), TEMPSUMMON_MANUAL_DESPAWN))
+                    {
+                        Ragamuffin1->SetReactState(REACT_PASSIVE);
+                        Ragamuffin1->MonsterSay("General Marcus Jonathan!", LANG_UNIVERSAL, 0);
+                        Ragamuffin1->DespawnOrUnsummon(6000);
+                    }
+
+                    if (Creature* Ragamuffin2 = me->SummonCreature(46943, x - 4, y + 6, z, Marcus->GetAngle(me), TEMPSUMMON_MANUAL_DESPAWN))
+                    {
+                        Ragamuffin2->SetReactState(REACT_PASSIVE);
+                        Ragamuffin2->MonsterSay("Wow!", LANG_UNIVERSAL, 0);
+                        Ragamuffin2->DespawnOrUnsummon(6000);
+                    }
+                }
+
+                MarcusSummoned = true;
+            }
+        }
+
+        void UpdateAI(uint32 const diff)
+        {
+            if (Eaten)
+            {
+                if (EatTimer <= diff)
+                {
+                    if (me->IsMoving()) me->StopMoving();
+                    DoCast(me, SPELL_EATING);
+                    EatTimer = -1;
+                } else EatTimer -= diff;
+
+                if (!me->HasAura(SPELL_EATING) && !me->HasAura(SPELL_UPSET_STOMACH) && !MovedHome && !me->IsMoving())
+                {
+                    me->GetMotionMaster()->MovementExpired();
+                    me->GetMotionMaster()->MoveChase(me->getVictim());
+                }
+
+                if (MarcusSummoned)
+                {
+                    if (MarcusSayTimer1 <= diff)
+                    {
+                        Marcus->MonsterYell("Hold your blade, adventurer!", LANG_UNIVERSAL, 0);
+                        Marcus->HandleEmote(EMOTE_ONESHOT_SHOUT);
+                        MarcusSayTimer1 = -1;
+                        HoggerSayTimer1 = 5000;
+                    } else MarcusSayTimer1 -= diff;
+
+                    if (HoggerSayTimer1 <= diff)
+                    {
+                        me->MonsterSay("Grrr...", LANG_UNIVERSAL, 0);
+                        Marcus->Dismount();
+                        float x, y, z;
+                        me->GetClosePoint(x, y, z, me->GetObjectSize() / 3, 5.0f);
+                        Marcus->GetMotionMaster()->MovePoint(1, x, y, z);
+                        HoggerSayTimer1 = -1;
+                        MarcusSayTimer2 = 4000;
+                    } else HoggerSayTimer1 -= diff;
+
+                    if (MarcusSayTimer2 <= diff)
+                    {
+                        Marcus->MonsterSay("This beast leads the Riverpaw Gnoll gang and may be the key to ending gnoll aggression in Elwynn.", LANG_UNIVERSAL, 0);
+                        Marcus->HandleEmote(EMOTE_ONESHOT_POINT);
+                        MarcusSayTimer2 = -1;
+                        MarcusSayTimer3 = 8000;
+                    } else MarcusSayTimer2 -= diff;
+
+                    if (MarcusSayTimer3 <= diff)
+                    {
+                        Marcus->MonsterSay("We're taking him into custody in the name of King Varian Wrynn.", LANG_UNIVERSAL, 0);
+                        Marcus->HandleEmote(EMOTE_ONESHOT_EXCLAMATION);
+                        MarcusSayTimer3 = -1;
+                        HoggerSayTimer2 = 6000;
+                    } else MarcusSayTimer3 -= diff;
+
+                    if (HoggerSayTimer2 <= diff)
+                    {
+                        me->MonsterSay("Nooooo...", LANG_UNIVERSAL, 0);
+                        HoggerSayTimer2 = -1;
+                        MarcusSayTimer4 = 4000;
+                    } else HoggerSayTimer2 -= diff;
+
+                    if (MarcusSayTimer4 <= diff)
+                    {
+                        Marcus->MonsterSay("Take us to the Stockades, Andromath.", LANG_UNIVERSAL, 0);
+                        Marcus->SetFacingTo(Marcus->GetAngle(Andromath));
+                        MarcusSayTimer4 = -1;
+                        DespawnTimer = 3000;
+                    } else MarcusSayTimer4 -= diff;
+
+                    if (DespawnTimer <= diff)
+                    {
+                        Andromath->MonsterSay("Right away, General!", LANG_UNIVERSAL, 0);
+                        Andromath->HandleEmote(EMOTE_ONESHOT_SALUTE);
+                        Maginor->CastSpell(Maginor, SPELL_TELEPORT_VIS, true);
+                        Andromath->CastSpell(Andromath, SPELL_TELEPORT_VIS, true);
+                        Marcus->CastSpell(Marcus, SPELL_TELEPORT_VIS, true);
+                        me->CastSpell(me, SPELL_TELEPORT_VIS, true);
+                        Maginor->DespawnOrUnsummon(1000);
+                        Andromath->DespawnOrUnsummon(1000);
+                        me->DespawnOrUnsummon(1000);
+                        Marcus->DespawnOrUnsummon(1000);
+                        DespawnTimer = -1;
+                    } else DespawnTimer -= diff;
+                }
+            }
+
+            if (!UpdateVictim())
                 return;
 
-            AttackStart(pAttacker);
-        }
-
-        void MovementInform(uint32 type, uint32 id)
-        {
-            if (id == 0)
+            if (ViciousSliceTimer <= diff && !MarcusSummoned)
             {
-                DoCast(me, SPELL_EATING);
-            }
-        }
+                DoCastVictim(SPELL_VICIOUS_SLICE);
+                ViciousSliceTimer = urand(7000, 11000);
+            } else ViciousSliceTimer -= diff;
 
-        void UpdateAI(const uint32 diff)
-        {
-            ScriptedAI::UpdateAI(diff);
-
-            DoMeleeAttackIfReady();
-
-            if (m_uiViciousSliceTimer <= diff)
-            {
-                DoCast(me->getVictim(), SPELL_VICIOUS_SLICE);
-                m_uiViciousSliceTimer = 10000;
-            }
-            else
-                m_uiViciousSliceTimer -= diff;
-
-            if (HealthBelowPct(50))
-            {
-                if (!bSummoned)
-                {
-                    DoCast(me->getVictim(), SPELL_SUMMON_MINIONS);
-                    bSummoned = true;
-                }
-                if (!bSay)
-                {
-                    me->MonsterYell("Yipe! Help Hogger", 0, NULL);
-                    bSay = true;
-                }
-            }
-
-            if (HealthBelowPct(35))
-            {
-                if (!bSay2)
-                {
-                    me->MonsterTextEmote("Hogger is eating! Stop him!", NULL, true);
-                    bSay2 = true;
-                }
-                if (!bGo1)
-                {
-                    me->AttackStop();
-                    me->SetReactState(REACT_PASSIVE);
-                    me->GetMotionMaster()->MovePoint(0, -10142.081f, 671.773f, 36.014f);
-                    bGo1 = true;
-                }
-            }
-
-            if (HealthBelowPct(10))
-            {
-                if (!bSummoned3)
-                {
-                    if (!bSay3)
-                    {
-                        me->MonsterYell("No hurt Hogger!", 0, NULL);
-                        bSay3 = true;
-                    }
-
-                    me->CombatStop(true);
-                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-
-                    Creature* General = me->SummonCreature(46942, -10133.275f, 663.244f, 35.964616f, 2.45f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 180000);
-                    GeneralGUID = General->GetGUID();
-
-                    Creature* Mage1 = me->SummonCreature(46941, -10129.976f, 667.982f, 35.67f, 2.85f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 180000);
-                    Mage1GUID = Mage1->GetGUID();
-
-                    Creature* Mage2 = me->SummonCreature(46940, -10137.671f, 659.926f, 35.971f, 2.051f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 180000);
-                    Mage2GUID = Mage2->GetGUID();
-
-                    Creature* Raga1 = me->SummonCreature(46943, -10133.339f, 660.087f, 35.971f, 2.26f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 180000);
-                    Raga1GUID = Raga1->GetGUID();
-
-                    Creature* Raga2 = me->SummonCreature(42413, -10129.461f, 663.180f, 35.9491f, 2.37f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 180000);
-                    Raga2GUID = Raga2->GetGUID();
-
-                    Summon = true;
-
-                    m_uiPhaseTimer = 1500;
-                    phase = 1;
-                }
-
-                if (Summon)
-                {
-                    Creature* General = Unit::GetCreature(*me, GeneralGUID);
-                    Creature* Raga2 = Unit::GetCreature(*me, Raga2GUID);
-                    Creature* Raga1 = Unit::GetCreature(*me, Raga1GUID);
-                    Creature* Mage2 = Unit::GetCreature(*me, Mage2GUID);
-                    Creature* Mage1 = Unit::GetCreature(*me, Mage1GUID);
-
-                    if (!bCasted)
-                    {
-                        General->CastSpell(General, 64446, true);
-                        Raga2->CastSpell(Raga2, 64446, true);
-                        Raga1->CastSpell(Raga1, 64446, true);
-                        Mage2->CastSpell(Raga2, 64446, true);
-                        Mage1->CastSpell(Raga1, 64446, true);
-                        bCasted = true;
-                    }
-
-                    bSummoned3 = true;
-                    me->SetSpeed(MOVE_RUN, 1.0f);
-                }
-            }
-
-            if (bCasted)
-            {
-                if (m_uiPhaseTimer <= diff)
-                {
-                    Creature* General = Unit::GetCreature(*me, GeneralGUID);
-                    Creature* Raga2 = Unit::GetCreature(*me, Raga2GUID);
-                    Creature* Raga1 = Unit::GetCreature(*me, Raga1GUID);
-                    Creature* Mage2 = Unit::GetCreature(*me, Mage2GUID);
-                    Creature* Mage1 = Unit::GetCreature(*me, Mage1GUID);
-
-                    switch (phase)
-                    {
-
-                    case 1: me->GetMotionMaster()->MovePoint(1, -10141.054f, 670.719f, 35.9569f); m_uiPhaseTimer = 3000; phase = 2; break;
-                    case 2: General->MonsterYell("Hold your blade, adventurer!", 0, NULL); m_uiPhaseTimer = 2500; phase = 3; break;
-                    case 3: Raga1->MonsterSay("WoW!", 0, NULL); m_uiPhaseTimer = 1500; phase = 4; break;
-                    case 4: Raga2->MonsterSay("General Jonathan Marcus!", 0, NULL); m_uiPhaseTimer = 1500; phase = 5; break;
-                    case 5:
-                    {
-                        if (Creature* General = Unit::GetCreature(*me, GeneralGUID))
-                        {
-                            General->MonsterSay("This beast leads the Riverpaw gnoll gang and may be the key to ending gnoll aggression in Elwynn!", 0, NULL);
-                            General->AddUnitMovementFlag(MOVEMENTFLAG_WALKING);
-                            General->GetMotionMaster()->MovePoint(0, -10137.162f, 667.919f, 35.937f);
-                            m_uiPhaseTimer = 3000;
-                        }
-                        phase = 6;
-                    } break;
-                    case 6: me->MonsterSay("Grrr...", 0, NULL); m_uiPhaseTimer = 4000; phase = 7; break;
-                    case 7:
-                    {
-                        General->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
-                        m_uiPhaseTimer = 4500;
-                        phase = 8;
-                    } break;
-
-                    case 8: General->MonsterSay("We're taking him into custody in the name of King Varian Wrynn.", 0, NULL); m_uiPhaseTimer = 4000; phase = 9; break;
-                    case 9: me->MonsterSay("Nooooo...", 0, NULL); m_uiPhaseTimer = 4000; phase = 10; break;
-                    case 10: General->MonsterSay("Take us to the Stockades, Andromath.", 0, NULL); m_uiPhaseTimer = 4000; phase = 11; break;
-                        General->SetOrientation(6.08f);
-                    case 11:
-                    {
-                        General->CastSpell(General, 64446, true);
-                        Raga1->CastSpell(Raga1, 64446, true);
-                        Raga2->CastSpell(Raga2, 64446, true);
-                        Mage1->CastSpell(Mage1, 64446, true);
-                        Mage2->CastSpell(Mage2, 64446, true);
-                        me->CastSpell(me, 64446, true);
-
-                        General->DespawnOrUnsummon(500);
-                        Raga1->DespawnOrUnsummon(500);
-                        Raga2->DespawnOrUnsummon(500);
-                        Mage1->DespawnOrUnsummon(500);
-                        Mage2->DespawnOrUnsummon(500);
-                        me->DespawnOrUnsummon(500);
-
-                        std::list<Player*> players;
-
-                        WoWSource::AnyPlayerInObjectRangeCheck checker(me, 35.0f);
-                        WoWSource::PlayerListSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(me, players, checker);
-                        me->VisitNearbyWorldObject(35.0f, searcher);
-
-                        for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
-                            (*itr)->KilledMonsterCredit(448, NULL);
-
-                        phase = 0;
-                    } break;
-                    default: break;
-                    }
-                }
-                else m_uiPhaseTimer -= diff;
-            }
-            if (me->GetHealth() <= 1)
-            {
-                if (m_uiDespawnTimer <= diff)
-                {
-                    me->CombatStop(true);
-                    me->AttackStop();
-                    me->ClearAllReactives();
-                    me->DeleteThreatList();
-                    me->SetHealth(me->GetMaxHealth());
-                }
-                else m_uiDespawnTimer -= diff;
-            }
-        }
-        void DamageTaken(Unit* done_by, uint32 & damage)
-        {
-            if (PlayerGUID == 0)
-            {
-                if (Player *pPlayer = done_by->ToPlayer())
-                {
-                    PlayerGUID = pPlayer->GetGUID();
-                }
-            }
-
-            if (me->GetHealth() <= damage)
-            {
-                damage = me->GetHealth() - 1;
-
-                if (Credit == false)
-                {
-                    me->RemoveAllAuras();
-                    me->CombatStop(true);
-                    me->AttackStop();
-                    me->ClearAllReactives();
-                    me->DeleteThreatList();
-
-                }Credit = true;
-            }
+            if (!MarcusSummoned)
+                DoMeleeAttackIfReady();
         }
     };
+
+    CreatureAI* GetAI(Creature* creature) const
+    {
+        return new npc_hoggerAI (creature);
+    }
 };
 
 /*######
@@ -611,59 +713,59 @@ public:
 
 class spell_spray_water : public SpellScriptLoader
 {
-public:
-    spell_spray_water() : SpellScriptLoader("spell_spray_water") { }
+    public:
+        spell_spray_water() : SpellScriptLoader("spell_spray_water") { }
 
-    class spell_spray_water_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_spray_water_AuraScript);
-
-        void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        class spell_spray_water_AuraScript : public AuraScript
         {
-            if (GetCaster())
-                GetCaster()->AddAura(SPELL_VISUAL_EXTINGUISHER, GetCaster());
-        }
+            PrepareAuraScript(spell_spray_water_AuraScript);
 
-        void OnPeriodic(constAuraEffectPtr /*aurEff*/)
-        {
-            if (!GetCaster())
-                return;
-
-            if (Creature* fire = GetCaster()->FindNearestCreature(42940, 5.0f, true))
+            void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
-                if (Player* player = GetCaster()->ToPlayer())
-                    player->KilledMonsterCredit(42940, 0);
-
-                fire->DespawnOrUnsummon();
+                if (GetCaster())
+                    GetCaster()->AddAura(SPELL_VISUAL_EXTINGUISHER, GetCaster());
             }
-        }
 
-        void OnRemove(constAuraEffectPtr, AuraEffectHandleModes)
+            void OnPeriodic(constAuraEffectPtr /*aurEff*/)
+            {
+                if (!GetCaster())
+                    return;
+
+                if (Creature* fire = GetCaster()->FindNearestCreature(42940, 5.0f, true))
+                {
+                    if (Player* player = GetCaster()->ToPlayer())
+                        player->KilledMonsterCredit(42940, 0);
+
+                    fire->DespawnOrUnsummon();
+                }
+            }
+
+            void OnRemove(constAuraEffectPtr, AuraEffectHandleModes)
+            {
+                if (GetCaster())
+                    GetCaster()->RemoveAurasDueToSpell(SPELL_VISUAL_EXTINGUISHER);
+            }
+
+            void Register()
+            {
+                OnEffectApply += AuraEffectApplyFn(spell_spray_water_AuraScript::OnApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_spray_water_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+                OnEffectRemove += AuraEffectRemoveFn(spell_spray_water_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const
         {
-            if (GetCaster())
-                GetCaster()->RemoveAurasDueToSpell(SPELL_VISUAL_EXTINGUISHER);
+            return new spell_spray_water_AuraScript();
         }
-
-        void Register()
-        {
-            OnEffectApply += AuraEffectApplyFn(spell_spray_water_AuraScript::OnApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
-            OnEffectPeriodic += AuraEffectPeriodicFn(spell_spray_water_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
-            OnEffectRemove += AuraEffectRemoveFn(spell_spray_water_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_spray_water_AuraScript();
-    }
 };
 
 void AddSC_elwyn_forest()
 {
-    new npc_injured_soldier();
-    new npc_blackrock_battle_worg();
     new npc_stormwind_infantry();
-    new npc_marshal_mcbride();
+    new npc_brother_paxton();
+    new npc_blackrock_battle_worg();
+    new npc_injured_stormwind_infantry();
     new npc_hogger();
     new spell_spray_water();
 }

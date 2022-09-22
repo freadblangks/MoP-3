@@ -226,7 +226,7 @@ class boss_tayak : public CreatureScript
                     entranceDone = true;
                 }
 
-                if (entranceDone && !introDone && me->IsWithinDistInMap(who, 30) && who->GetTypeId() == TYPEID_PLAYER)
+                if (entranceDone && !introDone && me->IsWithinDistInMap(who, 30) && who->GetTypeId() == TYPEID_PLAYER && CheckTrash())
                 {
                     Talk(SAY_INTRO);
                     introDone = true;
@@ -238,6 +238,11 @@ class boss_tayak : public CreatureScript
             {
                 if (pInstance)
                 {
+                    if (!pInstance->CheckRequiredBosses(DATA_TAYAK) || !CheckTrash())
+                    {
+                        EnterEvadeMode();
+                        return;
+                    }
 
                     if (GameObject* entranceDoor = pInstance->instance->GetGameObject(pInstance->GetData64(GOB_QUARTERS_DOOR_ENTRANCE)))
                         entranceDoor->SetGoState(GO_STATE_READY);

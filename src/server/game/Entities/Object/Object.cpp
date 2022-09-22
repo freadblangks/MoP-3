@@ -881,7 +881,6 @@ WorldObject::WorldObject(bool isWorldObject): WorldLocation(),
 m_name(""), m_isActive(false), m_isWorldObject(isWorldObject), m_zoneScript(NULL),
 m_transport(NULL), m_currMap(NULL), m_InstanceId(0),
 m_phaseMask(PHASEMASK_NORMAL)
-, m_explicitSeerGuid()
 {
     m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE | GHOST_VISIBILITY_GHOST);
     m_serverSideVisibilityDetect.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE);
@@ -987,10 +986,13 @@ float WorldObject::GetGridActivationRange() const
 
 float WorldObject::GetVisibilityRange() const
 {
-	if (isActiveObject() && !ToPlayer())
-		return MAX_VISIBILITY_DISTANCE;
-	else
-		return GetMap()->GetVisibilityRange();
+    if (isActiveObject() && !ToPlayer())
+        return MAX_VISIBILITY_DISTANCE;
+    else
+        if (GetMap())
+            return GetMap()->GetVisibilityRange();
+
+    return MAX_VISIBILITY_DISTANCE;
 }
 
 float WorldObject::GetSightRange(const WorldObject* target) const
@@ -1305,7 +1307,7 @@ void Object::ForceValuesUpdateAtIndex(uint32 i)
     }
 }
 
-namespace WoWSource
+namespace SkyMistCore
 {
     class MonsterChatBuilder
     {
@@ -1346,68 +1348,68 @@ namespace WoWSource
             uint32 i_language;
             uint64 i_targetGUID;
     };
-}                                                           // namespace WoWSource
+}                                                           // namespace SkyMistCore
 
 void WorldObject::MonsterSay(const char* text, uint32 language, uint64 TargetGuid)
 {
-    CellCoord p = WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY());
+    CellCoord p = SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY());
 
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::MonsterCustomChatBuilder say_build(*this, CHAT_MSG_MONSTER_SAY, text, language, TargetGuid);
-    WoWSource::LocalizedPacketDo<WoWSource::MonsterCustomChatBuilder> say_do(say_build);
-    WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterCustomChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), say_do);
-    TypeContainerVisitor<WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterCustomChatBuilder> >, WorldTypeMapContainer > message(say_worker);
+    SkyMistCore::MonsterCustomChatBuilder say_build(*this, CHAT_MSG_MONSTER_SAY, text, language, TargetGuid);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterCustomChatBuilder> say_do(say_build);
+    SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterCustomChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), say_do);
+    TypeContainerVisitor<SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterCustomChatBuilder> >, WorldTypeMapContainer > message(say_worker);
     cell.Visit(p, message, *GetMap(), *this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY));
 }
 
 void WorldObject::MonsterSay(int32 textId, uint32 language, uint64 TargetGuid)
 {
-    CellCoord p = WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY());
+    CellCoord p = SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY());
 
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::MonsterChatBuilder say_build(*this, CHAT_MSG_MONSTER_SAY, textId, language, TargetGuid);
-    WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> say_do(say_build);
-    WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), say_do);
-    TypeContainerVisitor<WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> >, WorldTypeMapContainer > message(say_worker);
+    SkyMistCore::MonsterChatBuilder say_build(*this, CHAT_MSG_MONSTER_SAY, textId, language, TargetGuid);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> say_do(say_build);
+    SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), say_do);
+    TypeContainerVisitor<SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> >, WorldTypeMapContainer > message(say_worker);
     cell.Visit(p, message, *GetMap(), *this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY));
 }
 
 void WorldObject::MonsterYell(const char* text, uint32 language, uint64 TargetGuid)
 {
-    CellCoord p = WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY());
+    CellCoord p = SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY());
 
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::MonsterCustomChatBuilder say_build(*this, CHAT_MSG_MONSTER_YELL, text, language, TargetGuid);
-    WoWSource::LocalizedPacketDo<WoWSource::MonsterCustomChatBuilder> say_do(say_build);
-    WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterCustomChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL), say_do);
-    TypeContainerVisitor<WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterCustomChatBuilder> >, WorldTypeMapContainer > message(say_worker);
+    SkyMistCore::MonsterCustomChatBuilder say_build(*this, CHAT_MSG_MONSTER_YELL, text, language, TargetGuid);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterCustomChatBuilder> say_do(say_build);
+    SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterCustomChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL), say_do);
+    TypeContainerVisitor<SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterCustomChatBuilder> >, WorldTypeMapContainer > message(say_worker);
     cell.Visit(p, message, *GetMap(), *this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL));
 }
 
 void WorldObject::MonsterYell(int32 textId, uint32 language, uint64 TargetGuid)
 {
-    CellCoord p = WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY());
+    CellCoord p = SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY());
 
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::MonsterChatBuilder say_build(*this, CHAT_MSG_MONSTER_YELL, textId, language, TargetGuid);
-    WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> say_do(say_build);
-    WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL), say_do);
-    TypeContainerVisitor<WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> >, WorldTypeMapContainer > message(say_worker);
+    SkyMistCore::MonsterChatBuilder say_build(*this, CHAT_MSG_MONSTER_YELL, textId, language, TargetGuid);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> say_do(say_build);
+    SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL), say_do);
+    TypeContainerVisitor<SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> >, WorldTypeMapContainer > message(say_worker);
     cell.Visit(p, message, *GetMap(), *this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_YELL));
 }
 
 void WorldObject::MonsterYellToZone(int32 textId, uint32 language, uint64 TargetGuid)
 {
-    WoWSource::MonsterChatBuilder say_build(*this, CHAT_MSG_MONSTER_YELL, textId, language, TargetGuid);
-    WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> say_do(say_build);
+    SkyMistCore::MonsterChatBuilder say_build(*this, CHAT_MSG_MONSTER_YELL, textId, language, TargetGuid);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> say_do(say_build);
 
     uint32 zoneid = GetZoneId();
 
@@ -1426,15 +1428,15 @@ void WorldObject::MonsterTextEmote(const char* text, uint64 TargetGuid, bool IsB
 
 void WorldObject::MonsterTextEmote(int32 textId, uint64 TargetGuid, bool IsBossEmote)
 {
-    CellCoord p = WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY());
+    CellCoord p = SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY());
 
     Cell cell(p);
     cell.SetNoCreate();
 
-    WoWSource::MonsterChatBuilder say_build(*this, IsBossEmote ? CHAT_MSG_RAID_BOSS_EMOTE : CHAT_MSG_MONSTER_EMOTE, textId, LANG_UNIVERSAL, TargetGuid);
-    WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> say_do(say_build);
-    WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), say_do);
-    TypeContainerVisitor<WoWSource::PlayerDistWorker<WoWSource::LocalizedPacketDo<WoWSource::MonsterChatBuilder> >, WorldTypeMapContainer > message(say_worker);
+    SkyMistCore::MonsterChatBuilder say_build(*this, IsBossEmote ? CHAT_MSG_RAID_BOSS_EMOTE : CHAT_MSG_MONSTER_EMOTE, textId, LANG_UNIVERSAL, TargetGuid);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> say_do(say_build);
+    SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> > say_worker(this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE), say_do);
+    TypeContainerVisitor<SkyMistCore::PlayerDistWorker<SkyMistCore::LocalizedPacketDo<SkyMistCore::MonsterChatBuilder> >, WorldTypeMapContainer > message(say_worker);
     cell.Visit(p, message, *GetMap(), *this, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_TEXTEMOTE));
 }
 
@@ -1487,13 +1489,13 @@ void WorldObject::SendMessageToSet(WorldPacket* data, bool self)
 
 void WorldObject::SendMessageToSetInRange(WorldPacket* data, float dist, bool /*self*/)
 {
-    WoWSource::MessageDistDeliverer notifier(this, data, dist);
+    SkyMistCore::MessageDistDeliverer notifier(this, data, dist);
     VisitNearbyWorldObject(dist, notifier);
 }
 
 void WorldObject::SendMessageToSet(WorldPacket* data, Player const* skipped_rcvr)
 {
-    WoWSource::MessageDistDeliverer notifier(this, data, GetVisibilityRange(), false, skipped_rcvr);
+    SkyMistCore::MessageDistDeliverer notifier(this, data, GetVisibilityRange(), false, skipped_rcvr);
     VisitNearbyWorldObject(GetVisibilityRange(), notifier);
 }
 
@@ -1604,7 +1606,6 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonPropert
                         mask = UNIT_MASK_GUARDIAN;
                         break;
                     case SUMMON_TYPE_TOTEM:
-                    case SUMMON_TYPE_LIGHTWELL:
                         mask = UNIT_MASK_TOTEM;
                         break;
                     case SUMMON_TYPE_VEHICLE:
@@ -2039,8 +2040,8 @@ void WorldObject::SummonCreatureGroup(uint8 group, std::list<TempSummon*>& list)
 Creature* WorldObject::FindNearestCreature(uint32 entry, float range, bool alive) const
 {
     Creature* creature = NULL;
-    WoWSource::NearestCreatureEntryWithLiveStateInObjectRangeCheck checker(*this, entry, alive, range);
-    WoWSource::CreatureLastSearcher<WoWSource::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(this, creature, checker);
+    SkyMistCore::NearestCreatureEntryWithLiveStateInObjectRangeCheck checker(*this, entry, alive, range);
+    SkyMistCore::CreatureLastSearcher<SkyMistCore::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(this, creature, checker);
     VisitNearbyObject(range, searcher);
     return creature;
 }
@@ -2048,8 +2049,8 @@ Creature* WorldObject::FindNearestCreature(uint32 entry, float range, bool alive
 GameObject* WorldObject::FindNearestGameObject(uint32 entry, float range) const
 {
     GameObject* go = NULL;
-    WoWSource::NearestGameObjectEntryInObjectRangeCheck checker(*this, entry, range);
-    WoWSource::GameObjectLastSearcher<WoWSource::NearestGameObjectEntryInObjectRangeCheck> searcher(this, go, checker);
+    SkyMistCore::NearestGameObjectEntryInObjectRangeCheck checker(*this, entry, range);
+    SkyMistCore::GameObjectLastSearcher<SkyMistCore::NearestGameObjectEntryInObjectRangeCheck> searcher(this, go, checker);
     VisitNearbyGridObject(range, searcher);
     return go;
 }
@@ -2057,8 +2058,8 @@ GameObject* WorldObject::FindNearestGameObject(uint32 entry, float range) const
 GameObject* WorldObject::FindNearestGameObjectOfType(GameobjectTypes type, float range) const
 { 
     GameObject* go = NULL;
-    WoWSource::NearestGameObjectTypeInObjectRangeCheck checker(*this, type, range);
-    WoWSource::GameObjectLastSearcher<WoWSource::NearestGameObjectTypeInObjectRangeCheck> searcher(this, go, checker);
+    SkyMistCore::NearestGameObjectTypeInObjectRangeCheck checker(*this, type, range);
+    SkyMistCore::GameObjectLastSearcher<SkyMistCore::NearestGameObjectTypeInObjectRangeCheck> searcher(this, go, checker);
     VisitNearbyGridObject(range, searcher);
     return go;
 }
@@ -2066,42 +2067,42 @@ GameObject* WorldObject::FindNearestGameObjectOfType(GameobjectTypes type, float
 Player* WorldObject::FindNearestPlayer(float range, bool alive)
 {
     Player* player = NULL;
-    WoWSource::AnyPlayerInObjectRangeCheck check(this, range);
-    WoWSource::PlayerSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(this, player, check);
+    SkyMistCore::AnyPlayerInObjectRangeCheck check(this, range);
+    SkyMistCore::PlayerSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(this, player, check);
     VisitNearbyWorldObject(range, searcher);
     return player;
 }
 
 void WorldObject::GetGameObjectListWithEntryInGrid(std::list<GameObject*>& gameobjectList, uint32 entry, float maxSearchRange) const
 {
-    CellCoord pair(WoWSource::ComputeCellCoord(this->GetPositionX(), this->GetPositionY()));
+    CellCoord pair(SkyMistCore::ComputeCellCoord(this->GetPositionX(), this->GetPositionY()));
     Cell cell(pair);
     cell.SetNoCreate();
 
-    WoWSource::AllGameObjectsWithEntryInRange check(this, entry, maxSearchRange);
-    WoWSource::GameObjectListSearcher<WoWSource::AllGameObjectsWithEntryInRange> searcher(this, gameobjectList, check);
-    TypeContainerVisitor<WoWSource::GameObjectListSearcher<WoWSource::AllGameObjectsWithEntryInRange>, GridTypeMapContainer> visitor(searcher);
+    SkyMistCore::AllGameObjectsWithEntryInRange check(this, entry, maxSearchRange);
+    SkyMistCore::GameObjectListSearcher<SkyMistCore::AllGameObjectsWithEntryInRange> searcher(this, gameobjectList, check);
+    TypeContainerVisitor<SkyMistCore::GameObjectListSearcher<SkyMistCore::AllGameObjectsWithEntryInRange>, GridTypeMapContainer> visitor(searcher);
 
     cell.Visit(pair, visitor, *(this->GetMap()), *this, maxSearchRange);
 }
 
 void WorldObject::GetCreatureListWithEntryInGrid(std::list<Creature*>& creatureList, uint32 entry, float maxSearchRange) const
 {
-    CellCoord pair(WoWSource::ComputeCellCoord(this->GetPositionX(), this->GetPositionY()));
+    CellCoord pair(SkyMistCore::ComputeCellCoord(this->GetPositionX(), this->GetPositionY()));
     Cell cell(pair);
     cell.SetNoCreate();
 
-    WoWSource::AllCreaturesOfEntryInRange check(this, entry, maxSearchRange);
-    WoWSource::CreatureListSearcher<WoWSource::AllCreaturesOfEntryInRange> searcher(this, creatureList, check);
-    TypeContainerVisitor<WoWSource::CreatureListSearcher<WoWSource::AllCreaturesOfEntryInRange>, GridTypeMapContainer> visitor(searcher);
+    SkyMistCore::AllCreaturesOfEntryInRange check(this, entry, maxSearchRange);
+    SkyMistCore::CreatureListSearcher<SkyMistCore::AllCreaturesOfEntryInRange> searcher(this, creatureList, check);
+    TypeContainerVisitor<SkyMistCore::CreatureListSearcher<SkyMistCore::AllCreaturesOfEntryInRange>, GridTypeMapContainer> visitor(searcher);
 
     cell.Visit(pair, visitor, *(this->GetMap()), *this, maxSearchRange);
 }
 
 void WorldObject::GetPlayerListInGrid(std::list<Player*>& playerList, float maxSearchRange) const
 {    
-    WoWSource::AnyPlayerInObjectRangeCheck checker(this, maxSearchRange);
-    WoWSource::PlayerListSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(this, playerList, checker);
+    SkyMistCore::AnyPlayerInObjectRangeCheck checker(this, maxSearchRange);
+    SkyMistCore::PlayerListSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(this, playerList, checker);
     this->VisitNearbyWorldObject(maxSearchRange, searcher);
 }
 
@@ -2215,8 +2216,8 @@ void WorldObject::DestroyForNearbyPlayers()
         return;
 
     std::list<Player*> targets;
-    WoWSource::AnyPlayerInObjectRangeCheck check(this, GetVisibilityRange(), false);
-    WoWSource::PlayerListSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(this, targets, check);
+    SkyMistCore::AnyPlayerInObjectRangeCheck check(this, GetVisibilityRange(), false);
+    SkyMistCore::PlayerListSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(this, targets, check);
     VisitNearbyWorldObject(GetVisibilityRange(), searcher);
     for (std::list<Player*>::const_iterator iter = targets.begin(); iter != targets.end(); ++iter)
     {
@@ -2239,7 +2240,7 @@ void WorldObject::DestroyForNearbyPlayers()
 void WorldObject::UpdateObjectVisibility(bool /*forced*/)
 {
     //updates object's visibility for nearby players
-    WoWSource::VisibleChangesNotifier notifier(*this);
+    SkyMistCore::VisibleChangesNotifier notifier(*this);
     VisitNearbyWorldObject(GetVisibilityRange(), notifier);
 }
 
@@ -2315,7 +2316,7 @@ struct WorldObjectChangeAccumulator
 
 void WorldObject::BuildUpdate(UpdateDataMapType& data_map)
 {
-    CellCoord p = WoWSource::ComputeCellCoord(GetPositionX(), GetPositionY());
+    CellCoord p = SkyMistCore::ComputeCellCoord(GetPositionX(), GetPositionY());
     Cell cell(p);
     cell.SetNoCreate();
     WorldObjectChangeAccumulator notifier(*this, data_map);

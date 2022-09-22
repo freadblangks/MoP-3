@@ -1102,39 +1102,6 @@ public:
 
 };
 
-class npc_frostbrood_vanquisher : public CreatureScript
-{
-public:
-    npc_frostbrood_vanquisher() : CreatureScript("npc_frostbrood_vanquisher") { }
-
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_frostbrood_vanquisherAI(creature);
-    }
-
-    struct npc_frostbrood_vanquisherAI : public ScriptedAI
-    {
-        npc_frostbrood_vanquisherAI(Creature* creature) : ScriptedAI(creature)
-        {
-            Reset();
-        }
-
-        void Reset()
-        {
-            me->SetSpeed(MOVE_FLIGHT, 2.5f, true);
-        }
-
-        void MovementInform(uint32 type, uint32 pointId)
-        {
-            if (type != POINT_MOTION_TYPE)
-                return;
-
-            ((Player*)(me->GetCharmer()))->SetClientControl(me, 1);
-            me->SetSpeed(MOVE_FLIGHT, 2.5f, true);
-        }
-    };
-};
-
 // npc 28912 quest 17217 boss 29001 mob 29007 go 191092
 
 void AddSC_the_scarlet_enclave_c1()

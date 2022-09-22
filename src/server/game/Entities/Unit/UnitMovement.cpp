@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 - 2016 WoWSource
+ * Copyright (C) 2011-2015 SkyMist Gaming
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -915,7 +915,6 @@ void Unit::SendMovementHover(bool apply)
 {
     if (GetTypeId() == TYPEID_PLAYER)
         ToPlayer()->SendMovementSetHover(HasUnitMovementFlag(MOVEMENTFLAG_HOVER));
-
 }
 
 void Unit::SetFeared(bool apply)
@@ -1183,7 +1182,7 @@ void Unit::SendTeleportPacket(Position& oldPos)
 bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool teleport)
 {
     // prevent crash when a bad coord is sent by the client
-    if (!WoWSource::IsValidMapCoord(x, y, z, orientation))
+    if (!SkyMistCore::IsValidMapCoord(x, y, z, orientation))
         return false;
 
     bool turn = (GetOrientation() != orientation);
@@ -1255,7 +1254,7 @@ void Unit::SetFacingToObject(WorldObject* object)
 
     Movement::MoveSplineInit init(this);
     init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset());
-    init.SetFacing(GetAngle(object));
+    init.SetFacing(object->ToUnit());
     init.Launch();
 }
 

@@ -2,156 +2,118 @@
 #include "ScriptedCreature.h"
 #include "siege_of_orgrimmar.h"
 
-enum Texts
+enum eSpells
 {
-	SAY_AGGRO = 0,
-	SAY_EARTHQUAKE = 1,
-	SAY_OVERRUN = 2,
-	SAY_SLAY = 3,
-	SAY_DEATH = 4
+    SPELL_ACCELERATION	           = 143411,
+    SPELL_ACID_BREATH	           = 143780,
+    SPELL_BERSERK	               = 26662,
+    SPELL_BLOOD_FRENZY             = 143440, // Periodic aura. Triggers 143442 move speed increase + Taunt immunity.
+    SPELL_DEAFENING_SCREECH	       = 143343,
+    SPELL_FEARSOME_ROAR            = 143426,
+    SPELL_FIXATING                 = 146540, // Boss spell.
+    SPELL_FIXATED                  = 143445, // Player aura.
+    SPELL_FREEZING_BREATH          = 143773,
+    SPELL_MENDING                  = 149569,
+    SPELL_PANIC                    = 143766,
+    SPELL_SCORCHING_BREATH         = 143767,
+    SPELL_SUMMON_PLAYER            = 25104,
+    SPELL_TAIL_LASH                = 143428
 };
 
-enum Spells
+enum eEvents
 {
-	SPELL_EARTHQUAKE = 143780,
-	SPELL_SUNDER_ARMOR = 143773,
-	SPELL_CHAIN_LIGHTNING = 143767,
-	SPELL_OVERRUN = 143428,
-	SPELL_ENRAGE = 149569,
-	SPELL_MARK_DEATH = 143426,
-	SPELL_AURA_DEATH = 143343
 };
 
-enum Events
+enum eSays
 {
-	EVENT_ENRAGE = 1,
-	EVENT_ARMOR = 2,
-	EVENT_CHAIN = 3,
-	EVENT_QUAKE = 4,
-	EVENT_OVERRUN = 5
 };
 
 class boss_thok_the_bloodthirsty : public CreatureScript
 {
-public:
-	boss_thok_the_bloodthirsty() : CreatureScript("boss_thok_the_bloodthirsty") { }
+    public:
+        boss_thok_the_bloodthirsty() : CreatureScript("boss_thok_the_bloodthirsty") { }
 
-	struct boss_thok_the_bloodthirstyAI : public ScriptedAI
-	{
-		boss_thok_the_bloodthirstyAI(Creature* creature) : ScriptedAI(creature)
-		{
-			Initialize();
-		}
+        struct boss_thok_the_bloodthirstyAI : public BossAI
+        {
+            boss_thok_the_bloodthirstyAI(Creature* creature) : BossAI(creature, DATA_THOK_THE_BLOODTHIRSTY)
+            {
+                pInstance = creature->GetInstanceScript();
+            }
+			
+            EventMap events;
+            InstanceScript* pInstance;
+			
+            void Reset()
+            {
+                Reset();
+				
+                events.Reset();
+				
+                summons.DespawnAll();
+				
+                if (pInstance)
+                    pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
+            }
+			
+            void JustReachedHome()
+            {
+                _JustReachedHome();
 
-		void Initialize()
-		{
-			_inEnrage = false;
-		}
+                if (pInstance)
+                    pInstance->SetBossState(DATA_THOK_THE_BLOODTHIRSTY, FAIL);
+            }
+			
+            void EnterCombat(Unit* attacker)
+            {
+                // @TODO: Set in combat for other protectors
+                if (pInstance)
+                {
+                    pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
+                    pInstance->SetBossState(DATA_THOK_THE_BLOODTHIRSTY, IN_PROGRESS);
+                }
+            }
+			
+            void JustSummoned(Creature* summon)
+            {
+                summons.Summon(summon);
+            }
 
-		void Reset() override
-		{
-			_events.Reset();
-			_events.ScheduleEvent(EVENT_ENRAGE, 0);
-			_events.ScheduleEvent(EVENT_ARMOR, urand(5000, 13000));
-			_events.ScheduleEvent(EVENT_CHAIN, urand(10000, 30000));
-			_events.ScheduleEvent(EVENT_QUAKE, urand(25000, 35000));
-			_events.ScheduleEvent(EVENT_OVERRUN, urand(30000, 45000));
-			Initialize();
-		}
+            void SummonedCreatureDespawn(Creature* summon)
+            {
+                summons.Despawn(summon);
+            }
+			
+            void KilledUnit(Unit* who)
+            {
+            }
+			
+            void JustDied(Unit* killer)
+            {
+                _JustDied();
 
-		void KilledUnit(Unit* victim) override
-		{
+                if (pInstance)
+                {
+                    pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
+                    pInstance->SetBossState(DATA_THOK_THE_BLOODTHIRSTY, DONE);
+                }
+            }
+			
+            void UpdateAI(const uint32 diff)
+            {
+                if (!UpdateVictim())
+                    return;
 
+                if (me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
 
-			if (urand(0, 4))
-				return;
+                events.Update(diff);
+            }
+        };
 
-			Talk(SAY_SLAY);
-		}
-
-		void JustDied(Unit* killer) override
-		{
-			if (killer) { if (killer->GetTypeId() == TYPEID_PLAYER)         if (AchievementEntry const* achievementEntry = sAchievementStore.LookupEntry(8479)) killer->ToPlayer()->CompletedAchievement(achievementEntry); }Talk(SAY_DEATH);
-		}
-
-		void EnterCombat(Unit* /*who*/) override
-		{
-			Talk(SAY_AGGRO);
-		}
-
-		void MoveInLineOfSight(Unit* who) override
-
-		{
-
-
-
-		}
-
-		void UpdateAI(uint32 const diff) override
-		{
-			if (!UpdateVictim())
-				return;
-
-			_events.Update(diff);
-
-			if (me->HasUnitState(UNIT_STATE_CASTING))
-				return;
-
-			while (uint32 eventId = _events.ExecuteEvent())
-			{
-				switch (eventId)
-				{
-				case EVENT_ENRAGE:
-					if (!HealthAbovePct(30))
-					{
-						DoCast(me, SPELL_ENRAGE);
-						_events.ScheduleEvent(EVENT_ENRAGE, 6000);
-						_inEnrage = true;
-					}
-					break;
-				case EVENT_OVERRUN:
-					Talk(SAY_OVERRUN);
-					DoCastVictim(SPELL_OVERRUN);
-					_events.ScheduleEvent(EVENT_OVERRUN, urand(25000, 40000));
-					break;
-				case EVENT_QUAKE:
-					if (urand(0, 1))
-						return;
-
-					Talk(SAY_EARTHQUAKE);
-
-					//remove enrage before casting earthquake because enrage + earthquake = 16000dmg over 8sec and all dead
-					if (_inEnrage)
-						me->RemoveAurasDueToSpell(SPELL_ENRAGE);
-
-					DoCastVictim(SPELL_EARTHQUAKE);
-					_events.ScheduleEvent(EVENT_QUAKE, urand(30000, 55000));
-					break;
-				case EVENT_CHAIN:
-					if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 0.0f, true))
-						DoCast(target, SPELL_CHAIN_LIGHTNING);
-					_events.ScheduleEvent(EVENT_CHAIN, urand(7000, 27000));
-					break;
-				case EVENT_ARMOR:
-					Talk(irand(5, 12)); if (irand(0, 5) == 0) DoCastVictim(SPELL_MARK_DEATH); else if (irand(0, 5) == 1) DoCastVictim(SPELL_AURA_DEATH); else DoCastVictim(SPELL_SUNDER_ARMOR);
-					_events.ScheduleEvent(EVENT_ARMOR, urand(10000, 25000));
-					break;
-				default:
-					break;
-				}
-			}
-			DoMeleeAttackIfReady();
-		}
-
-	private:
-		EventMap _events;
-		bool _inEnrage;
-	};
-
-	CreatureAI* GetAI(Creature* creature) const override
-	{
-		return new boss_thok_the_bloodthirstyAI(creature);
-	}
+        CreatureAI* GetAI(Creature* pCreature) const
+        {
+            return new boss_thok_the_bloodthirstyAI(pCreature);
+        }
 };
 
 class mob_korkron_jailer : public CreatureScript

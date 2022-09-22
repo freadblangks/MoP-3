@@ -103,45 +103,52 @@ class spell_sha_totemic_projection : public SpellScriptLoader
     public:
         spell_sha_totemic_projection() : SpellScriptLoader("spell_sha_totemic_projection") { }
 
-	class spell_sha_totemic_projection_SpellScript : public SpellScript
-	{
-		PrepareSpellScript(spell_sha_totemic_projection_SpellScript);
+        class spell_sha_totemic_projection_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_sha_totemic_projection_SpellScript);
 
-		std::list<Creature*> Totem_List;
+            void HandleDummy()
+            {
+                if (Unit* caster = GetCaster())
+                {
+                    float x, y, z;
+                    const WorldLocation* wl = GetExplTargetDest();
+                    wl->GetPosition(x, y, z);
 
-		void HandleAfterCast()
-		{
-			if (!GetCaster())
-				return;
-			Player* player = GetCaster()->ToPlayer();
-			if (!player)
-				return;
-			const WorldLocation* summonPos = GetExplTargetDest();
+                    for (Unit::ControlList::const_iterator itr = caster->m_Controlled.begin(); itr != caster->m_Controlled.end(); ++itr)
+                    {
+                        if ((*itr)->isTotem())
+                        {
+                            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo((*itr)->GetUInt32Value(UNIT_CREATED_BY_SPELL));
+                            if (!spellInfo)
+                                continue;
 
-			WoWSource::AnyUnitInObjectRangeCheck check(player, 20.0f);
-			WoWSource::CreatureListSearcher<WoWSource::AnyUnitInObjectRangeCheck> searcher(player, Totem_List, check);
+                            float objSize = caster->GetObjectSize();
+                            float angle = spellInfo->Effects[0].TargetA.CalcDirectionAngle();
+                            float dist = spellInfo->Effects[0].CalcRadius(caster);
 
-			player->VisitNearbyObject(20.0f, searcher);
+                            if (dist < objSize)
+                                dist = objSize;
 
-			for (std::list<Creature*>::const_iterator it = Totem_List.begin(); it != Totem_List.end(); ++it)
-			{
-				if ((*it)->GetEntry() != 15352 || (*it)->GetEntry() != 61029 || (*it)->GetEntry() != 61056)
-				{
-					if ((*it)->GetUInt64Value(UNIT_FIELD_SUMMONEDBY) == player->GetGUID())
-					{
-						(*it)->SetSpeed(MOVE_RUN, 20.0f, true);
-						(*it)->GetMotionMaster()->MovePoint(1, summonPos->GetPositionX(), summonPos->GetPositionY(), summonPos->GetPositionZ());
-						(*it)->RemoveAura(1784, (*it)->GetGUID());
-					}
-				}
-			}
-		}
-		void Register()
-		{
-			AfterCast += SpellCastFn(spell_sha_totemic_projection_SpellScript::HandleAfterCast);
-		}
- 
-	};
+                            angle += (*itr)->GetOrientation();
+                            float destx, desty, destz, ground, floor;
+                            destx = x + dist * std::cos(angle);
+                            desty = y + dist * std::sin(angle);
+                            ground = (*itr)->GetMap()->GetHeight((*itr)->GetPhaseMask(), destx, desty, MAX_HEIGHT, true);
+                            floor = (*itr)->GetMap()->GetHeight((*itr)->GetPhaseMask(), destx, desty, z, true);
+                            destz = fabs(ground - z) <= fabs(floor - z) ? ground : floor;
+
+                            (*itr)->NearTeleportTo(destx, desty, destz, (*itr)->GetOrientation());
+                        }
+                    }
+                }
+            }
+
+            void Register()
+            {
+                AfterCast += SpellCastFn(spell_sha_totemic_projection_SpellScript::HandleDummy);
+            }
+        };
 
         SpellScript* GetSpellScript() const
         {
@@ -570,11 +577,11 @@ public:
             targets.clear();
             std::list<Unit*> GetTargets;
 
-            WoWSource::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
-            WoWSource::UnitListSearcher<WoWSource::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
+            SkyMistCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
             GetCaster()->VisitNearbyObject(40.0f, searcher);
 
-            GetTargets.sort(WoWSource::HealthPctOrderPred());
+            GetTargets.sort(SkyMistCore::HealthPctOrderPred());
             GetTargets.resize(3);
 
             for (auto itr : GetTargets)
@@ -1010,8 +1017,8 @@ class spell_sha_fire_nova : public SpellScriptLoader
             SpellCastResult HandleCheckCast()
             {
                 UnitList targets;
-                WoWSource::AnyUnitHavingBuffInObjectRangeCheck u_check(GetCaster(), GetCaster(), 100, SPELL_SHA_FLAME_SHOCK, false);
-                WoWSource::UnitListSearcher<WoWSource::AnyUnitHavingBuffInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
+                SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck u_check(GetCaster(), GetCaster(), 100, SPELL_SHA_FLAME_SHOCK, false);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitHavingBuffInObjectRangeCheck> searcher(GetCaster(), targets, u_check);
                 GetCaster()->VisitNearbyObject(100, searcher);
                 
                 return targets.size() == 0 ? SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW : SPELL_CAST_OK;
@@ -1040,46 +1047,50 @@ class spell_sha_unleash_elements : public SpellScriptLoader
         {
             PrepareSpellScript(spell_sha_unleash_elements_SpellScript);
 
-            SpellCastResult CheckCast()
+            SpellCastResult HandleCheckCast()
             {
-                Player* caster = GetCaster()->ToPlayer();
-                if (!caster)
-                    return SPELL_CAST_OK;
+                 Unit* caster = GetCaster();
+                 if (!caster)
+                     return SPELL_FAILED_DONT_REPORT;
 
-                if (Unit* target = GetExplTargetUnit())
-                {
-                    bool isFriendly = caster->IsFriendlyTo(target);
-                    bool anyEnchant = false;
-                    Item *weapons[2];
-                    weapons[0] = caster->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
-                    weapons[1] = caster->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
-                    for (int i = 0; i < 2; i++)
-                    {
-                        if (!weapons[i])
-                            continue;
+                 Player* plr = caster->ToPlayer();
+                 if (!plr)
+                     return SPELL_FAILED_DONT_REPORT;
 
-                        switch (weapons[i]->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT))
-                        {
-                            case 3345:
-                                anyEnchant = true;
-                                break;
-                            case 5: // Flametongue Weapon
-                            case 2: // Frostbrand Weapon
-                            case 3021: // Rockbiter Weapon
-                            case 283: // Windfury Weapon
-                                if (isFriendly)
-                                    return SPELL_FAILED_BAD_TARGETS;
-                                anyEnchant = true;
-                                break;
-                        }
-                    }
-                    if (!anyEnchant)
-                    {
-                        SetCustomCastResultMessage(SPELL_CUSTOM_ERROR_NO_ACTIVE_ENCHANTMENT);
-                        return SPELL_FAILED_CUSTOM_ERROR;
-                    }
-                }
-                return SPELL_CAST_OK;
+                 if (!GetExplTargetUnit())
+                     return SPELL_FAILED_BAD_TARGETS;
+
+                 Item* weapons[2];
+                 weapons[0] = plr->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                 weapons[1] = plr->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+                 bool found_enchantment = false;
+
+                 for (int i = 0; i < 2; i++)
+                 {
+                     if (!weapons[i])
+                          continue;
+
+                     int32 enchant = weapons[i]->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT);
+ 
+                     if (enchant == 0)
+                         continue;
+
+                     found_enchantment = true;
+
+                     switch (enchant)
+                     {
+                         case 5: // Flametongue Weapon
+                         case 2: // Frostbrand Weapon
+                         case 3021: // Rockbiter Weapon
+                         case 283: // Windfury Weapon
+                         {
+                             if (!plr->IsValidAttackTarget(GetExplTargetUnit()))
+                                 return SPELL_FAILED_BAD_TARGETS;
+                             break;
+                         }
+                     }
+                 }
+                 return found_enchantment == false ? SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW : SPELL_CAST_OK;
             }
 
             void HandleOnHit()
@@ -1167,7 +1178,7 @@ class spell_sha_unleash_elements : public SpellScriptLoader
 
             void Register()
             {
-                OnCheckCast += SpellCheckCastFn(spell_sha_unleash_elements_SpellScript::CheckCast);
+                OnCheckCast += SpellCheckCastFn(spell_sha_unleash_elements_SpellScript::HandleCheckCast);
                 OnHit += SpellHitFn(spell_sha_unleash_elements_SpellScript::HandleOnHit);
             }
         };
@@ -1278,8 +1289,6 @@ class spell_sha_fulmination : public SpellScriptLoader
                             return;
 
                         uint8 usedCharges = lsCharges - 1;
-                        if (_player->HasAura(144998))
-                            _player->CastCustomSpell(144999, SPELLVALUE_BASE_POINT0, usedCharges * 4, target, true);
 
                         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(SPELL_SHA_LIGHTNING_SHIELD_ORB_DAMAGE);
                         if (!spellInfo)
@@ -1343,19 +1352,12 @@ class spell_sha_healing_stream : public SpellScriptLoader
                 targets.clear();
                 std::list<Unit*> GetTargets;
 
-                WoWSource::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
-                WoWSource::UnitListSearcher<WoWSource::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
+                SkyMistCore::AnyGroupedUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), 40.0f, true);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyGroupedUnitInObjectRangeCheck> searcher(GetCaster(), GetTargets, u_check);
                 GetCaster()->VisitNearbyObject(40.0f, searcher);
 
-                GetTargets.sort(WoWSource::HealthPctOrderPred());
-                int targetsize = 1;
-                if (GetCaster()->HasAura(138303))
-                    targetsize = 2;
-                if (GetCaster()->HasAura(147074))
-                    targetsize++;
-
-                if (targets.size() > 1)
-                    GetTargets.resize(targetsize);
+                GetTargets.sort(SkyMistCore::HealthPctOrderPred());
+                GetTargets.resize(GetCaster()->HasAura(147074) ? 2 : 1);
 
                 for (auto itr : GetTargets)
                     targets.push_back(itr);
@@ -1755,9 +1757,9 @@ class spell_sha_bloodlust : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(WoWSource::UnitAuraCheck(true, SHAMAN_SPELL_SATED));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SHAMAN_SPELL_SATED));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
             }
 
             void ApplyDebuff()
@@ -1799,9 +1801,9 @@ class spell_sha_heroism : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(WoWSource::UnitAuraCheck(true, SHAMAN_SPELL_EXHAUSTION));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SHAMAN_SPELL_EXHAUSTION));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, MAGE_SPELL_TEMPORAL_DISPLACEMENT));
             }
 
             void ApplyDebuff()
@@ -1987,8 +1989,6 @@ class spell_sha_chain_heal : public SpellScriptLoader
             {
                 firstHeal = true;
                 riptide = false;
-				amount = 0;
-
                 return true;
             }
 
@@ -1997,24 +1997,23 @@ class spell_sha_chain_heal : public SpellScriptLoader
                 if (!GetCaster() || !GetHitUnit())
                     return;
 
-				// Check the First Hit
                 if (firstHeal)
                 {
                     // Check if the target has Riptide
                     if (AuraEffectPtr aurEff = GetHitUnit()->GetAuraEffect(SPELL_AURA_PERIODIC_HEAL, SPELLFAMILY_SHAMAN, 0, 0, 0x10, GetCaster()->GetGUID()))
                     {
-						riptide = true;
-						amount = aurEff->GetSpellInfo()->Effects[EFFECT_2].CalcValue();
+                        riptide = true;
+
+                        // Consume it
+                        // if caster has no Item - Shaman T12 Restoration 4P Bonus
+                        if (!GetCaster()->HasAura(99195))
+                            GetHitUnit()->RemoveAura(aurEff->GetBase());
                     }
                     firstHeal = false;
                 }
-
                 // Riptide increases the Chain Heal effect by 25%
-				if (riptide)
-				{
-					uint32 bonus = CalculatePct(GetHitHeal(), amount);
-					SetHitHeal(GetHitHeal() + bonus);
-				}
+                if (riptide)
+                    SetHitHeal(GetHitHeal() * 1.25f);
             }
 
             void Register()
@@ -2024,8 +2023,6 @@ class spell_sha_chain_heal : public SpellScriptLoader
 
             bool firstHeal;
             bool riptide;
-			uint32 amount;
-
         };
 
         SpellScript* GetSpellScript() const
@@ -2077,7 +2074,7 @@ class spell_sha_glyph_of_telluric_currents : public SpellScriptLoader
             {
                 PreventDefaultAction();
 
-                if (!GetCaster() || !eventInfo.GetDamageInfo()->getVictim())
+                if (!GetCaster() || !eventInfo.GetDamageInfo()->GetVictim())
                     return;
 
                 if ((eventInfo.GetDamageInfo()->GetSpellInfo() && eventInfo.GetDamageInfo()->GetSpellInfo()->Id != 403) || 
@@ -2104,138 +2101,6 @@ class spell_sha_glyph_of_telluric_currents : public SpellScriptLoader
         {
             return new spell_sha_glyph_of_telluric_currents_AuraScript();
         }
-};
-
-//138136	Item - Shaman T15 Enhancement 2P Bonus
-class spell_sha_stormstrike : public SpellScriptLoader
-{
-public:
-    spell_sha_stormstrike() : SpellScriptLoader("spell_sha_stormstrike") { }
-
-    class spell_sha_stormstrike_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_sha_stormstrike_SpellScript);
-
-        void HandleOnHit()
-        {
-            if (Player* _player = GetCaster()->ToPlayer())
-            {
-                if (_player->HasAura(138136))
-                {
-                    _player->CastSpell(_player, 53817, true);
-                    _player->CastSpell(_player, 53817, true);
-                }
-            }
-        }
-
-        void Register()
-        {
-            OnHit += SpellHitFn(spell_sha_stormstrike_SpellScript::HandleOnHit);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_sha_stormstrike_SpellScript();
-    }
-};
-
-// Lava Burst - 51505
-class spell_sha_lava_burst : public SpellScriptLoader
-{
-    class spell_sha_lava_burst_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_sha_lava_burst_SpellScript)
-
-        enum
-        {
-            SPELL_FLAME_SHOCK       = 8050,
-            SPELL_LAVA_SURGE_PROC   = 77762,
-        };
-
-
-        void HandleAfterHit()
-        {
-            if (Player* _player = GetCaster()->ToPlayer())
-            {
-                if (_player->HasAura(138144))
-                {
-                    _player->ReduceSpellCooldown(114049, 1000);
-                    _player->ReduceSpellCooldown(114050, 1000);
-                    _player->ReduceSpellCooldown(114051, 1000);
-                    _player->ReduceSpellCooldown(114052, 1000);
-                }
-            }
-        }
-
-        void HandleOnHit(SpellEffIndex /*effIndex*/)
-        {
-            Unit* target = GetHitUnit();
-            if (!target || !target->HasAura(SPELL_FLAME_SHOCK, GetCaster()->GetGUID()))
-                return;
-
-            SetHitDamage(GetHitDamage() * 1.5f);
-        }
-
-        void Register()
-        {
-            OnEffectHitTarget += SpellEffectFn(spell_sha_lava_burst_SpellScript::HandleOnHit, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
-            AfterHit += SpellHitFn(spell_sha_lava_burst_SpellScript::HandleAfterHit);
-
-        }
-    };
-
-public:
-    spell_sha_lava_burst() : SpellScriptLoader("spell_sha_lava_burst")
-    { }
-
-    SpellScript * GetSpellScript() const
-    {
-        return new spell_sha_lava_burst_SpellScript();
-    }
-};
-
-//138146	Lightning Strike
-class spell_sha_lightning_strike : public SpellScriptLoader
-{
-public:
-    spell_sha_lightning_strike() : SpellScriptLoader("spell_sha_lightning_strike") { }
-
-    class spell_sha_lightning_strike_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_sha_lightning_strike_SpellScript);
-
-        int count;
-
-        bool Load()
-        {
-            count = 0;
-            return true;
-        }
-
-        void HandleOnHit()
-        {
-            int32 damage = GetHitDamage();
-            damage /= count;
-            SetHitDamage(damage);
-        }
-
-        void TargetCorrect(std::list<WorldObject*>& targets)
-        {
-            count = targets.size();
-        }
-
-        void Register()
-        {
-            OnHit += SpellHitFn(spell_sha_lightning_strike_SpellScript::HandleOnHit);
-            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sha_lightning_strike_SpellScript::TargetCorrect, EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_sha_lightning_strike_SpellScript();
-    }
 };
 
 void AddSC_shaman_spell_scripts()
@@ -2277,7 +2142,4 @@ void AddSC_shaman_spell_scripts()
     new spell_sha_chain_heal();
     new spell_sha_glyph_of_lightning_shield();
     new spell_sha_glyph_of_telluric_currents();
-    new spell_sha_stormstrike();
-    new spell_sha_lava_burst();
-    new spell_sha_lightning_strike();
 }

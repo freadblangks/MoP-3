@@ -107,35 +107,6 @@ enum PaladinSpells
     PALADIN_SPELL_HOLY_INSIGHT                   = 112859
 };
 
-
-//119072	spell_pal_holy_wrath
-class spell_pal_holy_wrath : public SpellScriptLoader
-{
-public:
-	spell_pal_holy_wrath() : SpellScriptLoader("spell_pal_holy_wrath") { }
-
-	class spell_pal_holy_wrath_SpellScript : public SpellScript
-	{
-		PrepareSpellScript(spell_pal_holy_wrath_SpellScript)
-
-			void HandleOnHit()
-		{
-			float damage = float(GetCaster()->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY)) * 0.91f;
-			SetHitDamage(damage);
-		}
-
-		void Register()
-		{
-			OnHit += SpellHitFn(spell_pal_holy_wrath_SpellScript::HandleOnHit);
-		}
-	};
-
-	SpellScript* GetSpellScript() const
-	{
-		return new spell_pal_holy_wrath_SpellScript();
-	}
-};
-
 // Called by Avenging Wrath - 31884
 // Sanctified Wrath - 53376
 class spell_pal_sanctified_wrath : public SpellScriptLoader
@@ -706,7 +677,7 @@ class spell_pal_emancipate : public SpellScriptLoader
 
                     if (!auraList.empty())
                     {
-                        WoWSource::Containers::RandomResizeList(auraList, 1);
+                        SkyMistCore::Containers::RandomResizeList(auraList, 1);
                         _player->RemoveAura(*auraList.begin());
                     }
                 }
@@ -1299,12 +1270,6 @@ class spell_pal_word_of_glory : public SpellScriptLoader
                         if (holyPower > 2)
                             holyPower = 2;
 
-                        if (_player->HasAura(138238))
-                        {
-                            if (AuraPtr aura = _player->AddAura(138242, _player))
-                                aura->SetDuration(aura->GetDuration() + aura->GetDuration() * holyPower);
-                        }
-
                         _player->CastSpell(unitTarget, PALADIN_SPELL_WORD_OF_GLORY_HEAL, true);
 
                         if (_player->HasAura(PALADIN_SPELL_GLYPH_OF_WORD_OF_GLORY))
@@ -1537,9 +1502,6 @@ class spell_pal_holy_shock_heal : public SpellScriptLoader
                                 counter++;
                             }
                         }
-
-                        if (caster->HasAura(138291))
-                            ApplyPct(heal, 10);
 
                         if (counter != 0 )
                             heal = int32(heal / counter);
@@ -1893,10 +1855,6 @@ class spell_pal_exorcism : public SpellScriptLoader
                 if (Player* _player = GetCaster()->ToPlayer())
                     if (Unit* target = GetHitUnit())
                     {
-                        if (_player->HasAura(138159))
-                        {
-                            _player->CastSpell(target, 138162, true);
-                        }
                         int32 power = 1;
                         if (_player->HasAura(PALADIN_SPELL_HOLY_AVENGER))
                             power = 3;
@@ -1936,10 +1894,6 @@ class spell_pal_crusader_strike : public SpellScriptLoader
                         if (target->GetGUID() == _player->GetGUID())
                             return;
 
-                        if (_player->HasAura(138164) && roll_chance_i(40))
-                        {
-                            _player->CastSpell(_player, 138169, true);
-                        }
                         _player->CastSpell(target, PALADIN_SPELL_WEAKENED_BLOWS, true);
                     }
                 }
@@ -2085,8 +2039,6 @@ class spell_pal_beacon_of_light : public SpellScriptLoader
                                                 percent = 0.5f; // 50% heal from all other heals
                                                 break;
                                         }
-                                        if (_player->HasAura(138292))
-                                            ApplyPct(basepoints, 20);
                                         basepoints = int32(basepoints * percent);
                                         _player->CastCustomSpell(itr, 53652, &basepoints, NULL, NULL, true);
                                     }
@@ -2107,82 +2059,6 @@ class spell_pal_beacon_of_light : public SpellScriptLoader
         {
             return new spell_pal_beacon_of_light_SpellScript();
         }
-};
-
-//138165 Item - Paladin T15 Retribution 4P Bonus
-class spell_pal_t15_retribution_4p : public SpellScriptLoader
-{
-public:
-    spell_pal_t15_retribution_4p() : SpellScriptLoader("spell_pal_t15_retribution_4p") { }
-
-    class spell_pal_t15_retribution_4p_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_pal_t15_retribution_4p_SpellScript);
-
-        void HandleAfterCast()
-        {
-            if (Player* _player = GetCaster()->ToPlayer())
-                if (_player->HasAura(138169))
-                    _player->RemoveAura(138169);
-        }
-
-        void Register()
-        {
-            AfterCast += SpellCastFn(spell_pal_t15_retribution_4p_SpellScript::HandleAfterCast);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_pal_t15_retribution_4p_SpellScript();
-    }
-};
-
-//498 Divine Protection
-class spell_pal_t15_protection_4p : public SpellScriptLoader
-{
-public:
-    spell_pal_t15_protection_4p() : SpellScriptLoader("spell_pal_t15_protection_4p") { }
-
-    class spell_pal_t15_protection_4p_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_pal_t15_protection_4p_AuraScript);
-
-    public:
-        spell_pal_t15_protection_4p_AuraScript()
-        {
-            amount = 0;
-        }
-
-        bool CheckProc(ProcEventInfo& /*eventInfo*/)
-        {
-            return GetTarget()->HasAura(138244);
-        }
-
-        void HandleProc(constAuraEffectPtr aurEff, ProcEventInfo& eventInfo)
-        {
-            PreventDefaultAction();
-            amount += eventInfo.GetDamageInfo()->GetDamage();
-            if (amount >= GetTarget()->CountPctFromMaxHealth(20))
-            {
-                GetTarget()->ModifyPower(POWER_HOLY_POWER, 1);
-                amount = 0;
-            }
-        }
-
-        void Register()
-        {
-            DoCheckProc += AuraCheckProcFn(spell_pal_t15_protection_4p_AuraScript::CheckProc);
-            OnEffectProc += AuraEffectProcFn(spell_pal_t15_protection_4p_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN);
-        }
-    private:
-        uint32 amount;
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_pal_t15_protection_4p_AuraScript();
-    }
 };
 
 void AddSC_paladin_spell_scripts()
@@ -2231,7 +2107,4 @@ void AddSC_paladin_spell_scripts()
     new spell_pal_crusader_strike();
     new spell_pal_selfless_healer_spell();
     new spell_pal_beacon_of_light();
-	new spell_pal_holy_wrath();
-    new spell_pal_t15_retribution_4p();
-    new spell_pal_t15_protection_4p();
 }

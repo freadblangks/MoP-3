@@ -681,9 +681,11 @@ void Pet::Update(uint32 diff)
                 return;
             }
 
-            // Spirit Bond - While your pet is active, you and your pet regen 2% health each 2s
-            if (owner->HasSpell(109212) && !owner->HasAura(118694) && !m_Stampeded)
-                CastSpell(this, 118694, false);
+            // Spirit Bond
+            if (owner->HasAura(109212))
+                AddAura(118694,this);
+            else if (HasAura(118694) && !owner->HasAura(109212))
+                RemoveAura(118694);
 
             // Kindred Spirits
             if (owner->HasAura(56315) && !HasAura(56315) && !m_Stampeded)

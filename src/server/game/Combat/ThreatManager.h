@@ -257,7 +257,7 @@ class ThreatManager
 
 //=================================================
 
-namespace WoWSource
+namespace SkyMistCore
 {
     // Binary predicate for sorting HostileReferences based on threat value
     class ThreatOrderPred

@@ -72,7 +72,7 @@ DataDir = "."
 #                     Logs directory must exists, or log file creation will be disabled.
 #        Default:     "" - (Log files will be stored in the current path)
 
-LogsDir = "logs"
+LogsDir = ""
 
 #
 #    LoginDatabaseInfo
@@ -85,13 +85,13 @@ LogsDir = "logs"
 #                                                                 section my.ini)
 #                     ".;/path/to/unix_socket;username;password;database" - (use Unix sockets on
 #                                                                           Unix/Linux)
-#        Default:     "127.0.0.1;3306;root;ascent;auth"       - (LoginDatabaseInfo)
-#                     "127.0.0.1;3306;root;ascent;world"      - (WorldDatabaseInfo)
-#                     "127.0.0.1;3306;root;ascent;characters" - (CharacterDatabaseInfo)
+#        Default:     "127.0.0.1;3306;trinity;trinity;auth"       - (LoginDatabaseInfo)
+#                     "127.0.0.1;3306;trinity;trinity;world"      - (WorldDatabaseInfo)
+#                     "127.0.0.1;3306;trinity;trinity;characters" - (CharacterDatabaseInfo)
 
-LoginDatabaseInfo     = "127.0.0.1;3306;root;ascent;auth"
-WorldDatabaseInfo     = "127.0.0.1;3306;root;ascent;world"
-CharacterDatabaseInfo = "127.0.0.1;3306;root;ascent;characters"
+LoginDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;auth"
+WorldDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;world"
+CharacterDatabaseInfo = "127.0.0.1;3306;trinity;trinity;characters"
 
 #
 #    LoginDatabase.WorkerThreads
@@ -862,7 +862,7 @@ DisableWaterBreath = 4
 #        Default:     0 - (Disabled)
 #                     1 - (Enabled)
 
-AllFlightPaths = 1
+AllFlightPaths = 0
 
 #
 #    InstantFlightPaths
@@ -871,7 +871,7 @@ AllFlightPaths = 1
 #        Default:     0 - (Disabled)
 #                     1 - (Enabled)
 
-InstantFlightPaths = 1
+InstantFlightPaths = 0
 
 #
 #    ActivateWeather
@@ -1082,7 +1082,7 @@ BeepAtStart = 1
 #        Example:     "Welcome to John\'s Server@This server runs on Trinity Core."
 #        Default:     "Welcome to a Trinity Core server."
 
-Motd = "The WoWSource V4"
+Motd = "Welcome to the 5.4.8 Beta realm!"
 
 #
 #    Server.LoginInfo
@@ -2796,12 +2796,12 @@ UI.ShowQuestLevelsInDialogs = 0
 
 Appender.Console=1,3,0
 Appender.Server=2,2,0,Server.log,w
-Appender.GM=1,2,0,GM.log,w
+Appender.GM=2,3,0,GM.log,w
 Appender.DBErrors=2,3,0,DBErrors.log,w
 Appender.Char=2,2,0,Char.log,w
 Appender.RA=2,2,0,RA.log
 Appender.Warden=2,4,0,Warden.log
-Appender.Chat=2,2,1,Chat.log,a
+Appender.Chat=2,3,0,Chat.log,w
 Appender.CharDump=2,2,0,%s.log
 Appender.Arenas=2,2,0,Arena.log
 Appender.SQLDev=2,2,0,SQLDev.log
@@ -2812,7 +2812,7 @@ Appender.SQLDriver=2,2,0,SQLDriver.log
 #                     (Using spaces as separator).
 #        Default:     "Console Server GM DBErrors Char RA Warden Chat"
 
-Appenders=Console Server GM DBErrors Char RA Warden Chat
+Appenders=Console Server DBErrors Char
 
 #  Logger config values: Given a logger "name"
 #    Logger.name
@@ -2880,9 +2880,9 @@ Appenders=Console Server GM DBErrors Char RA Warden Chat
 #
 
 Logger.Root=0,5,Console Server
-Logger.Chat=22,2,Chat
+Logger.Chat=22,3,Chat
 Logger.DBErrors=26,5,Console Server DBErrors
-Logger.GM=27,2,Console Server GM
+Logger.GM=27,3,Console Server GM
 Logger.RA=28,3,RA
 Logger.Warden=29,4,Warden
 Logger.WorldServer=31,3,Console Server
@@ -2894,56 +2894,13 @@ Logger.CharDump=38,3,CharDump
 Logger.Load=40,3,Console Server
 Logger.Opcodes=41,6,Console Server
 
-
-#Logger.achievement=3,Console Server
-#Logger.auctionHouse=3,Console Server
-#Logger.bg.arena=3,Console Server
-#Logger.bg.battlefield=3,Console Server
-#Logger.bg.battleground=3,Console Server
-#Logger.chat.log=3,Console Server
-#Logger.calendar=3,Console Server
-#Logger.chat.system=3,Console Server
-#Logger.cheat=3,Console Server
-#Logger.commands.ra=3,Console Server
-#Logger.condition=3,Console Server
-#Logger.entities.pet=3,Console Server
-#Logger.entities.player.character=3,Console Server
-#Logger.entities.player.dump=3,Console Server
-#Logger.entities.player=3,Console Server
-#Logger.entities.player.items=3,Console Server
-#Logger.entities.player.loading=3,Console Server
-#Logger.entities.player.skills=3,Console Server
-#Logger.entities.transport=3,Console Server
-#Logger.entities.unit=3,Console Server
-#Logger.entities.vehicle=3,Console Server
-#Logger.gameevent=3,Console Server
-#Logger.guild=3,Console Server
-#Logger.lfg=3,Console Server
-#Logger.loot=3,Console Server
-#Logger.maps.script=3,Console Server
-#Logger.maps=3,Console Server
-#Logger.misc=3,Console Server
-#Logger.network=3,Console Server
-#Logger.network.opcode=3,Console Server
-#Logger.network.soap=3,Console Server
-#Logger.outdoorpvp=3,Console Server
-#Logger.pool=3,Console Server
-#Logger.rbac=3,Console Server
-#Logger.scripts=3,Console Server
-#Logger.scripts.ai=3,Console Server
-#Logger.server.authserver=3,Console Server
-#Logger.spells=3,Console Server
-#Logger.sql.dev=3,Console Server
-#Logger.sql.driver=3,Console Server
-#Logger.warden=3,Console Server
-
 #
 #    Loggers
 #        Description: List of Loggers to read from config
 #                     (Using spaces as separator).
 #        Default:     "Root Chat DBErrors GM RA Warden Character Load"
 
-Loggers=Root Chat DBErrors GM RA Warden Character Load
+Loggers=Root DBErrors Character Load WorldServer
 
 #
 ###################################################################################################
@@ -2983,29 +2940,6 @@ Guild.MaxLevel = 25
 
 Guild.UndeletableLevel = 26
 
-#
-#    Guild.XPModifier
-#        Description: Multiplier for guild experience gained from quests
-#        Default:     0.25
-#
-
-Guild.XPModifier = 0.25
-
-#
-#    Guild.DailyXPCap
-#        Description: Maximum experience points a guild can earn each day
-#        Default:     7807500
-#
-
-Guild.DailyXPCap = 7807500
-
-#
-#    Guild.WeeklyReputationCap
-#        Description: Maximum guild reputation a player can earn every week
-#        Default:     4375
-#
-
-Guild.WeeklyReputationCap = 4375
 #
 ###################################################################################################
 
@@ -3158,35 +3092,40 @@ DisableRestart = 1
 ###################################################################################################
 # VIP CONFIG
 #
-#    Rate.XP.Kill.VIP
-#    Rate.XP.Quest.VIP
-#    Rate.XP.Explore.VIP
-#    Rate.Honor.VIP
-#    Rate.Reputation.Gain.VIP
-#        XP rates VIP modifier
-#        Default: 2
+#    Rate.XP.Kill.Premium
+#    Rate.XP.Quest.Premium
+#    Rate.XP.Explore.Premium
+#    Rate.Honor.Premium
+#    Rate.Reputation.Gain.Premium
+#        Description: Enables rates modifier to VIPs.
+#        Default: 1
 
-Rate.XP.Kill.VIP    		= 2
-Rate.XP.Quest.VIP   		= 2
-Rate.XP.Explore.VIP 		= 2
-Rate.Honor.Premium 			= 2
-Rate.Reputation.Gain.VIP 	= 2
+Rate.XP.Kill.Premium         = 1.5
+Rate.XP.Quest.Premium        = 1.5
+Rate.XP.Explore.Premium      = 1.5
+Rate.Honor.Premium           = 1.5
+Rate.Reputation.Gain.Premium = 1.5
 
-#    Vip.Debuff.Command = 1
-#    Vip.Bank.Command = 1
-#    Vip.Repair.Command = 1
+#    Vip.Debuff.Command        = 1
+#    Vip.Bank.Command          = 1
+#    Vip.Repair.Command        = 1
 #    Vip.Reset.Talents.Command = 1
-#    Vip.Taxi.Command = 1
-#    Vip.Home.Command = 1
-#    Vip.Capital.Command = 1
+#    Vip.Taxi.Command          = 1
+#    Vip.Home.Command          = 1
+#    Vip.Capital.Command       = 1
+#    Vip.Exchange.Arena.Command
 #        Description: Here you can enable or disable some VIP commands.
 #        Default: 1
 
-Vip.Debuff.Command 			= 1
-Vip.Bank.Command 			= 1
-Vip.Repair.Command 			= 1
-Vip.Reset.Talents.Command 	= 1
-Vip.Taxi.Command 			= 1
-Vip.Home.Command 			= 1
-Vip.Capital.Command 		= 1
+Vip.Debuff.Command                 = 0
+Vip.Bank.Command                   = 1
+Vip.Repair.Command                 = 0
+Vip.Reset.Talents.Command          = 0
+Vip.Taxi.Command                   = 0
+Vip.Home.Command                   = 1
+Vip.Capital.Command                = 0
+Vip.Exchange.Arena.Command         = 0
+Vip.Exchange.Frost.Command         = 0
+Vip.Rate.Exchange.Honor.In.Arena   = 1
+Vip.Rate.Exchange.Triumph.In.Frost = 1
 ###################################################################################################

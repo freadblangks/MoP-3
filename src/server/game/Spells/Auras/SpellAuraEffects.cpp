@@ -484,7 +484,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS]=
     &AuraEffect::HandleNULL,                                      //425 SPELL_AURA_425
     &AuraEffect::HandleNULL,                                      //426 SPELL_AURA_426
     &AuraEffect::HandleNULL,                                      //427 SPELL_AURA_427
-    &AuraEffect::HandleAuraLinked,                                //428 SPELL_AURA_428
+    &AuraEffect::HandleNULL,                                      //428 SPELL_AURA_428
     &AuraEffect::HandleNULL,                                      //429 SPELL_AURA_429
     &AuraEffect::HandleNULL,                                      //430 SPELL_AURA_430
     &AuraEffect::HandleNULL,                                      //431 SPELL_AURA_431
@@ -1059,25 +1059,12 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
                     if (caster->HasAura(90174))
                         holyPower = 3;
 
-                    bool takepower = true;
-                    if (caster->HasAura(144569))
-                    {
-                        holyPower = 3;
-                        takepower = false;
-                    }
-                    if (caster->HasAura(138238))
-                    {
-                        if (AuraPtr aura = caster->AddAura(138242, caster))
-                            aura->SetDuration(aura->GetDuration() * holyPower);
-                    }
-
                     amount *= holyPower;
 
                     // If aura applies on paladin it should heal 50% more
                     if (caster->GetGUID() ==  GetBase()->GetUnitOwner()->GetGUID())
                         amount = int32(amount * 1.5f);
 
-                    if (takepower)
                     caster->ModifyPower(POWER_HOLY_POWER, (holyPower > 1) ? (-(holyPower - 1)) : 0);
 
                     break;
@@ -3262,8 +3249,8 @@ void AuraEffect::HandleFeignDeath(AuraApplication const* aurApp, uint8 mode, boo
         */
 
         UnitList targets;
-        WoWSource::AnyUnfriendlyUnitInObjectRangeCheck u_check(target, target, target->GetMap()->GetVisibilityRange());
-        WoWSource::UnitListSearcher<WoWSource::AnyUnfriendlyUnitInObjectRangeCheck> searcher(target, targets, u_check);
+        SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(target, target, target->GetMap()->GetVisibilityRange());
+        SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(target, targets, u_check);
         target->VisitNearbyObject(target->GetMap()->GetVisibilityRange(), searcher);
         for (UnitList::iterator iter = targets.begin(); iter != targets.end(); ++iter)
         {
@@ -3347,50 +3334,75 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
 
     AuraType type = GetAuraType();
 
-    //Prevent handling aura twice
+    // Prevent handling the aura twice.
     if ((apply) ? target->GetAuraEffectsByType(type).size() > 1 : target->HasAuraType(type))
         return;
 
-    // Adaptation
+    // Adaptation - Custom MOP script.
     if (apply && target->HasAura(126046))
         target->CastSpell(target, 126050, true);
+
+    // Check for ranged weapons.
+    bool hasRangedWeapon = false;
+
+    if (target->GetTypeId() == TYPEID_PLAYER) // Players.
+    {
+        if (Item* rangedWeapon = target->ToPlayer()->GetWeaponForAttack(RANGED_ATTACK))
+            if (rangedWeapon->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_BOW ||
+                rangedWeapon->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_GUN ||
+                rangedWeapon->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_WAND)
+                hasRangedWeapon = true; // The player has a Bow / Gun / Wand.
+    }
+    else                                      // Creatures.
+    {
+        if (uint32 rangedWeaponId = target->GetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + 0))
+            if (ItemTemplate const* rangedWeapon = sObjectMgr->GetItemTemplate(rangedWeaponId))
+                if (rangedWeapon->SubClass == ITEM_SUBCLASS_WEAPON_BOW ||
+                    rangedWeapon->SubClass == ITEM_SUBCLASS_WEAPON_GUN ||
+                    rangedWeapon->SubClass == ITEM_SUBCLASS_WEAPON_WAND)
+                    hasRangedWeapon = true; // The player has a Bow / Gun / Wand.
+    }
 
     uint32 field, flag, slot;
     WeaponAttackType attType;
     switch (type)
     {
         case SPELL_AURA_MOD_DISARM:
-            field=UNIT_FIELD_FLAGS;
-            flag=UNIT_FLAG_DISARMED;
-            slot=EQUIPMENT_SLOT_MAINHAND;
-            attType=BASE_ATTACK;
+            field   = UNIT_FIELD_FLAGS;
+            flag    = UNIT_FLAG_DISARMED;
+            slot    = EQUIPMENT_SLOT_MAINHAND;
+            attType = !hasRangedWeapon ? BASE_ATTACK : RANGED_ATTACK;
             break;
         case SPELL_AURA_MOD_DISARM_OFFHAND:
-            field=UNIT_FIELD_FLAGS_2;
-            flag=UNIT_FLAG2_DISARM_OFFHAND;
-            slot=EQUIPMENT_SLOT_OFFHAND;
-            attType=OFF_ATTACK;
+            field   = UNIT_FIELD_FLAGS_2;
+            flag    = UNIT_FLAG2_DISARM_OFFHAND;
+            slot    = EQUIPMENT_SLOT_OFFHAND;
+            attType = OFF_ATTACK;
             break;
         case SPELL_AURA_MOD_DISARM_RANGED:
-            /*field=UNIT_FIELD_FLAGS_2;
-            flag=UNIT_FLAG2_DISARM_RANGED;
-            slot=EQUIPMENT_SLOT_MAINHAND;
-            attType=RANGED_ATTACK;
-            break*/
-        default:
-            return;
+            field   = UNIT_FIELD_FLAGS_2;
+            flag    = UNIT_FLAG2_DISARM_RANGED;
+            slot    = EQUIPMENT_SLOT_MAINHAND;
+            attType = RANGED_ATTACK;
+            break;
+
+        default: return;
     }
 
-    // if disarm aura is to be removed, remove the flag first to reapply damage/aura mods
+    // If the disarm aura is to be removed, remove the flag first to reapply damage / aura mods.
     if (!apply)
         target->RemoveFlag(field, flag);
 
-    // Handle damage modification, shapeshifted druids are not affected
+    // Handle damage modification, shapeshifted druids are not affected.
     if (target->GetTypeId() == TYPEID_PLAYER && !target->IsInFeralForm())
     {
         if (Item* pItem = target->ToPlayer()->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
         {
             uint8 attacktype = Player::GetAttackBySlot(slot);
+
+            // Use the correct attack type for ranged classes / casters to update damages / aura mods on aura removal.
+            if (attacktype == BASE_ATTACK && hasRangedWeapon && !apply)
+                attacktype = RANGED_ATTACK;
 
             if (attacktype < MAX_ATTACK)
             {
@@ -3400,10 +3412,11 @@ void AuraEffect::HandleAuraModDisarm(AuraApplication const* aurApp, uint8 mode, 
         }
     }
 
-    // if disarm effects should be applied, wait to set flag until damage mods are unapplied
+    // If disarm effects should be applied, wait to set flag until damage mods are unapplied.
     if (apply)
         target->SetFlag(field, flag);
 
+    // Update Physical damage for creatures.
     if (target->GetTypeId() == TYPEID_UNIT && target->ToCreature()->GetCurrentEquipmentId())
         target->UpdateDamagePhysical(attType);
 }
@@ -7095,14 +7108,14 @@ void AuraEffect::HandlePeriodicDummyAuraTick(Unit* target, Unit* caster) const
                         // eff_radius == 0
                         float radius = GetSpellInfo()->GetMaxRange(false);
 
-                        CellCoord p(WoWSource::ComputeCellCoord(target->GetPositionX(), target->GetPositionY()));
+                        CellCoord p(SkyMistCore::ComputeCellCoord(target->GetPositionX(), target->GetPositionY()));
                         Cell cell(p);
 
-                        WoWSource::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck u_check(target, radius);
-                        WoWSource::UnitListSearcher<WoWSource::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck> checker(target, targets, u_check);
+                        SkyMistCore::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck u_check(target, radius);
+                        SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck> checker(target, targets, u_check);
 
-                        TypeContainerVisitor<WoWSource::UnitListSearcher<WoWSource::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck>, GridTypeMapContainer > grid_object_checker(checker);
-                        TypeContainerVisitor<WoWSource::UnitListSearcher<WoWSource::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck>, WorldTypeMapContainer > world_object_checker(checker);
+                        TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck>, GridTypeMapContainer > grid_object_checker(checker);
+                        TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyAttackableVisibleUnitInObjectRangeCheck>, WorldTypeMapContainer > world_object_checker(checker);
 
                         cell.Visit(p, grid_object_checker,  *GetBase()->GetOwner()->GetMap(), *target, radius);
                         cell.Visit(p, world_object_checker, *GetBase()->GetOwner()->GetMap(), *target, radius);
@@ -7121,7 +7134,7 @@ void AuraEffect::HandlePeriodicDummyAuraTick(Unit* target, Unit* caster) const
                     if (validTargets.empty())
                         return;
 
-                    Unit* spellTarget = sObjectAccessor->FindUnit(WoWSource::Containers::SelectRandomContainerElement(validTargets));
+                    Unit* spellTarget = sObjectAccessor->FindUnit(SkyMistCore::Containers::SelectRandomContainerElement(validTargets));
 
                     target->CastSpell(spellTarget, 57840, true);
                     target->CastSpell(spellTarget, 57841, true);
@@ -7838,11 +7851,6 @@ void AuraEffect::HandlePeriodicDamageAurasTick(Unit* target, Unit* caster) const
                 damage *= 0.85f;
         }
 
-        if (m_spellInfo->Id == 124275 || m_spellInfo->Id == 124274 || m_spellInfo->Id == 124273)
-        {
-            if (target->HasAura(138236) && roll_chance_i(10))
-                target->CastSpell(target, 138237, true);
-        }
         // Mind flay with Solace and Insanity
         if (GetSpellInfo()->Id == 129197)
         {
@@ -8382,11 +8390,6 @@ void AuraEffect::HandlePeriodicHealAurasTick(Unit* target, Unit* caster) const
         if (PvPPower > 1.0f)
             damage *= PvPPower;
     }
-    else if (m_spellInfo->Id == 774)
-    {
-        if (GetCaster()->HasAura(138286))
-            AddPct(damage, 6);
-    }
 
     bool crit = false;
     if (m_fixed_periodic.HasCritChance())
@@ -8698,9 +8701,7 @@ void AuraEffect::HandleRaidProcFromChargeWithValueAuraProc(AuraApplication* aurA
     uint32 triggerSpellId = 33110;
 
     int32 value = GetAmount();
-    if (GetCaster()->HasAura(138293))
-        ApplyPct(value, 10);
-    
+
     int32 jumps = GetBase()->GetCharges();
 
     // current aura expire on proc finish

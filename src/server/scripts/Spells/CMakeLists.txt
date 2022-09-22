@@ -27,7 +27,6 @@ set(scripts_STAT_SRCS
   Spells/spell_pet.cpp
   Spells/spell_monk.cpp
   Spells/spell_mastery.cpp
-  Spells/spell_t16.cpp
 )
 
 message("  -> Prepared: Spells")

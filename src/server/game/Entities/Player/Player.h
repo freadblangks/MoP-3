@@ -1418,7 +1418,6 @@ class Player : public Unit, public GridObject<Player>
         Pet* GetPet() const;
         Pet* SummonPet(uint32 entry, float x, float y, float z, float ang, PetType petType, uint32 despwtime, PetSlot slotID = PET_SLOT_UNK_SLOT, bool stampeded = false);
         void RemovePet(Pet* pet, PetSlot mode, bool returnreagent = false, bool stampeded = false);
-		bool HavePetSummoned(uint32 petEntry);
 
         PhaseMgr& GetPhaseMgr() { return phaseMgr; }
 
@@ -2376,9 +2375,6 @@ class Player : public Unit, public GridObject<Player>
         void RepopAtGraveyard();
         void SendCemeteryList(bool onMap);
 
-        uint32 GetLastKilledCreature() { return m_lastKilledCreatureId; }
-        void SetLastKilledCreature(Creature* creature);
-
         void DurabilityLossAll(double percent, bool inventory);
         void DurabilityLoss(Item* item, double percent);
         void DurabilityPointsLossAll(int32 points, bool inventory);
@@ -3088,9 +3084,6 @@ class Player : public Unit, public GridObject<Player>
         uint8 GetBattleGroundRoles() const { return m_bgRoles; }
         void SetBattleGroundRoles(uint8 roles) { m_bgRoles = roles; }
 
-		uint64 greenGuid;
-		uint64 purpleGuid;
-
      private:
         // Gamemaster whisper whitelist
         WhisperListContainer WhisperList;
@@ -3471,8 +3464,6 @@ class Player : public Unit, public GridObject<Player>
 
         bool m_initializeCallback;
 
-        uint32 m_lastKilledCreatureId;
-
         ArchaeologyMgr m_archaeologyMgr;
 
         // Store callback
@@ -3482,7 +3473,7 @@ class Player : public Unit, public GridObject<Player>
         PreparedQueryResultFuture _petPreloadCallback;
         QueryResultHolderFuture _petLoginCallback;
 
-        WoWSource::SpellChargesTracker spellChargesTracker_;
+        SkyMistCore::SpellChargesTracker spellChargesTracker_;
 
         uint8 m_bgRoles;
 

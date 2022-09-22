@@ -31,18 +31,19 @@
 
 Log::Log() : worker(NULL)
 {
-	SetRealmID(0);
-	m_logsTimestamp = "_" + GetTimestampStr();
-	LoadFromConfig();
+    SetRealmID(0);
+    m_logsTimestamp = "_" + GetTimestampStr();
+    LoadFromConfig();
+    specialLog = fopen("SpecialLogs.log", "a");
 }
 
 Log::~Log()
 {
-	Close();
+    Close();
 
-	fclose(specialLog);
-	delete specialLog;
-	specialLog = NULL;
+    fclose(specialLog);
+    delete specialLog;
+    specialLog = NULL;
 }
 
 uint8 Log::NextAppenderId()
@@ -570,6 +571,7 @@ void Log::OutSpecialLog(const char* str, ...)
     vsnprintf(result, MAX_QUERY_LEN, str, ap);
     va_end(ap);
 
-	outInfo(LOG_FILTER_GENERAL, result);
-
+    std::string date = GetTimestampStr();
+    fprintf(specialLog, "[%s] Special Log : %s\n", date.c_str(), result);
+    fflush(specialLog);
 }

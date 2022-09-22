@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 - 2016 WoWSource
+ * Copyright (C) 2011-2015 SkyMist Gaming
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -382,9 +382,8 @@ class npc_uncle_gao : public CreatureScript
                 me->RemoveAllAuras();
                 Reset();
                 me->GetMotionMaster()->MoveTargetedHome();
-                if (instance)
-                    if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
-                        door->SetGoState(GO_STATE_ACTIVE);
+                if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
+                    door->SetGoState(GO_STATE_ACTIVE);
 
                 if (instance)
                     instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, FAIL);
@@ -515,9 +514,8 @@ class npc_uncle_gao : public CreatureScript
                             for (uint8 i = 0; i < 3; i++)
                                 me->SummonCreature(NPC_CAULDRON_BUNNY, CauldronPositions[i], TEMPSUMMON_MANUAL_DESPAWN);
                             me->SummonCreature(NPC_BREW_BUNNY, YanzhuSummonPosition, TEMPSUMMON_MANUAL_DESPAWN);
-                            if (instance)
-                                if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
-                                    door->SetGoState(GO_STATE_READY);
+                            if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
+                                door->SetGoState(GO_STATE_READY);
                             if (instance)
                                 instance->SetData(DATA_YANZHU_THE_UNCASKED_EVENT, IN_PROGRESS);
                             events.ScheduleEvent(EVENT_UNCLE_GAO_INTRO_1, 6000);
@@ -624,10 +622,8 @@ class npc_uncle_gao : public CreatureScript
                         case EVENT_UNCLE_GAO_SAY_OUTRO_1:
                             Talk(UNCLE_GAO_SAY_OUTRO_1);
                             me->HandleEmote(EMOTE_ONESHOT_QUESTION);
-
-                            if (instance)
-                                if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
-                                    door->SetGoState(GO_STATE_ACTIVE);
+                            if (GameObject* door = instance->instance->GetGameObject(instance->GetData64(DATA_YAN_ZHU_DOOR)))
+                                door->SetGoState(GO_STATE_ACTIVE);
                             events.ScheduleEvent(EVENT_UNCLE_GAO_OUTRO_1, 3000);
                             break;
 
@@ -892,9 +888,9 @@ class boss_yan_zhu_the_uncasked : public CreatureScript
                     }
                     if (me->HasAura(SPELL_WALL_OF_SUDS_DUMMY))
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_SUDSY);
-                    if (uncleGao)
-                        uncleGao->AI()->DoAction(ACTION_START_OUTRO);
                 }
+
+                uncleGao->AI()->DoAction(ACTION_START_OUTRO);
 
                 _JustDied();
             }
@@ -1450,7 +1446,7 @@ class spell_yeasty_alemental_ferment : public SpellScriptLoader
 
                         if (!playerTargetsList.empty()) // If the list is not empty select only the nearest player in line with the boss.
                         {
-                            playerTargetsList.sort(WoWSource::ObjectDistanceOrderPred(caster));
+                            playerTargetsList.sort(SkyMistCore::ObjectDistanceOrderPred(caster));
                             playerTargetsList.resize(1);
                             caster->CastSpell(playerTargetsList.front(), SPELL_FERMENT_HEAL, true);
                         }

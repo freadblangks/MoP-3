@@ -1575,8 +1575,8 @@ void Guardian::UpdateAttackPowerAndDamage(bool ranged)
         }
         else if (IsPetGhoul())
         {
-            bonusAP = owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.4f;
-            SetBonusDamage(owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.4f);
+            bonusAP = owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.7f;
+            SetBonusDamage(owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.7f);
         }
         else if (isPet() && GetEntry() != ENTRY_WATER_ELEMENTAL) // demons benefit from warlocks shadow or fire damage
         {
@@ -1699,7 +1699,7 @@ void Guardian::UpdateDamagePhysical(WeaponAttackType attType)
         }
     }
     else if (IsPetGhoul() && m_owner)
-        base_value = m_owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.5f + bonusDamage;
+        base_value = m_owner->GetTotalAttackPowerValue(BASE_ATTACK) * 0.7f + bonusDamage;
 
     float mindamage = ((base_value + weapon_mindamage) * base_pct + total_value) * total_pct;
     float maxdamage = ((base_value + weapon_maxdamage) * base_pct + total_value) * total_pct;

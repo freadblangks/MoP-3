@@ -23,7 +23,7 @@
 #include "SharedDefines.h"
 #include "ScriptMgr.h"
 
-namespace WoWSource
+namespace SkyMistCore
 {
     namespace Honor
     {
@@ -204,9 +204,10 @@ namespace WoWSource
                 else
                     KillXpRate = sWorld->getRate(RATE_XP_KILL);
 
-                float premium_rate = player->GetSession()->GetVipLevel() ? sWorld->getRate(RATE_XP_KILL_VIP) : 1.0f;
+                gain = uint32(gain * KillXpRate);
 
-            return uint32(gain*sWorld->getRate(RATE_XP_KILL)*premium_rate);
+                float premium_rate = player->GetSession()->IsPremium() ? sWorld->getRate(RATE_XP_KILL_PREMIUM) : 1.0f;
+                gain *= premium_rate;
             }
 
             sScriptMgr->OnGainCalculation(gain, player, u);

@@ -1,1931 +1,1196 @@
-
-#include "GameObjectAI.h"
-#include "siege_of_orgrimmar.h"
-
 /*
-#include "siege_of_orgrimmar.h"
+ * Copyright (C) 2011-2015 SkyMist Gaming
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Raid: Siege of Orgrimmar.
+ * Boss: Sha of Pride.
+ *
+ * Wowpedia boss history:
+ *
+ * "The seventh sha, the Sha of Pride, was the final burden to which Emperor Shaohao clung, shrouding the land in mist and biding its time for millennia.
+ *  When Garrosh awakened the Heart of Y'shaarj, the force of his arrogance caused this dark energy to coalesce in the chamber where the Heart was unearthed."
+ */
+
+#include "ObjectMgr.h"
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellAuras.h"
+#include "MapManager.h"
+#include "Spell.h"
+#include "Vehicle.h"
+#include "Cell.h"
+#include "CellImpl.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CreatureTextMgr.h"
+#include "Unit.h"
+#include "Player.h"
+#include "Creature.h"
+#include "InstanceScript.h"
+#include "Map.h"
+#include "VehicleDefines.h"
+#include "SpellInfo.h"
 #include "MoveSplineInit.h"
+
+#include "siege_of_orgrimmar.h"
+
 /*
-General Information: (Icy-veins.com):
+Intro:
 
-1.1. Health Values
+    Norushen yells: The corruption is amplifying. The fragments must be purged before it becomes too great. 145979 Door Channel.
+    Taran Zhu says: *Cough cough* Nyyyhunnnggggg...
+    Taran Zhu has survived his encounter with Garrosh, but his wound caused by Gorehowl is serious.
+    Lorewalker Cho yells: Taran Zhu!
+    Taran Zhu says: Cho... the outsiders... THEY did this... we should never have let them in...
+    Lorewalker Cho says: Don't speak, friend, I will take you to the healers.
+    Lorewalker Cho yells: I will find help! Try to hold off the sha for as long as you can!
+    Cho leads Taran Zhu out the way he came in.
 
-Difficulty	Sha of Pride	Manifestations of Pride	Reflections	Corrupted Fragment
-10-man	425M	1.7M	2.4M	Heroic-only
-10-man Heroic	660M	4.40M	2.75M	4.73
-25-man	1.2B	4M	5.6M	Heroic-only
-25-man Heroic	1.85B	5.6M	7.7M	4.7M
-LFR	???M	???
+    Norushen yells: It did not matter. It comes. Steel your hearts and prepare your souls.
+    Sha of Pride yells: Come, face me. Give in to your pride. Show me your "Greatness". 
 
-1.2. Enrage Timer
-We do not know if this fight has a hard enrage timer. When the Sha of Pride reaches 30% health, the raid will constantly gain 5 Pride every 10 seconds, meaning that you will have about 200 seconds to kill the boss from that moment.
+Outro:
+
+    Lady Jaina Proudmoore and Lor'themar Theron walk in ahead of Cho.
+    Lorewalker Cho yells: Heroes! You're alive. I brought help.
+    Cho stops and Jaina and Lor'themar continue crossing the room.
+    Lady Jaina Proudmoore says: So Hellscream's arrogance unleashed the last of the sha. I am not surprised.
+    Lor'themar Theron yells: Look here! He left his weapon behind.
+    Lady Jaina Proudmoore says: Gorehowl.
+    Lor'themar Theron says: This means he's completely unhinged.
+    Lady Jaina Proudmoore says: News to no one, Regent Lord. King Wrynn's fleet is converging on Orgrimmar as we speak.
+    Lor'themar Theron says: Likewise. Sylvanas and I have both sent ships to support Vol'jin's revolution.
+    Lady Jaina Proudmoore says: I'm warning you, Lor'themar. The Alliance is besieging the city and we will destroy Hellscream. Your people had best stay out of our way.
+    Lor'themar's response has a hint of sarcasm.
+    Lor'themar Theron says: It is always a privilege to see you, Lady Proudmoore.
+    Jaina and Lor'themar each summon a Portal to Orgrimmar as they walk forward to opposite corners of the room as Cho heads back out through the doorway.
+    (Alliance) Lady Jaina Proudmoore says: Come heroes, through the portal! The Siege of Orgrimmar begins!
+    (Horde) Lor'themar Theron says: Champions, come with me. It's time to settle grievances with our... "Warchief."
 */
 
+enum Yells
+{
+    /*** Bosses ***/
+
+    // Norushen.
+
+    SAY_NORUSHEN_INTRO_1           = 0, // The corruption is amplifying. The fragments must be purged before it becomes too great.
+    SAY_NORUSHEN_INTRO_2           = 1, // It did not matter. It comes. Steel your hearts and prepare your souls.
+
+    SAY_NORUSHEN_GIFT_OF_THE_TIT   = 2, // 0 - Be humble. ; 1 - Free yourself of arrogance. .
+    SAY_NORUSHEN_DEATH             = 3, // You... must... contain... it...
+
+    // Lorewalker Cho Intro.
+
+    SAY_LOREWALKER_INTRO_1         = 0, // Taran Zhu!
+    SAY_LOREWALKER_INTRO_2         = 1, // Don't speak, friend, I will take you to the healers.
+    SAY_LOREWALKER_INTRO_3         = 2, // I will find help! Try to hold off the sha for as long as you can!
+
+    SAY_LOREWALKER_OUTRO_1         = 3, // Heroes! You're alive. I brought help.
+
+    // Taran Zhu Intro.
+
+    SAY_TARAN_ZHU_INTRO_1          = 0, // *Cough cough* Nyyyhunnnggggg...
+    SAY_TARAN_ZHU_INTRO_2          = 1, // Cho... the outsiders... THEY did this... we should never have let them in...
+
+    // Sha of Pride.
+
+    SAY_SHA_OF_PRIDE_INTRO_1       = 0, // Come, face me. Give in to your pride. Show me your "Greatness".
+
+    SAY_SHA_OF_PRIDE_AGGRO         = 1, // So foolish...
+    SAY_SHA_OF_PRIDE_KILL          = 2, // 0 - That one is WEAK. ; 1 - That one is unworthy of your group. ; 2 - Blame your companions! .
+    SAY_SHA_OF_PRIDE_SELF_REFLECT  = 3, // 0 - You are better than your companions! ; 1 - Your arrogance compels you... .
+    SAY_SHA_OF_PRIDE_SWEL_PRIDE    = 4, // 0 - Succumb to your pride! ; 1 - You should bow to no king or warchief. .
+    SAY_SHA_OF_PRIDE_CORR_PRISON   = 5, // Your arrogance feeds me!
+
+    SAY_SHA_OF_PRIDE_UNLEASHED     = 6, // You've let your pride cloud your vision, Titan puppet! You can never contain ME!
+
+    // Lady Jaina Proudmoore.
+
+    SAY_JAINA_OUTRO_1              = 0, // So Hellscream's arrogance unleashed the last of the sha. I am not surprised.
+    SAY_JAINA_OUTRO_2              = 1, // Gorehowl.
+    SAY_JAINA_OUTRO_3              = 2, // News to no one, Regent Lord. King Wrynn's fleet is converging on Orgrimmar as we speak.
+    SAY_JAINA_OUTRO_4              = 3, // I'm warning you, Lor'themar. The Alliance is besieging the city and we will destroy Hellscream. Your people had best stay out of our way.
+    SAY_JAINA_OUTRO_5              = 4, // (Alliance) Lady Jaina Proudmoore says: Come heroes, through the portal! The Siege of Orgrimmar begins!
+
+    // Lor'themar Theron.
+
+    SAY_THERON_OUTRO_1             = 0, // Look here! He left his weapon behind.
+    SAY_THERON_OUTRO_2             = 1, // This means he's completely unhinged.
+    SAY_THERON_OUTRO_3             = 2, // Likewise. Sylvanas and I have both sent ships to support Vol'jin's revolution.
+    SAY_THERON_OUTRO_4             = 3, // It is always a privilege to see you, Lady Proudmoore.
+    SAY_THERON_OUTRO_5             = 4  // (Horde) Lor'themar Theron says: Champions, come with me. It's time to settle grievances with our... "Warchief."
+};
 
 enum Spells
 {
-    SPELL_AURA_OF_PRIDE_AURA = 146817,
-    SPELL_PRIDE_METER = 144343,
-    SPELL_GIFT_OF_TITAN = 144359,
-    SPELL_POWER_OF_THE_TITANS = 144364,
-    SPELL_SWELLING_PRIDE = 144400,
-    SPELL_BANISHMENT = 145215,
-    SPELL_BURSTING_PRIDE = 144910,
-    SPELL_PROJECTION_PROJECTILE = 145066,
-    SPELL_PROJECTION_DUMMY = 144952,
-    SPELL_PROJECTION_DAMAGE = 145320,
-    SPELL_PROJECTION_BLUE = 145526,
-    SPELL_PROJECTION_WARNING = 146822,
-    SPELL_CHARMED_OVERCOME = 144863,
-    SPELL_OVERCOME_DAMAGE = 144843,
-    SPELL_MARK_OF_ARROGANCE = 144351,
-    SPELL_WOUNDED_PRIDE = 144358,
-    SPELL_MANIFESTATION_VISUAL = 144778,
-    SPELL_MOCKINGB_LAST = 144379,
-    SPELL_LAST_WORD = 144370,
-    SPELL_SPELL_REFLECTION_VISUAL_POOL = 144784,
-    SPELL_SPELL_REFLECTION_VISUAL_SQUIRT = 144788,
-    SPELL_CORRUPTED_PRISON_DOT = 144574,
-    SPELL_CORRUPTED_PRISON_EXPLOSION = 144615,
-    SPELL_REACHING_ATTACK = 144774,
-    SPELL_UNLEASHED_01 = 146173,
-    SPELL_UNLEASHED_02 = 146174,
-    SPELL_FINAL_GIFT = 144854,
+    /*** Bosses ***/
 
-    /// Heroic
-    SPELL_SHA_OF_PRIDE_DAMAGE = 147183,
-    SPELL_SHA_OF_PRIDE_BOLT = 147391,
+    // Norushen.
 
-    SPELL_BANISHMENT_DEBUFF = 145215,
-    SPELL_BANISHMENT_DOT_ENRAGE = 145684,
-    SPELL_BANISHMENT_RED_VISUAL = 148705,
+    /* Gift of the Titans 
+        Norushen gifts players with immunity to pride for 20 seconds. He will always choose at least one of the healers, and seems to never choose any of the tanks.
+        In addition, if all players with Gift of the Titans are within 8 yards of each other, they gain Power of the Titans.
+        Power of the Titans increases haste and all damage and healing done by 15%.
+    */
+    SPELL_GIFT_OF_THE_TITANS_A     = 146595, // Trigger for all checks.
+    SPELL_GIFT_OF_THE_TITANS_1     = 144359, // Triggered by the aura.
+    SPELL_GIFT_OF_THE_TITANS_2     = 146594, // Triggered by the aura. Same as 1.
+    SPELL_GIFT_OF_THE_TITANS_D     = 144363, // Dummy for 8 yard checktriggered by 1 and 2 each sec.
 
-    SPELL_ORB_OF_LIGHT_VISUAL = 145299,
-    SPELL_ORB_OF_LIGHT_HEAL = 145345,
+    SPELL_POWER_OF_THE_TITANS      = 144364, // Buff for dmg + healing increase and threat decrease.
+
+    /* Final Gift
+        As Norushen dies, he purifies all players, reducing their Pride to zero. 
+    */
+    SPELL_FINAL_GIFT               = 144854, // Sets Pride to 0 in 300y.
+
+    // Sha of Pride.
+
+    SPELL_SHA_VORTEX_INTRO         = 146024, // Intro Aura - Visual + Trigger.
+    SPELL_SHA_VORTEX_INTRO_SUMMON  = 149220, // Intro Aura - Dummy to summon a mob every 4 seconds.
+    SPELL_SHA_INTRO_SPAWN_KB       = 149213, // Intro Knockback when Sha emerges.
+    SPELL_GOREHOWL_VISUAL          = 146058, // Gorehowl in ground visual.
+
+    /*
+    Pride
+        Players start the encounter with 0 points of Pride. Whenever hit by an ability from the Sha of Pride or one of its minions, players gain 5 Pride.
+        As a player's Pride increases to 25, 50, 75 and 100, Swelling Pride will inflict additional effects on that player.
+    */
+    SPELL_PRIDE_BAR                = 144343, // Enables Pride power.
+
+    /* Reaching Attack
+        The Sha of Pride strikes at a distant target, inflicting 50% of weapon damage as Shadow and increasing Shadow damage taken by 25% for 8 sec.
+        The Sha uses this ability when no targets are in melee range. 
+    */
+    SPELL_REACHING_ATTACK          = 144774,
+
+    /* Mark of Arrogance
+        The Sha of Pride marks 2 players, inflicting 70000 Shadow damage every 1 sec, for the remainder of the encounter. This effect stacks.
+        This effect is only removed by single target dispels and gives the dispeller 5 Pride when removed.
+    */
+    SPELL_MARK_OF_ARROGANCE        = 144351,
+
+    /* Corrupted Prison
+        The Sha of Pride activates 2 titan prisons, trapping a player inside each. 
+        As the prison activates, it releases a burst of Sha energy that inflicts 250000 Shadow damage to all players within 0 yards, knocking them back and giving them 5 Pride.
+        Imprisoned players are stunned, suffer 80000 Shadow damage, and gain 5 Pride every second while they remain imprisoned.
+        Players remain stunned until all titan locks surrounding the prison have been activated. 
+        Titan locks are activated by having a player stand within the lock's rune and remain there until the prison is deactivated. 
+
+        !Note: Usable with GO's.
+    */
+    SPELL_IMPRISON                 = 144563, // Cast time + Dummy (Effect 0). Boss main spell.
+    SPELL_CORRUPTED_PRISON_1       = 144574, // First  prison victim. Teleport (Effect 0), Stun, Periodic dmg, Pacify. Needs script for Pride addition.
+    SPELL_CORRUPTED_PRISON_2       = 144636, // Second prison victim. Teleport (Effect 0), Stun, Periodic dmg, Pacify. Needs script for Pride addition.
+    SPELL_CORRUPTED_PRISON_3       = 144683, // Third  prison victim (25 man). Teleport (Effect 0), Stun, Periodic dmg, Pacify. Needs script for Pride addition.
+    SPELL_CORRUPTED_PRISON_4       = 144684, // Fourth prison victim (25 man). Teleport (Effect 0), Stun, Periodic dmg, Pacify. Needs script for Pride addition.
+    SPELL_CORRUPTED_PRISON_ACTIV   = 144615, // Activation knockback and damage (Effect 1). Needs script for Pride addition.
+
+    /* Banishment
+        The Sha of Pride banishes random players to the corrupted Sha Realm. 
+        Banished players leave behind a physical form of their pride and remain banished until it is destroyed.
+        Players within the Sha realm move 50% faster and are compelled to continually run forward, unable to stop.
+        Additionally, coming into contact with corruption within the Sha realm inflicts 42000 Shadow damage every second.
+        Any player damaged by the Sha realm gains 5 Pride. 
+    */
+    SPELL_BANISHMENT               = 146823, // Main spell, Cast time, Dummy (Effect 0) for SPELL_BANISHMENT_AURA, Send Event (Effect 1).
+    SPELL_BANISHMENT_AURA          = 145215, // Screen Effect, Phase, Move Forward force, Periodic Damage, Trigger spell (Effect 5).
+    SPELL_BANISHMENT_AT            = 145217, // Creates 9 AreaTriggers.
+    SPELL_BANISHMENT_SIZE          = 145684, // 75% size increase.
+    SPELL_BANISHMENT_STUN          = 146623, // Stun.
+    SPELL_BANISHMENT_TELEPORT      = 148705, // Teleport visual and effect.
+
+    /* Unstable Corruption
+        The Sha's energy tears open Rifts of Corruption every 8 sec. 
+        Each rift launches a bolt of corruption at a random player's location every 5 sec.
+        Players struck by the bolts suffer 42000 Shadow damage and gain 5 Pride.
+        Players can close the rifts, causing them to explode, inflicting 30000 Shadow damage to all players within 8 yards.
+        Closing a rift afflicts players with Weakened Resolve, preventing them from closing another rift for 1 min. 
+    */
+    SPELL_RIFT_OF_CORRUPTION_DUMMY = 147183, // Effect 0 - Periodic Dummy for Spawn Effect. The Sha's energy tears open Rifts of Corruption every 8 sec. 
+    SPELL_RIFT_OF_CORRUPTION_VIS   = 147186, // NPC visual. Also 147210 & 147211.
+    SPELL_RIFT_OF_CORRUPTION_SPAWN = 147199, // Spawn effect.
+    SPELL_BOLT_OF_CORRUPTION_DUMMY = 147389, // Effect 0 - Periodic Trigger. Each rift launches a bolt of corruption at a random player's location every 5 sec.
+    SPELL_BOLT_OF_CORRUPTION_MIS   = 147391, // Missile, triggers SPELL_BOLT_OF_CORRUPTION. Triggered by above.
+    SPELL_BOLT_OF_CORRUPTION       = 147198, // Damage.
+    SPELL_COLLAPSING_RIFT          = 147388, // Players can close the rifts, causing them to explode, 250000 Shadow damage to all players within 8 yards.
+    SPELL_WEAKENED_RESOLVE         = 147207, // Dummy (Effect 0), cannot "close" (kill) a rift for 1 minute.
+
+    /* Wounded Pride
+        The Sha of Pride wounds his current target for 15 sec. Wounded players gain 5 Pride whenever they suffer melee damage from the Sha of Pride.
+    */
+    SPELL_WOUNDED_PRIDE            = 144358, // Aura, Dummy Effect 0.
+
+    /* Self Reflection
+        The Sha of Pride causes up to 5 players to reflect on their actions, creating a Reflection of Pride at their location.
+        With each tick of Self-Reflection, the Sha focuses on players with higher levels of Pride, only targeting those with 25, 50, and then 75 Pride. 
+    */
+    SPELL_SELF_REFLECTION          = 144800, // Periodic Dummy.
+    SPELL_SELF_REFLECTION_VISUAL   = 144784, // Spawn Effect on NPC.
+    SPELL_SELF_REFLECTION_EXPLODE  = 144788, // Damage. Needs script for Pride addition.
+
+    /* Unleashed
+        When the Sha of Pride reaches 30% health remaining, it becomes Unleashed. With its unleashed power, the Sha focuses on Norushen, instantly killing him.
+        The remaining power of the unleashed Sha inflicts 245000 Shadow damage every 10 seconds for the remainder of the encounter.
+        Players gain 5 Pride each time they are damaged by Unleashed.
+    */
+    SPELL_UNLEASHED                = 144832, // Triggers SPELL_UNLEASHED_DMG every 10 seconds.
+    SPELL_UNLEASHED_DMG            = 144836, // Damage. Needs script for Pride addition.
+
+    /* Swelling Pride
+        When the Sha of Pride reaches 100 energy, it releases a wave of dark energy, inflicting 350000 Shadow damage to all players, giving them 5 Pride.
+        In addition, Swelling Pride will trigger a secondary effect on any player with 25 or more Pride.
+    */
+    SPELL_SWELLING_PRIDE           = 144400, // Damage. Needs script for Pride addition.
+
+    //============================= Swelling Pride effects - Start =============================//
+
+    /* Bursting Pride
+        When Swelling Pride hits a player that has 25 to 49 Pride, it creates a mass of Sha corruption at their location.
+        After 3 seconds, the corruption explodes, inflicting 300000 Shadow damage to all players within 4 yards.
+        Any player damaged by this explosion gains 5 Pride.
+    */
+    SPELL_BURSTING_PRIDE_MIS       = 144910, // Missile. Triggers SPELL_BURSTING_PRIDE.
+    SPELL_BURSTING_PRIDE           = 144911, // Damage. Needs script for Pride addition.
+
+    /* Projection
+        When Swelling Pride hits a player that has 50 to 74 Pride, a projection forms 15 yards from their current location.
+        Projections explode after 6 seconds, inflicting 225000 Shadow damage to all players, unless the projection's creator is standing within it.
+        Any player damaged by a projection's explosion gains 5 Pride.
+    */
+    SPELL_PROJECTION_DUMMY         = 146822, // 6 second player aura.
+    SPELL_PROJECTION_EXPLODE       = 145320, // Damage. Needs script for Pride addition.
+
+    /* Aura of Pride
+        When Swelling Pride hits a player that has 75 to 99 Pride, it afflicts them with Aura of Pride for 25 sec.
+        This effect causes the player to inflict 11750 Shadow damage to allies within 4.5 yards every 1 sec.
+    */
+    SPELL_AURA_OF_PRIDE            = 146817, // Triggers SPELL_AURA_OF_PRIDE_DMG each sec.
+    SPELL_AURA_OF_PRIDE_DMG        = 146818, // Damage. Needs script for Pride addition.
+
+    /* Overcome
+        When players reach 100 Pride, they are Overcome, increasing their damage and healing done by 50%.
+        Players hit by Swelling Pride while Overcome are permanently mind controlled and have their health increased by 100%.
+    */
+    SPELL_OVERCOME                 = 144843, // Dmg / Healing increase, Morph.
+    SPELL_OVERCOME_CHARMED         = 144863, // MC, max health increase.
+
+    //============================= Swelling Pride effects - End   =============================//
+
+    /*** Adds ***/
+
+    // Manifestation of Pride.
+
+    /* Mocking Blast
+        Manifestations of Pride blast a random player, inflicting 225000 Shadow damage, giving them 5 Pride. 
+    */
+    SPELL_MOCKING_BLAST            = 144379, // Damage. Needs script for Pride addition.
+
+    /* Last Word
+        When a Manifestation of Pride dies, it gives 5 Pride to the 2 closest players.
+    */
+    SPELL_LAST_WORD                = 144370, // 500y Dummy.
 };
 
 enum Events
 {
-    EVENT_GIFT_OF_THE_TITANS = 1,
-    EVENT_POWER_OF_TITANS,
-    EVENT_SWELLING_PRIDE,
-    EVENT_BURSTING_PRIDE,
-    EVENT_AURA_OF_PRIDE,
-    EVENT_OVERCOME,
-    EVENT_MARKOF_ARROGANCE,
-    EVENT_WOUNDED_PRIDE,
-    EVENT_MANIFESTATION_OF_PRIDE,
-    EVENT_MOCKING_BLAST,
-    EVENT_LAST_WORD,
-    EVENT_SELF_REFLECTION,
-    EVENT_CORRUPTION_PRISON,
-    EVENT_REACHING_ATTACK,
-    EVENT_UNLEASHED,
-    EVENT_CHECK_ENERGY,
+    /*** Bosses ***/
 
-    EVENT_NORUSHEN_GIFT_OF_THE_TITANS,
-    EVENT_FINAL_GIFT,
-    EVENT_ENRAGE,
+    // Intro - Controller: Norushen.
 
-    // RP
-    EVENT_01,
-    EVENT_02,
-    EVENT_03,
-    EVENT_04,
-    EVENT_05,
-    EVENT_06,
-};
+    EVENT_INTRO_1                  = 1,
+    EVENT_INTRO_2,
+    EVENT_INTRO_3,
+    EVENT_INTRO_4,
+    EVENT_INTRO_5,
+    EVENT_INTRO_6,
+    EVENT_INTRO_7,
+    EVENT_INTRO_8,
+    EVENT_INTRO_9,
 
-enum eGameObjectsLocal
-{
-    GAMEOBJECT_IMMERSUS_FRONTDOOR = 231412,
-    GAMEOBJECT_IMMERSUS_BACKDOOR = 532425,
-    GobjectMediumShaWall = 221611,
+    // Outro - Controller: Lady Jaina Proudmoore.
 
-    GAMEOBJECT_SKYROOM_HOLA = 222681,
+    EVENT_OUTRO_1,
+    EVENT_OUTRO_2,
+    EVENT_OUTRO_3,
+    EVENT_OUTRO_4,
+    EVENT_OUTRO_5,
+    EVENT_OUTRO_6,
+    EVENT_OUTRO_7,
+    EVENT_OUTRO_8,
+    EVENT_OUTRO_9,
+    EVENT_OUTRO_10,
+    EVENT_OUTRO_11,
 
-    /*
-    Prisoners
-    */
+    // Norushen.
 
-    // Norushen
-    GAMEOBJECT_NORUSHEN_ENTRANCE = 221447,
-    GAMEOBJECT_PRIDE_ENTRNANCE   = 221446,
+    // Sha of Pride.
 
-    // North 
-    GAMEOBJECT_PRISON_NORTH_01 = 221755,
-    GAMEOBJECT_PRISON_NORTH_02 = 221750,
-    GAMEOBJECT_PRISON_NORTH_03 = 221754,
-    GAMEOBJECT_ACTIVATOR_NORTH = 221676,
-
-    // East
-    GAMEOBJECT_PRISON_EAST_01 = 221753,
-    GAMEOBJECT_PRISON_EAST_02 = 221751,
-    GAMEOBJECT_PRISON_EAST_03 = 221752,
-    GAMEOBJECT_ACTIVATOR_EAST = 221677,
-
-    // South
-    GAMEOBJECT_PRISON_SOUTH_01 = 221761,
-    GAMEOBJECT_PRISON_SOUTH_02 = 221760,
-    GAMEOBJECT_PRISON_SOUTH_03 = 221756,
-    GAMEOBJECT_ACTIVATOR_SOUTH = 221678,
-
-    // West
-    GAMEOBJECT_PRISON_WEST_01 = 221758,
-    GAMEOBJECT_PRISON_WEST_02 = 221759,
-    GAMEOBJECT_PRISON_WEST_03 = 221757,
-    GAMEOBJECT_ACTIVATOR_WEST = 221679,
-
-    GAMEOBJECT_RIGHT_DOOR = 221440,
-    GAMEOBJECT_LEFT_DOOR = 221439,
+    /*** Adds ***/
 };
 
 enum Actions
 {
-    ACTION_UNLEAHSED = 1,
-    ACTION_RELEASE = 2,
-    ACTION_SWITCH01 = 3,
-    ACTION_SWITCH02 = 4,
-    ACTION_SWITCH03 = 5,
-    ACTION_RESET = 6,
-    ACTION_COMBAT = 7,
-    ACTION_FINISH = 8,
+    /*** Bosses ***/
+
+    // Intro - Controller: Norushen.
+
+    ACTION_START_SHA_PRIDE_INTRO  = 1,
+
+    // Outro - Controller: Lady Jaina Proudmoore.
+
+    ACTION_START_SHA_PRIDE_OUTRO,
+
+    /*** Adds ***/
 };
 
-enum Creatures
+enum Npcs
 {
-    CREATURE_MANIFESTATION_OF_PRIDE = 71946,
-    CREATURE_PRISON_TRIGGER = 324245, // CUSTOM
-    CREATURE_REFLECTION = 72172,
-    CREATURE_PROJECTION = 432425,
-    CREATURE_ETHEREAL_CORRUPTION = 73972,
+    /*** Bosses ***/
+
+    // Sha of Pride.
+
+    NPC_LOREWALKER_CHO_NORUSHEN    = 72872,
+    NPC_THARAN_ZHU_PRIDE           = 72779,
+
+    NPC_MANIFESTATION_OF_PRIDE     = 72280, // From Banishment.
+    NPC_SELF_REFLECTION            = 72172, // From Self Reflection.
+    NPC_RIFT_OF_CORRUPTION         = 72846, // From Unstable Corruption.
+
+    /*** Adds ***/
+
+    // Intro / Outro.
+
+    NPC_JAINA_PROUDMOORE_PRIDE     = 73598,
+    NPC_LORTHEMAR_THERON_PRIDE     = 73605
 };
 
-enum Talks
+enum GOs
 {
-    TALK_AGGRO = 1,          // Haha.. so.. Foolish.
-    TAL_DEATH,               // Arghhh...
-    TALK_INTRO,              // Come face me, give in to your pride.. show me your greatness!
-    TALK_SAY01,              // You're weak..
-    TALK_SAY02,              // That one is unworthy of your group.
-    TALK_SAY03,              // Blame your companions.
-    TALK_SPELL01,            // You're better then your companions
-    TALK_SPELL02,            // Your arrogance compels you!
-    TALK_SPELL03,            // Succumb.. to your PRIDE!
-    TALK_SPELL04,            // Your arrogance.. feeds me!
-    TALK_SPELL05,            // You should bow to no King.. or Warchief..
+    /*** Bosses ***/
 
-    TALK_EVENT01,            // You've let your pride clowd your version, titan.. puppet. YOU CAN NEVER CONTAIN ME!
-    TALK_NORUSHEN_EVENT01,   // The corruption is amplifying, the fragments must be purged before it becomes to great!
-    TALK_NORUSHEN_EVENT02,   // It did not matter.. it comes.. steal your hearts and prepare your souls.
-    TALK_NORUSHEN_ABILITY01, // Be humble!
-    TALK_NORUSHEN_ABILITY02, // Free yourself of arrogance!
-    TALK_NORUSHEN_DEATH      // You.. must.. contain.. it.
+    // Sha of Pride.
+
+    // Shadow Prison - Each composed of 3 'parts', Game Objects which are blue by default and when stepped on by a player get Orange and activate.
+
+    GO_N_PRISON_FLOOR              = 222682, // X: 772.8920 Y: 1096.243 Z: 355.6587, Rotation: X: 0 Y: 0 Z: -0.6293201 W: 0.777146. O 4.92183.
+    GO_S_PRISON_FLOOR              = 222680, // X: 722.3790 Y: 1128.177 Z: 355.6587, Rotation: X: 0 Y: 0 Z: -0.6293201 W: 0.777146. O 4.92183.
+    GO_E_PRISON_FLOOR              = 222683, // X: 731.6327 Y: 1087.473 Z: 355.6587, Rotation: X: 0 Y: 0 Z: -0.6293201 W: 0.777146. O 4.92183.
+    GO_W_PRISON_FLOOR              = 222681, // X: 764.2142 Y: 1137.069 Z: 355.6587, Rotation: X: 0 Y: 0 Z: -0.6293201 W: 0.777146. O 4.92183.
+    GO_PRISON_FLOOR                = 222679, // X: 747.9799 Y: 1112.775 Z: 356.0117, Rotation: X: 0 Y: 0 Z: -0.6293201 W: 0.777146. O 4.92183.
+
+    // North
+
+    GO_NORTH_PRISON_A              = 221755, // X: 772.9168 Y: 1096.363 Z: 354.6127, Rotation: X: 0 Y: 0 Z: -0.4656143 W: 0.884987. O 5.31453.
+    GO_NORTH_PRISON_B              = 221750, // X: 772.8506 Y: 1096.849 Z: 354.6127, Rotation: X: 0 Y: 0 Z:  0.5336142 W: 0.845728. O 1.12574.
+    GO_NORTH_PRISON_C              = 221754, // X: 772.4857 Y: 1096.761 Z: 354.6127, Rotation: X: 0 Y: 0 Z: -0.9992285 W: 0.039274. O 3.22016.
+
+    // South
+
+    GO_SOUTH_PRISON_A              = 221761, // X: 723.0390 Y: 1129.091 Z: 354.6127, Rotation: X: 0 Y: 0 Z: 0.8849869 W: 0.4656160. O 2.17293.
+    GO_SOUTH_PRISON_B              = 221760, // X: 723.4701 Y: 1128.692 Z: 354.6127, Rotation: X: 0 Y: 0 Z: 0.0392599 W: 0.9992291. O 0.07854.
+    GO_SOUTH_PRISON_C              = 221756, // X: 723.1052 Y: 1128.604 Z: 354.6127, Rotation: X: 0 Y: 0 Z: -0.845727 W: 0.5336158. O 4.26733.
+
+    // East
+
+    GO_EAST_PRISON_A               = 221753, // X: 731.9785 Y: 1088.212 Z: 354.6127, Rotation: X: 0 Y: 0 Z: 0.7343225 W: 0.6788007. O 1.649336.
+    GO_EAST_PRISON_B               = 221751, // X: 731.5802 Y: 1087.781 Z: 354.6127, Rotation: X: 0 Y: 0 Z: -0.955020 W: 0.2965415. O 3.743731.
+    GO_EAST_PRISON_C               = 221752, // X: 732.0667 Y: 1087.847 Z: 354.6127, Rotation: X: 0 Y: 0 Z: -0.220697 W: 0.9753423. O 5.838127.
+
+    // West
+
+    GO_WEST_PRISON_A               = 221758, // X: 764.3764 Y: 1137.689 Z: 354.6127, Rotation: X: 0 Y: 0 Z: 0.2965412 W: 0.9550201. O 0.60214.
+    GO_WEST_PRISON_B               = 221759, // X: 763.8900 Y: 1137.623 Z: 354.6127, Rotation: X: 0 Y: 0 Z: 0.9753418 W: 0.2206997. O 2.69653.
+    GO_WEST_PRISON_C               = 221757, // X: 763.9813 Y: 1137.247 Z: 354.6129, Rotation: X: 0 Y: 0 Z: -0.678800 W: 0.7343227. O 4.79093.
+
+    /*** Adds ***/
 };
 
-enum eShaOfPrideSwellingCases
+// Corrupted Prisons count, depending on difficulty.
+enum PrisonsCount
 {
-    LOW = 1,
-    MEDIUM,
-    HARD,
-    FATAL,
-    CHAOS,
+    SP_PRISONS_COUNT_10MAN         = 2,
+    SP_PRISONS_COUNT_25MAN         = 4
 };
 
-void ModifyPride(Unit* me,uint32 p_BaseValue, uint64 playerGuid)
+// Corrupted Prisons id.
+enum Prisons
 {
-    if (playerGuid == NULL)
-        return;
-
-    if (Player* l_Object = sObjectAccessor->GetPlayer(*me, playerGuid))
-    {
-        if (l_Object->HasAura(Spells::SPELL_GIFT_OF_TITAN))
-            return;
-
-        uint32 power = l_Object->GetPower(Powers(POWER_ALTERNATE_POWER));
-
-        l_Object->SetPower(Powers(POWER_ALTERNATE_POWER), power + p_BaseValue);
-    }
-}
-
-int32 CheckForPrideValue(Player* player)
-{
-    uint32 auraBasePoint = player->GetPower(POWER_ALTERNATE_POWER);
-
-    if (auraBasePoint > 0 && auraBasePoint < 24)
-        return eShaOfPrideSwellingCases::LOW;
-
-    else if (auraBasePoint > 25 && auraBasePoint < 49)
-        return eShaOfPrideSwellingCases::MEDIUM;
-
-    else if (auraBasePoint > 50 && auraBasePoint < 74)
-        return eShaOfPrideSwellingCases::HARD;
-
-    else if (auraBasePoint > 75 && auraBasePoint < 98)
-        return eShaOfPrideSwellingCases::FATAL;
-
-    else if (auraBasePoint > 99)
-        return eShaOfPrideSwellingCases::CHAOS;
-
-    return 0;
-}
-
-static void DespawnCreaturesInArea(uint32 entry, WorldObject* object)
-{
-    std::list<Creature*> creatures;
-    GetCreatureListWithEntryInGrid(creatures, object, entry, 300.0f);
-    if (creatures.empty())
-        return;
-
-    for (std::list<Creature*>::iterator iter = creatures.begin(); iter != creatures.end(); ++iter)
-        (*iter)->DespawnOrUnsummon();
-}
-
-Position l_PositionManifestationOfPride[2] =
-{
-    { 734.903f, 1175.487f, 356.078f, 4.878463f },
-    { 684.109f, 1099.600f, 356.093f, 0.108021f },
+    PRISON_NORTH                   = 1,
+    PRISON_SOUTH,
+    PRISON_WEST,
+    PRISON_EAST
 };
 
-Position l_PositionCircleA = { 731.222f, 1087.770f, 356.072f, 0.838f };
-Position l_PositionCircleB = { 773.229f, 1095.722f, 356.072f, 1.843f };
-Position l_PositionCircleC = { 765.093f, 1137.772f, 356.072f, 3.380f };
-Position l_PositionCircleD = { 723.024f, 1129.941f, 356.072f, 4.732f };
-
-#define HostileFaction 16
-#define FriendlyFaction 35
-#define DISPLAY_NONE 11686
-#define PRIDE_DISPLAY 49098
-
-class sha_of_pride_summon_reflection : public BasicEvent
+enum MovementPoints
 {
-public:
-    explicit sha_of_pride_summon_reflection(Unit* unit, int value, Position position) : obj(unit), modifier(value), pos(position)
-    {
-    }
+    POINT_NORUSHEN_MOVE_1          = 1,
+    POINT_NORUSHEN_MOVE_2          = 2,
+    POINT_NORUSHEN_MOVE_3          = 3,
+    POINT_NORUSHEN_MOVE_4          = 4,  // Chamber entrance.
+    POINT_NORUSHEN_MOVE_5          = 5,  // Encounter.
 
-    bool Execute(uint64 /*currTime*/, uint32 /*diff*/)
-    {
-        if (obj)
+    POINT_ZHU_MOVE_6               = 6,  // Spawn.
+    POINT_ZHU_MOVE_7               = 7,  // Despawn.
+
+    POINT_CHO_MOVE_8               = 8,  // Chamber entrance.
+    POINT_CHO_MOVE_9               = 9,  // Zhu.
+    POINT_CHO_MOVE_10              = 10, // Despawn.
+    POINT_CHO_MOVE_11              = 11, // Outro.
+
+    POINT_JL_MOVE_10               = 12, // Jaina / Lor'themar outro 1.
+    POINT_JL_MOVE_11               = 13, // Jaina / Lor'themar outro 2.
+    POINT_JL_MOVE_12               = 14, // Jaina / Lor'themar outro 3.
+    POINT_JL_MOVE_13               = 15, // Jaina / Lor'themar outro 4.
+    POINT_JL_MOVE_14               = 16, // Jaina / Lor'themar outro 5.
+};
+
+// Tharan Zhu spawn position.
+Position const tharanZhuSpawnPos   = { 780.412f, 1017.587f, 356.062f };
+
+// Sha of Pride spawn position.
+Position const shaPrideSpawnPos    = { 749.194f, 1112.641f, 357.314f };
+
+// Norushen movement positions.
+Position const NorushenMove[5]     =
+{
+    { 768.722f, 1015.379f, 356.073f }, // Stair before door.
+    { 767.805f, 1019.000f, 357.101f }, // Up the stair.
+    { 761.164f, 1049.889f, 357.151f }, // Front of entrance.
+    { 760.357f, 1051.784f, 356.072f }, // Entrance.
+    { 759.110f, 1060.828f, 356.072f }, // Encounter.
+};
+
+/*** Bosses ***/
+
+// Norushen 71967.
+class boss_norushen_pride : public CreatureScript
+{
+    public:
+        boss_norushen_pride() : CreatureScript("boss_norushen_pride") { }
+
+        struct boss_norushen_prideAI : public ScriptedAI
         {
-            if (InstanceScript* l_Instance = obj->GetInstanceScript())
+            boss_norushen_prideAI(Creature* creature) : ScriptedAI(creature)
             {
-                switch (modifier)
-                {
-                case 0:
-                    l_Instance->DoRemoveAurasDueToSpellOnPlayers(Spells::SPELL_SPELL_REFLECTION_VISUAL_POOL);
+                instance = creature->GetInstanceScript();
+            }
 
-                    if (Creature* l_Reflection = obj->SummonCreature(Creatures::CREATURE_REFLECTION, pos, TEMPSUMMON_MANUAL_DESPAWN))
-                        l_Reflection->CastSpell(l_Reflection, Spells::SPELL_SPELL_REFLECTION_VISUAL_SQUIRT);
-                    break;
+            InstanceScript* instance;
+            EventMap events;
+            Creature* lorewalkerChoIntro;
+            Creature* tharanZhuIntro;
+
+            void Reset()
+            {
+                events.Reset();
+                lorewalkerChoIntro = NULL;
+                DoAction(ACTION_START_SHA_PRIDE_INTRO);
+            }
+
+            void DoAction(int32 const action)
+            {
+                switch (action)
+                {
+                    case ACTION_START_SHA_PRIDE_INTRO:
+                        events.ScheduleEvent(EVENT_INTRO_1, 100);
+                        break;
+
+                    default: break;
                 }
             }
-        }
-        return true;
-    }
-private:
-    Creature* storm;
-    Unit* obj;
-    int modifier;
-    Position pos;
-    int Event;
-};
 
-class sha_of_pride_register_guid_prisons : public BasicEvent
-{
-public:
-    explicit sha_of_pride_register_guid_prisons(Unit* unit, int value) : obj(unit), modifier(value)
-    {
-    }
-
-    bool Execute(uint64 /*currTime*/, uint32 /*diff*/)
-    {
-        if (obj && obj->IsInWorld())
-        {
-            if (InstanceScript* l_Instance = obj->GetInstanceScript())
+            void UpdateAI(uint32 const diff)
             {
-                switch (modifier)
+                events.Update(diff);
+            
+                while(uint32 eventId = events.ExecuteEvent())
                 {
-                case 0:
-                    // Handle Prison in delay so player won't get stuck in port
-                    obj->CastSpell(obj, Spells::SPELL_CORRUPTED_PRISON_DOT);
-
-                    // Guid passing
-                    if (Creature * l_NearestController = obj->FindNearestCreature(CREATURE_PRISON_TRIGGER, 6.0f, true))
+                    switch (eventId)
                     {
-                        if (l_NearestController->GetAI())
-                            l_NearestController->GetAI()->SetGUID(obj->GetGUID());
-                    }
+                        // Intro.
 
-                    break;
+                        case EVENT_INTRO_1:
+
+                            // Define the actors.
+                            if (Creature* loreWalker = me->FindNearestCreature(NPC_LOREWALKER_CHO_NORUSHEN, 100.0f, true))
+                                lorewalkerChoIntro = loreWalker;
+                            if (Creature* tharanZhu = me->SummonCreature(NPC_THARAN_ZHU_PRIDE, tharanZhuSpawnPos, TEMPSUMMON_MANUAL_DESPAWN))
+                                tharanZhuIntro = tharanZhu;
+
+                            // Go to the entrance.
+                            me->GetMotionMaster()->MovePoint(POINT_NORUSHEN_MOVE_1, NorushenMove[0]);
+
+                            events.ScheduleEvent(EVENT_INTRO_2, 8000);
+                            break;
+
+                        default: break;
+                    }
                 }
             }
-        }
-        return true;
-    }
-private:
-    Creature* storm;
-    Unit* obj;
-    int modifier;
-    int Event;
-};
+        };
 
-class sha_of_pride_emerge : public BasicEvent
-{
-public:
-    explicit sha_of_pride_emerge(Unit* unit, int value) : obj(unit), modifier(value)
-    {
-    }
-
-    bool Execute(uint64 /*currTime*/, uint32 /*diff*/)
-    {
-        if (obj)
+        CreatureAI* GetAI(Creature* creature) const
         {
-            if (InstanceScript* l_Instance = obj->GetInstanceScript())
-            {
-                switch (modifier)
-                {
-                case 0:
-                    // Guid passing
-                    if (Creature * l_Pride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                    {
-                        l_Pride->SetDisplayId(49098);
-                        l_Pride->RemoveFlag(EUnitFields::UNIT_FIELD_FLAGS, UnitFlags::UNIT_FLAG_IMMUNE_TO_PC);
-                    }
-
-                    break;
-                }
-            }
+            return new boss_norushen_prideAI(creature);
         }
-        return true;
-    }
-private:
-    Creature* storm;
-    Unit* obj;
-    int modifier;
-    int Event;
 };
 
-class CheckForPrisoner
-{
-public:
-    CheckForPrisoner() {}
-
-    bool operator()(WorldObject* object)
-    {
-        if (object->ToPlayer()->HasAura(SPELL_CORRUPTED_PRISON_DOT))
-            return true;
-        else
-            return false;
-    }
-};
-
+// Sha of Pride 71734.
 class boss_sha_of_pride : public CreatureScript
 {
-public:
-    boss_sha_of_pride() : CreatureScript("boss_sha_of_pride") { }
+    public:
+        boss_sha_of_pride() : CreatureScript("boss_sha_of_pride") { }
 
-    struct boss_sha_of_prideAI : public BossAI
-    {
-        boss_sha_of_prideAI(Creature* p_Creature) : BossAI(p_Creature, Data64::DATA_SHA_OF_PRIDE)
+        struct boss_sha_of_prideAI : public BossAI
         {
-            m_Instance = p_Creature->GetInstanceScript();
-            m_Intro = false;
-
-            me->SetDisplayId(DISPLAY_NONE);
-            me->SetFlag(EUnitFields::UNIT_FIELD_FLAGS, UnitFlags::UNIT_FLAG_IMMUNE_TO_PC);
-        }
-
-        InstanceScript* m_Instance;
-        bool m_Intro;
-        bool m_ReachAttack;
-        bool m_Unleashed;
-        uint32 m_ReflectionCounter;
-        uint32 m_PrisonCounter;
-
-        void Reset() override
-        {
-            _Reset();
-            events.Reset();
-
-            m_ReachAttack = true;
-            m_Unleashed = false;
-
-            m_ReflectionCounter = 0;
-            m_PrisonCounter = 0;
-
-            me->SetPower(POWER_ENERGY, 0);
-            me->SetInt32Value(UNIT_FIELD_POWER1, 0);
-            me->SetMaxPower(POWER_ENERGY, 100);
-            me->SetInt32Value(UNIT_FIELD_MAXPOWER1, 100);
-
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-            me->setFaction(HostileFaction);
-        }
-
-        void MoveInLineOfSight(Unit* who) override
-        {
-            if (who && who->IsInWorld() && who->GetTypeId() == TYPEID_PLAYER && me->IsWithinDistInMap(who, 60.0f) && !m_Intro)
+            boss_sha_of_prideAI(Creature* creature) : BossAI(creature, DATA_SHA_OF_PRIDE_EVENT)
             {
-                m_Intro = true;
-                Talk(Talks::TALK_INTRO);
-
-                me->CastSpell(me, 145144);
-                me->m_Events.AddEvent(new sha_of_pride_emerge(me, 0), me->m_Events.CalculateTime(10000));
+                instance = creature->GetInstanceScript();
             }
-        }
 
-        void JustReachedHome() override
-        {
-            _JustReachedHome();
-            summons.DespawnAll();
+            InstanceScript* instance;
+            EventMap events;
+            bool prisonActivated[4];
 
-            if (m_Instance != nullptr)
+            /*** Special AI Functions ***/
+
+            // Used to retrieve a single part (1 / 3) of a Prison.
+            GameObject* GetPrisonTile(uint32 prisonGOId)
             {
-                if (Creature * l_Norushen = m_Instance->instance->GetCreature(m_Instance->GetData64(Data64::DATA_NORUSHEN)))
+                std::list<GameObject*> wallsList;
+
+                GetGameObjectListWithEntryInGrid(wallsList, me, prisonGOId, 300.0f);
+
+                if (!wallsList.empty())
+                    return wallsList.front();
+            }
+
+            // Retrieve the player put in a certain Prison.
+            Player* GetImprisonedPlayer(uint32 prisonId)
+            {
+                Player* neededPlayer = NULL;
+                uint32 spellId = 0;
+
+                switch (prisonId)
                 {
-                    if (l_Norushen->GetAI())
-                        l_Norushen->GetAI()->DoAction(Actions::ACTION_RELEASE);
-                }
-
-                DespawnCreaturesInArea(72172, me); // REFLECTION
-                m_Instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);;
-                m_Instance->SetBossState(Data64::DATA_SHA_OF_PRIDE, FAIL);       
-                m_Instance->DoRemoveAurasDueToSpellOnPlayers(Spells::SPELL_PRIDE_METER);
-                m_Instance->DoRemoveAurasDueToSpellOnPlayers(Spells::SPELL_AURA_OF_PRIDE_AURA);
-                m_Instance->DoRemoveAurasDueToSpellOnPlayers(Spells::SPELL_OVERCOME_DAMAGE);
-                m_Instance->DoRemoveAurasDueToSpellOnPlayers(Spells::SPELL_CORRUPTED_PRISON_DOT);
-            }
-
-
-            std::list<Player*> l_Playerlists;
-            me->GetPlayerListInGrid(l_Playerlists, 300.0f);
-
-            if (l_Playerlists.empty())
-                return;
-
-            for (auto itr : l_Playerlists)
-            {
-                itr->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-      
-                itr->RemoveCharmedBy(me);
-            }
-
-            // Handle Switcher Reset
-            std::list<Creature*> listLockTriggers;
-            me->GetCreatureListWithEntryInGrid(listLockTriggers, 3242457, 200.0f); // // CUSTOM
-
-            if (listLockTriggers.empty())
-                return;
-
-            for (auto itr : listLockTriggers)
-            {
-                if (itr->GetAI())
-                    itr->GetAI()->DoAction(ACTION_FINISH);
-            }        
-        }
-
-        void KilledUnit(Unit* who) override
-        {
-            if (who->GetTypeId() == TYPEID_PLAYER)
-            {
-                switch (urand(0, 2))
-                {
-                    case 0:
-                        Talk(Talks::TALK_SAY01);
+                    case PRISON_NORTH:
+                        spellId = SPELL_CORRUPTED_PRISON_1;
                         break;
-                    case 1:
-                        Talk(Talks::TALK_SAY02);
+
+                    case PRISON_SOUTH:
+                        spellId = SPELL_CORRUPTED_PRISON_2;
                         break;
-                    case 2:
-                        Talk(Talks::TALK_SAY03);
+
+                    case PRISON_WEST:
+                        spellId = SPELL_CORRUPTED_PRISON_3;
                         break;
+
+                    case PRISON_EAST:
+                        spellId = SPELL_CORRUPTED_PRISON_4;
+                        break;
+
+                    default: break;
                 }
+
+                // Check for errors / wrong calls and return NULL.
+                if (spellId == 0)
+                    return neededPlayer;
+
+                // Now check and retrieve the player having the specific prison aura.
+                Map::PlayerList const &PlayerList = me->GetMap()->GetPlayers();
+                if (!PlayerList.isEmpty())
+                    for (Map::PlayerList::const_iterator i = PlayerList.begin(); i != PlayerList.end(); ++i)
+                        if (Player* player = i->getSource())
+                            if (player->HasAura(spellId))
+                                neededPlayer = player;
+
+                // Return what we found.
+                return neededPlayer;
             }
-        }
 
-        void EnterCombat(Unit* attacker) override
-        {
-            Talk(Talks::TALK_AGGRO);
-
-            events.ScheduleEvent(Events::EVENT_CHECK_ENERGY, 1 * TimeConstants::IN_MILLISECONDS);
-            events.ScheduleEvent(Events::EVENT_WOUNDED_PRIDE, 30 * TimeConstants::IN_MILLISECONDS);
-            events.ScheduleEvent(Events::EVENT_SELF_REFLECTION, 45 * TimeConstants::IN_MILLISECONDS);
-            events.ScheduleEvent(Events::EVENT_MARKOF_ARROGANCE, 25 * TimeConstants::IN_MILLISECONDS);
-            events.ScheduleEvent(Events::EVENT_CORRUPTION_PRISON, 45 * TimeConstants::IN_MILLISECONDS);
-            events.ScheduleEvent(Events::EVENT_MANIFESTATION_OF_PRIDE, 60 * TimeConstants::IN_MILLISECONDS);
-
-            if (m_Instance != nullptr)
+            // Used to set the state of a single part (1 / 3) of a Prison.
+            void ActivatePrisonTile(bool active, uint32 prisonGOId)
             {
-                if (Creature * l_Norushen = m_Instance->instance->GetCreature(m_Instance->GetData64(Data64::DATA_NORUSHEN)))
+                std::list<GameObject*> wallsList;
+
+                GetGameObjectListWithEntryInGrid(wallsList, me, prisonGOId, 300.0f);
+
+                if (!wallsList.empty())
+                    for (std::list<GameObject*>::iterator walls = wallsList.begin(); walls != wallsList.end(); walls++)
+                        (*walls)->SetGoState(active ? GO_STATE_READY : GO_STATE_ACTIVE);
+            }
+
+            // Used to set the state of a whole Prison.
+            void ActivatePrison(uint32 prisonId)
+            {
+                switch (prisonId)
                 {
-                    if (l_Norushen->GetAI())
-                        l_Norushen->GetAI()->DoAction(Actions::ACTION_COMBAT);
+                    case PRISON_NORTH:
+                        ActivatePrisonTile(true, GO_N_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_NORTH_PRISON_A);
+                        ActivatePrisonTile(true, GO_NORTH_PRISON_B);
+                        ActivatePrisonTile(true, GO_NORTH_PRISON_C);
+                        break;
+
+                    case PRISON_SOUTH:
+                        ActivatePrisonTile(true, GO_S_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_SOUTH_PRISON_A);
+                        ActivatePrisonTile(true, GO_SOUTH_PRISON_B);
+                        ActivatePrisonTile(true, GO_SOUTH_PRISON_C);
+                        break;
+
+                    case PRISON_WEST:
+                        ActivatePrisonTile(true, GO_W_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_WEST_PRISON_A);
+                        ActivatePrisonTile(true, GO_WEST_PRISON_B);
+                        ActivatePrisonTile(true, GO_WEST_PRISON_C);
+                        break;
+
+                    case PRISON_EAST:
+                        ActivatePrisonTile(true, GO_E_PRISON_FLOOR);
+                        ActivatePrisonTile(true, GO_EAST_PRISON_A);
+                        ActivatePrisonTile(true, GO_EAST_PRISON_B);
+                        ActivatePrisonTile(true, GO_EAST_PRISON_C);
+                        break;
+
+                    default: break;
                 }
+
+                prisonActivated[prisonId - 1] = true;
             }
 
-            std::list<Player*> l_Playerlists;
-            me->GetPlayerListInGrid(l_Playerlists, 300.0f);
-
-            if (l_Playerlists.empty())
-                return;
-
-            for (auto itr : l_Playerlists)
+            void DeactivatePrison(uint32 prisonId)
             {
-                itr->CastSpell(itr, Spells::SPELL_PRIDE_METER);
-            }
-
-            me->SetPower(POWER_ENERGY, 0);
-            me->SetInt32Value(UNIT_FIELD_POWER1, 0);
-            me->SetMaxPower(POWER_ENERGY, 100);
-            me->SetInt32Value(UNIT_FIELD_MAXPOWER1, 100);
-        }
-
-        void DoAction(const int32 action) override
-        {
-            switch (action)
-            {
-            case Actions::ACTION_UNLEAHSED:
-                // Handle Unleahsed
-
-                if (m_Instance != nullptr)
+                switch (prisonId)
                 {
-                    if (Creature * l_Norushen = m_Instance->instance->GetCreature(m_Instance->GetData64(Data64::DATA_NORUSHEN)))
+                    case PRISON_NORTH:
+                        ActivatePrisonTile(false, GO_N_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_NORTH_PRISON_A);
+                        ActivatePrisonTile(false, GO_NORTH_PRISON_B);
+                        ActivatePrisonTile(false, GO_NORTH_PRISON_C);
+                        break;
+
+                    case PRISON_SOUTH:
+                        ActivatePrisonTile(false, GO_S_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_SOUTH_PRISON_A);
+                        ActivatePrisonTile(false, GO_SOUTH_PRISON_B);
+                        ActivatePrisonTile(false, GO_SOUTH_PRISON_C);
+                        break;
+
+                    case PRISON_WEST:
+                        ActivatePrisonTile(false, GO_W_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_WEST_PRISON_A);
+                        ActivatePrisonTile(false, GO_WEST_PRISON_B);
+                        ActivatePrisonTile(false, GO_WEST_PRISON_C);
+                        break;
+
+                    case PRISON_EAST:
+                        ActivatePrisonTile(false, GO_E_PRISON_FLOOR);
+                        ActivatePrisonTile(false, GO_EAST_PRISON_A);
+                        ActivatePrisonTile(false, GO_EAST_PRISON_B);
+                        ActivatePrisonTile(false, GO_EAST_PRISON_C);
+                        break;
+
+                    default: break;
+                }
+
+                prisonActivated[prisonId - 1] = false;
+            }
+
+            // UpdateAI method for automatic updating of Prisons & their parts.
+            void CheckAndSetPrisonTiles()
+            {
+                // Check active prisons.
+
+                bool canCheckNorth = false;
+                bool canCheckSouth = false;
+                bool canCheckWest  = false;
+                bool canCheckEast  = false;
+
+                if (prisonActivated[PRISON_NORTH - 1] == true)
+                    canCheckNorth = true;
+
+                if (prisonActivated[PRISON_SOUTH - 1] == true)
+                    canCheckSouth = true;
+
+                if (prisonActivated[PRISON_WEST - 1]  == true)
+                    canCheckWest = true;
+
+                if (prisonActivated[PRISON_EAST - 1]  == true)
+                    canCheckEast = true;
+
+                // North Prison.
+                if (canCheckNorth)
+                {
+                    bool mustDisableNorth = false;
+
+                    bool NorthATileActive = (GetPrisonTile(GO_NORTH_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool NorthBTileActive = (GetPrisonTile(GO_NORTH_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool NorthCTileActive = (GetPrisonTile(GO_NORTH_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
+
+                    // A Tile.
+                    if (NorthATileActive) // Enabled / Active.
                     {
-                        if (l_Norushen->GetAI())
-                            l_Norushen->GetAI()->DoAction(Actions::ACTION_UNLEAHSED);
-                    }
-                }
-                break;
-            }
-        }
-
-        void RegeneratePower(Powers power, int32& value) override
-        {
-            if (power != POWER_ENERGY)
-                return;
-
-            if (!me->isInCombat())
-                return;
-
-            // Sha of Fear regenerates 6 energy every 2s (15 energy for 5s)
-            value = 5;
-
-            int32 val = me->GetPower(POWER_ENERGY);
-            if (val + value > 100)
-                val = 100;
-            else
-                val += value;
-
-            if (value >= 100)
-            {
-                me->SetPower(POWER_ENERGY, 0);
-                me->SetInt32Value(UNIT_FIELD_POWER1, 0);
-                events.ScheduleEvent(EVENT_CHECK_ENERGY, 1000);
-            }
-
-            me->SetInt32Value(UNIT_FIELD_POWER1, val);
-        }
-
-        void DamageTaken(Unit* attacker, uint32& damage) override
-        {
-            if (!me->isInCombat())
-                return;
-
-            // Unleashed
-            if (!m_Unleashed && me->GetHealthPct() <= 30)
-            {
-                m_Unleashed = true;
-                DoAction(Actions::ACTION_UNLEAHSED);
-            }
-        }
-
-        void UpdateAI(const uint32 diff) override
-        {
-            events.Update(diff);
-
-            if (!UpdateVictim())
-                return;
-
-            if (Unit* l_Target = me->getVictim())
-                if (!me->IsWithinMeleeRange(l_Target))
-                {
-                    if (!m_ReachAttack)
-                    {
-                        m_ReachAttack = true;
-                        events.ScheduleEvent(Events::EVENT_REACHING_ATTACK, 5 * TimeConstants::IN_MILLISECONDS);
-                    }
-                }
-                else
-                {
-                    m_ReachAttack = false;
-                    events.CancelEvent(Events::EVENT_REACHING_ATTACK);
-                }
-
-            if (me->HasUnitState(UNIT_STATE_CASTING))
-                return;
-
-            switch (events.ExecuteEvent())
-            {
-                case Events::EVENT_ENRAGE:
-                {
-                    // hardcode 5 pride every 10 seconds.
-                    break;
-                }
-                case Events::EVENT_CHECK_ENERGY:
-                {
-                    if (me->GetUInt32Value(UNIT_FIELD_POWER1) == 100)
-                    {
-                        me->CastSpell(me->getVictim(), Spells::SPELL_SWELLING_PRIDE, true);
-
-                        me->SetPower(POWER_ENERGY, 0);
-                        me->SetInt32Value(UNIT_FIELD_POWER1, 0);
-                        Talk(Talks::TALK_SPELL03);
-                    }
-                    events.ScheduleEvent(EVENT_CHECK_ENERGY, 1000);
-                    break;
-                }
-                case Events::EVENT_CORRUPTION_PRISON:
-                {
-                    Talk(Talks::TALK_SPELL05);
-
-                    // Handle Switcher Reset
-                    std::list<Creature*> listLockTriggers;
-                    me->GetCreatureListWithEntryInGrid(listLockTriggers, 324245, 200.0f);
-
-                    if (listLockTriggers.empty())
-                        return;
-
-                    for (auto itr : listLockTriggers)
-                    {
-                        if (itr->GetAI())
-                            itr->GetAI()->DoAction(ACTION_FINISH);
-                    }
-
-                    if (m_PrisonCounter >= 3)
-                        m_PrisonCounter = 0;
-
-                    std::list<Player*> l_Playerlists;
-                    me->GetPlayerListInGrid(l_Playerlists, 300.0f);
-
-                    if (l_Playerlists.empty())
-                        return;
-
-                    if (l_Playerlists.size() < 1)
-                        return;
-
-                    Position l_Position;
-
-                    std::list<Player*>::const_iterator it = l_Playerlists.begin();
-                    std::advance(it, urand(0, l_Playerlists.size() - 1));
-
-                    if ((*it))
-                    {               
-                        m_PrisonCounter++;
-
-                        if (InstanceScript* m_Instance = me->GetInstanceScript())
+                        if (!GetPrisonTile(GO_NORTH_PRISON_A)->FindNearestPlayer(1.0f, true))
                         {
-                            if (Creature * l_ShaOfPride = m_Instance->instance->GetCreature(m_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                            {
-                                if (boss_sha_of_pride::boss_sha_of_prideAI* linkAI = CAST_AI(boss_sha_of_pride::boss_sha_of_prideAI, l_ShaOfPride->GetAI()))
-                                {
-                                    switch (linkAI->m_PrisonCounter)
-                                    {
-                                    case 0:
-                                        l_Position.m_positionX = l_PositionCircleA.GetPositionX();
-                                        l_Position.m_positionY = l_PositionCircleA.GetPositionY();
-                                        l_Position.m_positionZ = l_PositionCircleA.GetPositionZ();
-                                        break;
-                                    case 1:
-                                        l_Position.m_positionX = l_PositionCircleB.GetPositionX();
-                                        l_Position.m_positionY = l_PositionCircleB.GetPositionY();
-                                        l_Position.m_positionZ = l_PositionCircleB.GetPositionZ();
-                                        break;
-                                    case 2:
-                                        l_Position.m_positionX = l_PositionCircleC.GetPositionX();
-                                        l_Position.m_positionY = l_PositionCircleC.GetPositionY();
-                                        l_Position.m_positionZ = l_PositionCircleC.GetPositionZ();
-                                        break;
-                                    case 3:
-                                        l_Position.m_positionX = l_PositionCircleD.GetPositionX();
-                                        l_Position.m_positionY = l_PositionCircleD.GetPositionY();
-                                        l_Position.m_positionZ = l_PositionCircleD.GetPositionZ();
-                                        break;
-                                    }
-
-                                    (*it)->StopMoving();
-
-                                    (*it)->NearTeleportTo(l_Position.GetPositionX(), l_Position.GetPositionY(), l_Position.GetPositionZ(), (*it)->GetOrientation());
-                                    (*it)->m_Events.AddEvent(new sha_of_pride_register_guid_prisons((*it), 0), (*it)->m_Events.CalculateTime(1000));
-                                }
-                            }
+                            ActivatePrisonTile(false, GO_NORTH_PRISON_A);
+                            NorthATileActive = false;
+                        }
+                    }
+                    else if (!NorthATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_NORTH_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_NORTH_PRISON_A);
+                            NorthATileActive = true;
                         }
                     }
 
-                    events.ScheduleEvent(Events::EVENT_CORRUPTION_PRISON, 75 * TimeConstants::IN_MILLISECONDS);
-                    break;
-                }
-                case Events::EVENT_WOUNDED_PRIDE:
-                    if (Unit* l_Target = me->getVictim())
-                        me->CastSpell(l_Target, Spells::SPELL_WOUNDED_PRIDE);
-
-                    events.ScheduleEvent(Events::EVENT_WOUNDED_PRIDE, 20 * TimeConstants::IN_MILLISECONDS);
-                    break;
-                case Events::EVENT_REACHING_ATTACK:
-                    DoCastAOE(Spells::SPELL_REACHING_ATTACK);
-
-                    events.ScheduleEvent(Events::EVENT_REACHING_ATTACK, 5 * TimeConstants::IN_MILLISECONDS);
-                    break;
-                case Events::EVENT_MANIFESTATION_OF_PRIDE:
-                {
-                    if (me->GetMap()->Is25ManRaid())
+                    // B Tile.
+                    if (NorthBTileActive) // Enabled / Active.
                     {
-                        for (int i = 0; i <= 2; i++)
+                        if (!GetPrisonTile(GO_NORTH_PRISON_B)->FindNearestPlayer(1.0f, true))
                         {
-                            Creature* l_manifestedPride = me->SummonCreature(Creatures::CREATURE_MANIFESTATION_OF_PRIDE, l_PositionManifestationOfPride[i], TEMPSUMMON_MANUAL_DESPAWN);
-                            l_manifestedPride->CastSpell(me, Spells::SPELL_MANIFESTATION_VISUAL, true);
-
+                            ActivatePrisonTile(false, GO_NORTH_PRISON_B);
+                            NorthBTileActive = false;
                         }
                     }
-                    else
+                    else if (!NorthBTileActive) // Disabled / Inactive.
                     {
-                        Creature* l_manifestedPride = me->SummonCreature(Creatures::CREATURE_MANIFESTATION_OF_PRIDE, l_PositionManifestationOfPride[1], TEMPSUMMON_MANUAL_DESPAWN);
-                        l_manifestedPride->CastSpell(me, Spells::SPELL_MANIFESTATION_VISUAL, true);
+                        if (GetPrisonTile(GO_NORTH_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_NORTH_PRISON_B);
+                            NorthBTileActive = true;
+                        }
                     }
 
-                    events.ScheduleEvent(Events::EVENT_MANIFESTATION_OF_PRIDE, 60 * TimeConstants::IN_MILLISECONDS);
-                    break;
+                    // C Tile.
+                    if (NorthCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_NORTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_NORTH_PRISON_C);
+                            NorthCTileActive = false;
+                        }
+                    }
+                    else if (!NorthCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_NORTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_NORTH_PRISON_C);
+                            NorthCTileActive = true;
+                        }
+                    }
+
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (NorthATileActive && NorthBTileActive && NorthCTileActive)
+                        mustDisableNorth = true;
+
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableNorth)
+                    {
+                        DeactivatePrison(PRISON_NORTH);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_NORTH))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_1);
+                    }
                 }
-                case Events::EVENT_MARKOF_ARROGANCE:
+
+                // South Prison.
+                if (canCheckSouth)
                 {
-                    std::list<Player*> l_Playerlists;
-                    me->GetPlayerListInGrid(l_Playerlists, 300.0f);
+                    bool mustDisableSouth = false;
 
-                    if (l_Playerlists.empty())
-                        return;
+                    bool SouthATileActive = (GetPrisonTile(GO_SOUTH_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool SouthBTileActive = (GetPrisonTile(GO_SOUTH_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool SouthCTileActive = (GetPrisonTile(GO_SOUTH_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
 
-                    if (l_Playerlists.size() < 1)
-                        return;
+                    // A Tile.
+                    if (SouthATileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_SOUTH_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_SOUTH_PRISON_A);
+                            SouthATileActive = false;
+                        }
+                    }
+                    else if (!SouthATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_SOUTH_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_SOUTH_PRISON_A);
+                            SouthATileActive = true;
+                        }
+                    }
 
-                    std::list<Player*>::const_iterator it = l_Playerlists.begin();
-                    std::advance(it, urand(0, l_Playerlists.size() - 2));
+                    // B Tile.
+                    if (SouthBTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_SOUTH_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_SOUTH_PRISON_B);
+                            SouthBTileActive = false;
+                        }
+                    }
+                    else if (!SouthBTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_SOUTH_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_SOUTH_PRISON_B);
+                            SouthBTileActive = true;
+                        }
+                    }
 
-                    me->CastSpell((*it), Spells::SPELL_MARK_OF_ARROGANCE, true);
+                    // C Tile.
+                    if (SouthCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_SOUTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_SOUTH_PRISON_C);
+                            SouthCTileActive = false;
+                        }
+                    }
+                    else if (!SouthCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_SOUTH_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_SOUTH_PRISON_C);
+                            SouthCTileActive = true;
+                        }
+                    }
 
-                    events.ScheduleEvent(Events::EVENT_MARKOF_ARROGANCE, 20 * TimeConstants::IN_MILLISECONDS);
-                    break;
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (SouthATileActive && SouthBTileActive && SouthCTileActive)
+                        mustDisableSouth = true;
+
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableSouth)
+                    {
+                        DeactivatePrison(PRISON_SOUTH);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_SOUTH))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_2);
+                    }
                 }
-                case Events::EVENT_SELF_REFLECTION:
+
+                // West Prison.
+                if (canCheckWest)
                 {
-                    Talk(Talks::TALK_SPELL01);
-                    std::list<Player*> l_Playerlists;
-                    me->GetPlayerListInGrid(l_Playerlists, 600.0f);
+                    bool mustDisableWest = false;
 
-                    if (l_Playerlists.empty())
-                        return;
+                    bool WestATileActive = (GetPrisonTile(GO_WEST_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool WestBTileActive = (GetPrisonTile(GO_WEST_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool WestCTileActive = (GetPrisonTile(GO_WEST_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
 
-                    m_ReflectionCounter++;
+                    // A Tile.
+                    if (WestATileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_WEST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_WEST_PRISON_A);
+                            WestATileActive = false;
+                        }
+                    }
+                    else if (!WestATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_WEST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_WEST_PRISON_A);
+                            WestATileActive = true;
+                        }
+                    }
 
-                    ///< 25 man / 10 man
-                    if (l_Playerlists.size() < 4)
-                        return;
+                    // B Tile.
+                    if (WestBTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_WEST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_WEST_PRISON_B);
+                            WestBTileActive = false;
+                        }
+                    }
+                    else if (!WestBTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_WEST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_WEST_PRISON_B);
+                            WestBTileActive = true;
+                        }
+                    }
 
-                    std::list<Player*>::const_iterator it = l_Playerlists.begin();
-                    std::advance(it, urand(0, l_Playerlists.size() - 5));
+                    // C Tile.
+                    if (WestCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_WEST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_WEST_PRISON_C);
+                            WestCTileActive = false;
+                        }
+                    }
+                    else if (!WestCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_WEST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_WEST_PRISON_C);
+                            WestCTileActive = true;
+                        }
+                    }
 
-                    Position l_Position;
-                    l_Position.m_positionX = (*it)->GetPositionX();
-                    l_Position.m_positionY = (*it)->GetPositionY();
-                    l_Position.m_positionZ = (*it)->GetPositionZ();
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (WestATileActive && WestBTileActive && WestCTileActive)
+                        mustDisableWest = true;
 
-                    // Handle Prison
-                    (*it)->CastSpell((*it), Spells::SPELL_SPELL_REFLECTION_VISUAL_POOL);
-                    (*it)->m_Events.AddEvent(new sha_of_pride_summon_reflection((*it), 0, l_Position), (*it)->m_Events.CalculateTime(2 * TimeConstants::IN_MILLISECONDS));
-                    break;
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableWest)
+                    {
+                        DeactivatePrison(PRISON_WEST);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_WEST))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_3);
+                    }
+                }
+
+                // East Prison.
+                if (canCheckEast)
+                {
+                    bool mustDisableEast = false;
+
+                    bool EastATileActive = (GetPrisonTile(GO_EAST_PRISON_A)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool EastBTileActive = (GetPrisonTile(GO_EAST_PRISON_B)->GetGoState() == GO_STATE_READY) ? true : false;
+                    bool EastCTileActive = (GetPrisonTile(GO_EAST_PRISON_C)->GetGoState() == GO_STATE_READY) ? true : false;
+
+                    // A Tile.
+                    if (EastATileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_EAST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_EAST_PRISON_A);
+                            EastATileActive = false;
+                        }
+                    }
+                    else if (!EastATileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_EAST_PRISON_A)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_EAST_PRISON_A);
+                            EastATileActive = true;
+                        }
+                    }
+
+                    // B Tile.
+                    if (EastBTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_EAST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_EAST_PRISON_B);
+                            EastBTileActive = false;
+                        }
+                    }
+                    else if (!EastBTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_EAST_PRISON_B)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_EAST_PRISON_B);
+                            EastBTileActive = true;
+                        }
+                    }
+
+                    // C Tile.
+                    if (EastCTileActive) // Enabled / Active.
+                    {
+                        if (!GetPrisonTile(GO_EAST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(false, GO_EAST_PRISON_C);
+                            EastCTileActive = false;
+                        }
+                    }
+                    else if (!EastCTileActive) // Disabled / Inactive.
+                    {
+                        if (GetPrisonTile(GO_EAST_PRISON_C)->FindNearestPlayer(1.0f, true))
+                        {
+                            ActivatePrisonTile(true, GO_EAST_PRISON_C);
+                            EastCTileActive = true;
+                        }
+                    }
+
+                    // Check if the Prison should be disabled (all 3 Tiles active).
+                    if (EastATileActive && EastBTileActive && EastCTileActive)
+                        mustDisableEast = true;
+
+                    // If the conditions are met, disable the Prison and remove the victim aura.
+                    if (mustDisableEast)
+                    {
+                        DeactivatePrison(PRISON_EAST);
+                        if (Player* imprisonedPlayer = GetImprisonedPlayer(PRISON_EAST))
+                            imprisonedPlayer->RemoveAurasDueToSpell(SPELL_CORRUPTED_PRISON_4);
+                    }
                 }
             }
 
-            DoMeleeAttackIfReady();
-        }
-    };
+            /*** General AI Functions ***/
 
-    CreatureAI* GetAI(Creature* creature) const override
-    {
-        return new boss_sha_of_prideAI(creature);
-    }
-};
-
-// Norushen - 
-class npc_norushen : public CreatureScript
-{
-public:
-    npc_norushen() : CreatureScript("npc_norushen") { }
-
-    struct npc_norushenAI : public BossAI
-    {
-        npc_norushenAI(Creature* creature) : BossAI(creature, Data64::DATA_NORUSHEN)
-        {
-            m_Instance = creature->GetInstanceScript();
-
-            m_Intro = true;
-        }
-
-        InstanceScript* m_Instance;
-        bool m_Intro;
-
-        void Reset() override
-        {
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-        }
-
-        void MoveInLineOfSight(Unit* who) override
-        {
-            if (who && who->IsInWorld() && who->GetTypeId() == TYPEID_PLAYER && me->IsWithinDistInMap(who, 10.0f) && m_Intro)
+            void Reset()
             {
-                m_Intro = false;
-            }
-        }
-
-        void DoAction(const int32 action) override
-        {
-            switch (action)
-            {
-            case Actions::ACTION_UNLEAHSED:
-                events.ScheduleEvent(Events::EVENT_01, 2 * TimeConstants::IN_MILLISECONDS);
-                break;
-            case Actions::ACTION_COMBAT:
-                events.ScheduleEvent(Events::EVENT_GIFT_OF_THE_TITANS, 35 * TimeConstants::IN_MILLISECONDS);
-                break;
-            case Actions::ACTION_RELEASE:
                 events.Reset();
-                me->Respawn(true);
-                break;
+
+                for (uint8 i = 0; i < 4; i++)
+                    prisonActivated[i] = false;
             }
-        }
 
-        void UpdateAI(const uint32 diff) override
-        {
-            events.Update(diff);
-
-            // Starts at 30% UNLESHED EVENT
-            if (Creature * l_ShaOfPride = m_Instance->instance->GetCreature(m_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
+            void DoAction(int32 const action)
             {
-                if (l_ShaOfPride->GetAI())
+                switch (action)
                 {
-                    switch (events.ExecuteEvent())
-                    {
-                        // RP
-                    case Events::EVENT_01:
-                        l_ShaOfPride->AI()->Talk(Talks::TALK_EVENT01);
-                        events.ScheduleEvent(Events::EVENT_02, 6 * TimeConstants::IN_MILLISECONDS);
+                    case ACTION_START_SHA_PRIDE_INTRO:
+                        events.ScheduleEvent(EVENT_INTRO_1, 100);
                         break;
-                    case Events::EVENT_02:
-                        Talk(Talks::TALK_NORUSHEN_EVENT01);
-                        events.ScheduleEvent(Events::EVENT_03, 6 * TimeConstants::IN_MILLISECONDS);
-                        break;
-                    case Events::EVENT_03:
-                        Talk(Talks::TALK_NORUSHEN_EVENT02);
-                        events.ScheduleEvent(Events::EVENT_04, 6 * TimeConstants::IN_MILLISECONDS);
-                        break;
-                    case Events::EVENT_04:
-                        l_ShaOfPride->CastSpell(l_ShaOfPride, 144832);
-                        events.ScheduleEvent(Events::EVENT_05, 10 * TimeConstants::IN_MILLISECONDS);
-                        break;
-                    case Events::EVENT_05:
-                    {
-                        std::list<Player*> l_PlayerList;
-                        me->GetPlayerListInGrid(l_PlayerList, 300.0f);
 
-                        if (l_PlayerList.empty())
-                            return;
-
-                        for (auto itr : l_PlayerList)
-                        {
-                            me->CastSpell(itr, Spells::SPELL_FINAL_GIFT);
-                        }
-                        break;
-                    }
-                    case Events::EVENT_06:
-                        l_ShaOfPride->Kill(me);
-                        Talk(Talks::TALK_NORUSHEN_DEATH);
-                        break;
-                    case Events::EVENT_GIFT_OF_THE_TITANS:
-                    {
-                        std::list<Player*> l_PlayerList;
-                        me->GetPlayerListInGrid(l_PlayerList, 300.0f);
-
-                        if (l_PlayerList.empty())
-                            return;
-
-                        for (auto itr : l_PlayerList)
-                        {
-                            me->CastSpell(itr, Spells::SPELL_GIFT_OF_TITAN);
-                        }
-
-                        events.ScheduleEvent(Events::EVENT_GIFT_OF_THE_TITANS, 68 * TimeConstants::IN_MILLISECONDS);
-                        break;
-                    }
-                    default:
-                        break;
-                    }
+                    default: break;
                 }
             }
-        }
-    };
+        };
 
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_norushenAI(creature);
-    }
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new boss_sha_of_prideAI(creature);
+        }
 };
 
-// Manifestation Of Pride - 
+/*** Adds ***/
+
+// Manifestation of Pride 72280.
 class npc_manifestation_of_pride : public CreatureScript
 {
-public:
-    npc_manifestation_of_pride() : CreatureScript("npc_manifestation_of_pride") { }
+    public:
+        npc_manifestation_of_pride() : CreatureScript("npc_manifestation_of_pride") { }
 
-    struct npc_manifestation_of_prideAI : public ScriptedAI
-    {
-        npc_manifestation_of_prideAI(Creature* creature) : ScriptedAI(creature)
+        struct npc_manifestation_of_prideAI : public ScriptedAI
         {
-            m_Instance = creature->GetInstanceScript();
-            me->Respawn();
-        }
-
-        InstanceScript* m_Instance;
-
-        void Reset()
-        {
-            me->setFaction(FriendlyFaction);
-
-            events.Reset();
-            events.ScheduleEvent(Events::EVENT_MANIFESTATION_OF_PRIDE, 4 * TimeConstants::IN_MILLISECONDS);
-        }
-
-        void EnterCombat(Unit* attacker) override
-        {
-            // Schedule Combat event here
-            events.Reset();
-
-            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-
-            events.ScheduleEvent(Events::EVENT_MOCKING_BLAST, 8 * TimeConstants::IN_MILLISECONDS);
-            events.ScheduleEvent(Events::EVENT_LAST_WORD, 15 * TimeConstants::IN_MILLISECONDS);
-        }
-
-        void JustDied(Unit* killer) override
-        {
-            std::list<Player*> l_ListCloserPlayers;
-            me->GetPlayerListInGrid(l_ListCloserPlayers, 20.0f);
-
-            if (l_ListCloserPlayers.empty())
-                return;
-
-            for (auto itr : l_ListCloserPlayers)
+            npc_manifestation_of_prideAI(Creature* creature) : ScriptedAI(creature)
             {
-                me->CastSpell(itr, Spells::SPELL_LAST_WORD);
-            }
-        }
-
-        void UpdateAI(const uint32 diff) override
-        {
-            events.Update(diff);
-
-            if (me->HasUnitState(UNIT_STATE_CASTING))
-                return;
-
-            switch (events.ExecuteEvent())
-            {
-            case Events::EVENT_MOCKING_BLAST:
-            {
-                if (!UpdateVictim())
-                    return;
-
-                if (Unit* random = SelectTarget(SELECT_TARGET_RANDOM, 0, 200.0f, true))
-                    me->CastSpell(random, Spells::SPELL_MOCKINGB_LAST);
-
-                events.ScheduleEvent(Events::EVENT_MOCKING_BLAST, 8 * TimeConstants::IN_MILLISECONDS);
-                break;
-            }
-            case Events::EVENT_MANIFESTATION_OF_PRIDE:
-            {
-                me->RemoveAllAuras();
-                me->setFaction(HostileFaction);
-                me->SetInCombatWithZone();
-                break;
-            }
-            default:
-                break;
+                instance = creature->GetInstanceScript();
             }
 
-            DoMeleeAttackIfReady();
-        }
-    };
+            InstanceScript* instance;
+            EventMap events;
+        };
 
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_manifestation_of_prideAI(creature);
-    }
+        CreatureAI* GetAI(Creature* creature) const
+        {
+            return new npc_manifestation_of_prideAI(creature);
+        }
 };
 
-// Projectile - 
-class npc_projection : public CreatureScript
+// Self Reflection 72172.
+class npc_self_reflection : public CreatureScript
 {
-public:
-    npc_projection() : CreatureScript("npc_projection") { }
+    public:
+        npc_self_reflection() : CreatureScript("npc_self_reflection") { }
 
-    struct npc_projectionAI : public ScriptedAI
-    {
-        npc_projectionAI(Creature* creature) : ScriptedAI(creature)
+        struct npc_self_reflectionAI : public ScriptedAI
         {
-            m_Instance = creature->GetInstanceScript();
-        }
-
-        InstanceScript* m_Instance;
-        uint32 m_Explosion;
-
-        void Reset()
-        {
-            m_Explosion = 6000;
-
-            if (TempSummon* tempo = me->ToTempSummon())
-                if (Unit* summoner = tempo->GetSummoner())
-                    if (summoner->IsInWorld() && summoner->isAlive())
-                    {
-                        me->CastSpell(summoner, Spells::SPELL_PROJECTION_WARNING);
-                    }
-        }
-
-        bool TargetCheck()
-        {
-            if (Player* nearest = me->FindNearestPlayer(1.5f, true))
+            npc_self_reflectionAI(Creature* creature) : ScriptedAI(creature)
             {
-                if (nearest->GetAura(Spells::SPELL_PROJECTION_WARNING, me->GetGUID()))
-                {
-                    return true;
-                }
+                instance = creature->GetInstanceScript();
             }
-            return false;
-        }
 
-        void UpdateAI(const uint32 diff)
+            InstanceScript* instance;
+            EventMap events;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const
         {
-            events.Update(diff);
-
-            // Projectile
-            if (TempSummon* tempo = me->ToTempSummon())
-                if (Unit* summoner = tempo->GetSummoner())
-                    if (summoner->IsInWorld() && summoner->isAlive())
-                    {
-                        summoner->CastSpell(me, Spells::SPELL_PROJECTION_PROJECTILE);
-                    }
-
-            // Explosion
-            if (m_Explosion <= diff)
-            {
-                if (TargetCheck())
-                {
-                    me->CastSpell(me, Spells::SPELL_PROJECTION_BLUE);
-                    m_Explosion = 10000;
-                }
-                else
-                {
-                    me->CastSpell(me, Spells::SPELL_PROJECTION_DAMAGE);
-                    me->DespawnOrUnsummon();
-
-                    std::list<Player*> l_ListPlayers;
-                    me->GetPlayerListInGrid(l_ListPlayers, 300.0f);
-
-                    if (l_ListPlayers.empty())
-                        return;
-
-                    for (auto itr : l_ListPlayers)
-                    {
-                        if (InstanceScript* l_Instance = me->GetInstanceScript())
-                        {
-                            if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                            {
-                                ModifyPride(l_ShaOfPride, 5, itr->GetGUID());
-                            }
-                        }
-                    }
-
-                    m_Explosion = 10000;
-                }
-            }
+            return new npc_self_reflectionAI(creature);
         }
-    };
-
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_projectionAI(creature);
-    }
 };
 
-// Corrupted Prison Controller
-class mob_corrupted_prison : public CreatureScript
+// Rift of Corruption 72846.
+class npc_rift_of_corruption : public CreatureScript
 {
-public:
-    mob_corrupted_prison() : CreatureScript("mob_corrupted_prison") { }
+    public:
+        npc_rift_of_corruption() : CreatureScript("npc_rift_of_corruption") { }
 
-    struct sha_of_pride_creatures : public NullCreatureAI
-    {
-        sha_of_pride_creatures(Creature* p_Creature) : NullCreatureAI(p_Creature), victimGUID(0)
+        struct npc_rift_of_corruptionAI : public ScriptedAI
         {
-            m_ListPrisonsTriggers.clear();
-            m_Instance = me->GetInstanceScript();
-        }
+            npc_rift_of_corruptionAI(Creature* creature) : ScriptedAI(creature)
+            {
+                instance = creature->GetInstanceScript();
+            }
 
-        std::list<uint64> m_ListPrisonsTriggers;
-        std::list<GameObject*> m_listPrisonersGobjects;
-        InstanceScript* m_Instance;
-        uint64 victimGUID;
-        bool switch01;
-        bool switch02;
-        bool switch03;
+            InstanceScript* instance;
+            EventMap events;
+        };
 
-        void Reset() override
+        CreatureAI* GetAI(Creature* creature) const
         {
-            me->SetFlag(UNIT_FIELD_FLAGS, UnitFlags::UNIT_FLAG_NON_ATTACKABLE | UnitFlags::UNIT_FLAG_DISABLE_MOVE);
-            me->setFaction(FriendlyFaction);
-
-            switch01 = false;
-            switch02 = false;
-            switch03 = false;
-
-            me->SetDisplayId(11686);
-
-            std::list<Creature*> listLockTriggers;
-            me->GetCreatureListWithEntryInGrid(listLockTriggers, 3242457, 5.0f);
-            // 3242457 Custom
-
-            if (listLockTriggers.empty())
-                return;
-
-            for (auto itr : listLockTriggers)
-            {
-                if (itr->GetAI())
-                    itr->GetAI()->Reset();
-            }
+            return new npc_rift_of_corruptionAI(creature);
         }
-
-        void SetGUID(uint64 guid, int32 /*param*/) override
-        {
-            switch01 = false;
-            switch02 = false;
-            switch03 = false;
-            victimGUID = guid;
-            std::list<Creature*> listLockTriggers;
-            me->GetCreatureListWithEntryInGrid(listLockTriggers, 3242457, 6.8f);// 3242457 Custom
-
-            if (listLockTriggers.empty())
-                return;
-
-            for (auto itr : listLockTriggers)
-            {
-                if (itr->GetAI())
-                    itr->GetAI()->DoAction(ACTION_COMBAT);
-            }
-        }
-
-        void DoAction(const int32 action) override
-        {
-            switch (action)
-            {
-            case Actions::ACTION_RELEASE:
-            {
-                if (victimGUID)
-                {
-                    if (Unit* victim = Unit::GetUnit(*me, victimGUID))
-                    {
-                        victim->RemoveAura(Spells::SPELL_CORRUPTED_PRISON_DOT);
-                    }
-                }
-
-                switch01 = false;
-                switch02 = false;
-                switch03 = false;
-
-                victimGUID = NULL;
-
-                std::list<Creature*> listLockTriggers;
-                me->GetCreatureListWithEntryInGrid(listLockTriggers, 3242457, 3.0f);// 3242457 Custom
-
-                if (listLockTriggers.empty())
-                    return;
-
-                for (auto itr : listLockTriggers)
-                {
-                    if (itr->GetAI())
-                        itr->GetAI()->DoAction(ACTION_FINISH);
-                }
-                break;
-            }
-            case Actions::ACTION_SWITCH01:
-                switch01 = true;
-                break;
-            case Actions::ACTION_SWITCH02:
-                switch02 = true;
-                break;
-            case Actions::ACTION_SWITCH03:
-                switch03 = true;
-                break;
-            }
-        }
-
-        void UpdateAI(const uint32 diff) override
-        {
-            if (!me->GetMap()->Is25ManRaid())
-            {
-                if (switch01 && switch02)
-                {
-                    DoAction(Actions::ACTION_RELEASE);
-                }
-            }
-            else
-            {
-                if (switch01 && switch02 && switch03)
-                {
-                    DoAction(Actions::ACTION_RELEASE);
-                }
-            }
-        }
-    };
-
-    CreatureAI* GetAI(Creature* p_Creature) const override
-    {
-        return new sha_of_pride_creatures(p_Creature);
-    }
 };
 
-// Corrupted Prison
-class creature_corrupted_prison_pride_switch : public CreatureScript
+/*** Others ***/
+
+// Jaina Proudmoore 73598.
+class npc_jaina_proudmoore_pride : public CreatureScript
 {
-public:
-    creature_corrupted_prison_pride_switch() : CreatureScript("creature_corrupted_prison_pride_switch") { }
+    public:
+        npc_jaina_proudmoore_pride() : CreatureScript("npc_jaina_proudmoore_pride") { }
 
-    struct creature_corrupted_prison_pride_switchAI : public ScriptedAI
-    {
-        creature_corrupted_prison_pride_switchAI(Creature* creature) : ScriptedAI(creature), Guido(0)
+        struct npc_jaina_proudmoore_prideAI : public ScriptedAI
         {
-            m_Instance = creature->GetInstanceScript();
-        }
-
-        InstanceScript* m_Instance;
-        std::list<GameObject*> listGameObjects;
-        bool hasClicked;
-        bool Triggered;
-        uint32 ValueToReset;
-        uint64 Guido;
-
-        void Reset() override
-        {
-            Guido = 0;
-            ValueToReset = 0;
-            hasClicked = true;
-            Triggered = false;
-
-            me->SetDisplayId(11686);
-        }
-     
-        void SetGUID(uint64 guid, int32 param) override
-        {
-            uint32 entries[12] =
+            npc_jaina_proudmoore_prideAI(Creature* creature) : ScriptedAI(creature)
             {
-                GAMEOBJECT_PRISON_NORTH_01, GAMEOBJECT_PRISON_NORTH_02, GAMEOBJECT_PRISON_NORTH_03, GAMEOBJECT_PRISON_SOUTH_01, GAMEOBJECT_PRISON_SOUTH_02,
-                GAMEOBJECT_PRISON_SOUTH_03, GAMEOBJECT_PRISON_WEST_01, GAMEOBJECT_PRISON_WEST_02, GAMEOBJECT_PRISON_WEST_03, GAMEOBJECT_PRISON_EAST_01,
-                GAMEOBJECT_PRISON_EAST_02, GAMEOBJECT_PRISON_EAST_03
-            };           
-          
-            me->GetGameObjectListWithEntryInGrid(listGameObjects, entries[param], 600.0f);      
-
-            if (listGameObjects.empty())
-                return;
-
-            for (auto itr : listGameObjects)
-            {
-                Guido = itr->GetGUID();
-
-                itr->SetLootState(GO_READY);
-                itr->UseDoorOrButton(10000, false, me);
+                instance = creature->GetInstanceScript();
             }
-        }
-        
-        void DoAction(const int32 action) override
-        {
-            switch (action)
+
+            InstanceScript* instance;
+            EventMap events;
+
+            void Reset()
             {
-                case Actions::ACTION_RESET:
-                {
-                    if (m_Instance == nullptr)
-                        return;
+                events.Reset();
+                DoAction(ACTION_START_SHA_PRIDE_OUTRO);
+            }
 
-                    hasClicked = false;
-
-                    break;
-                }
-                case Actions::ACTION_COMBAT:
+            void DoAction(int32 const action)
+            {
+                switch (action)
                 {
-                    if (GameObject * gob = sObjectAccessor->GetGameObject(*me, Guido))
-                    {
-                        gob->SetLootState(GO_READY);
-                        gob->UseDoorOrButton(10000, false, me);
-                    }
+                    case ACTION_START_SHA_PRIDE_OUTRO:
+                        events.ScheduleEvent(EVENT_OUTRO_1, 100);
+                        break;
 
-                    hasClicked = false;
-                    Triggered = true;
-                    break;
-                }
-                case Actions::ACTION_FINISH:
-                {
-                    Triggered = false;
-                    hasClicked = false;
-                    if (GameObject * gob = sObjectAccessor->GetGameObject(*me, Guido))
-                    {
-                        gob->SetLootState(GO_READY);
-                        gob->UseDoorOrButton(10000, false, me);
-                    }
-                    break;
+                    default: break;
                 }
             }
-        } 
+        };
 
-        void UpdateAI(uint32 const diff)
+        CreatureAI* GetAI(Creature* creature) const
         {
-            // Only if Prison is triggered (has a victim GUID)
-            if (Triggered)
-            {
-                if (GameObject * gob = sObjectAccessor->GetGameObject(*me, Guido))
-                {
-                        if (me->FindNearestPlayer(1.5f, true))
-                        {
-                            if (!hasClicked)
-                            {
-                                hasClicked = true;
-
-                                gob->SetLootState(GO_READY);
-                                gob->UseDoorOrButton(10000, false, me);
-                            }
-
-                   
-                            uint32 l_GameObjectsEntries[16] =
-                            {
-                                eGameObjectsLocal::GAMEOBJECT_PRISON_NORTH_01, eGameObjectsLocal::GAMEOBJECT_PRISON_NORTH_02, eGameObjectsLocal::GAMEOBJECT_PRISON_NORTH_03,
-                                eGameObjectsLocal::GAMEOBJECT_PRISON_SOUTH_01, eGameObjectsLocal::GAMEOBJECT_PRISON_SOUTH_02, eGameObjectsLocal::GAMEOBJECT_PRISON_SOUTH_03,
-                                eGameObjectsLocal::GAMEOBJECT_PRISON_EAST_01, eGameObjectsLocal::GAMEOBJECT_PRISON_EAST_02, eGameObjectsLocal::GAMEOBJECT_PRISON_EAST_03,
-                                eGameObjectsLocal::GAMEOBJECT_PRISON_WEST_01, eGameObjectsLocal::GAMEOBJECT_PRISON_WEST_02, eGameObjectsLocal::GAMEOBJECT_PRISON_WEST_03,
-                            };
-
-                            switch (gob->GetEntry())
-                            {
-                            case GAMEOBJECT_PRISON_NORTH_01:
-                            case GAMEOBJECT_PRISON_SOUTH_01:
-                            case GAMEOBJECT_PRISON_EAST_01:
-                            case GAMEOBJECT_PRISON_WEST_01:
-                                if (Creature* PrisonController = gob->FindNearestCreature(CREATURE_PRISON_TRIGGER, 5.0f))
-                                    if (PrisonController->GetAI())
-                                        PrisonController->GetAI()->DoAction(ACTION_SWITCH01);
-
-                                ValueToReset = 1;
-                                break;
-                            case GAMEOBJECT_PRISON_NORTH_02:
-                            case GAMEOBJECT_PRISON_SOUTH_02:
-                            case GAMEOBJECT_PRISON_EAST_02:
-                            case GAMEOBJECT_PRISON_WEST_02:
-                                if (Creature* PrisonController = gob->FindNearestCreature(CREATURE_PRISON_TRIGGER, 5.0f))
-                                    if (PrisonController->GetAI())
-                                        PrisonController->GetAI()->DoAction(ACTION_SWITCH02);
-
-                                ValueToReset = 2;
-                                break;
-                            case GAMEOBJECT_PRISON_NORTH_03:
-                            case GAMEOBJECT_PRISON_SOUTH_03:
-                            case GAMEOBJECT_PRISON_EAST_03:
-                            case GAMEOBJECT_PRISON_WEST_03:
-                                if (Creature* PrisonController = gob->FindNearestCreature(CREATURE_PRISON_TRIGGER, 5.0f))
-                                    if (PrisonController->GetAI())
-                                        PrisonController->GetAI()->DoAction(ACTION_SWITCH03);
-
-                                ValueToReset = 3;
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            if (hasClicked)
-                            {
-                                hasClicked = false;
-
-                                gob->SetLootState(GO_READY);
-                                gob->UseDoorOrButton(10000, false, me);
-
-                                if (Creature* PrisonController = gob->FindNearestCreature(CREATURE_PRISON_TRIGGER, 8.0f))
-                                {
-                                    if (mob_corrupted_prison::sha_of_pride_creatures* linkAI = CAST_AI(mob_corrupted_prison::sha_of_pride_creatures, PrisonController->GetAI()))
-                                    {
-                                        switch (ValueToReset)
-                                        {
-                                        case 1:
-                                            if (linkAI->switch01)
-                                            {
-                                                linkAI->switch01 = false;
-                                                DoAction(ACTION_RESET);
-                                            }
-                                            break;
-                                        case 2:
-                                            if (linkAI->switch02)
-                                            {
-                                                linkAI->switch02 = false;                                       
-                                                DoAction(ACTION_RESET);
-                                            }
-                                            break;
-                                        case 3:
-                                            if (linkAI->switch03)
-                                            {
-                                                linkAI->switch03 = false;
-                                                DoAction(ACTION_RESET);
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-                    }
-            }
-            
+            return new npc_jaina_proudmoore_prideAI(creature);
         }
-    };
-
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new creature_corrupted_prison_pride_switchAI(creature);
-    }
-};
-
-// Corrupted Prison - 144574
-class spell_corrupted_prison : public SpellScriptLoader
-{
-public:
-    spell_corrupted_prison() : SpellScriptLoader("spell_corrupted_prison") { }
-
-    class spell_corrupted_prisonSpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_corrupted_prisonSpellScript);
-
-        void HandleCorruptedPrison()
-        {
-            if (!GetHitUnit() && GetHitUnit()->GetTypeId() != TYPEID_PLAYER && !GetHitUnit()->isAlive())
-                return;
-
-            if (!GetCaster())
-                return;
-
-            if (InstanceScript* l_Instance = GetCaster()->GetInstanceScript())
-            {
-                if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                {
-                    // 5 Pride upon each attack.
-                    ModifyPride(l_ShaOfPride, 5, GetHitUnit()->ToPlayer()->GetGUID());
-                }
-            }
-        }
-
-        void Register()
-        {
-            OnHit += SpellHitFn(spell_corrupted_prisonSpellScript::HandleCorruptedPrison);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_corrupted_prisonSpellScript();
-    }
-
-    class spell_corrupted_prisonAuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_corrupted_prisonAuraScript);
-
-        void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Unit* l_Target = GetTarget())
-            {
-                l_Target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-            }
-        }
-
-        void Register()
-        {
-            AfterEffectRemove += AuraEffectRemoveFn(spell_corrupted_prisonAuraScript::OnRemove, EFFECT_1, SPELL_AURA_TRANSFORM, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_corrupted_prisonAuraScript();
-    }
-};
-
-// Projection - 144952 
-class spell_projection_spawn : public SpellScriptLoader
-{
-public:
-    spell_projection_spawn() : SpellScriptLoader("spell_projection_spawn") { }
-
-    class spell_projection_spawn_spell_script : public SpellScript
-    {
-        PrepareSpellScript(spell_projection_spawn_spell_script);
-
-        void HandleCast()
-        {
-            if (!GetCaster())
-                return;
-
-            Player* l_Player = GetCaster()->ToPlayer();
-
-            Position l_Position;
-            l_Player->GetPosition(&l_Position);
-
-            if (l_Player)
-            {
-                l_Player->SummonCreature(CREATURE_PROJECTION, l_Position, TempSummonType::TEMPSUMMON_MANUAL_DESPAWN);
-            }
-        }
-
-        void Register()
-        {
-            AfterCast += SpellCastFn(spell_projection_spawn_spell_script::HandleCast);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_projection_spawn_spell_script();
-    }
-};
-
-// Power of The Titans:: 144363 
-class spell_power_of_the_titans : public SpellScriptLoader
-{
-public:
-    spell_power_of_the_titans() : SpellScriptLoader("spell_power_of_the_titans") { }
-
-    class spell_power_of_the_titans_spell_Script : public SpellScript
-    {
-        PrepareSpellScript(spell_power_of_the_titans_spell_Script);
-
-        void HandleDummy(SpellEffIndex /*effIndex*/)
-        {
-            if (!GetCaster())
-                return;
-
-            uint32 l_Counter = 0;
-
-            if (Player* l_NearestPlayer = GetCaster()->FindNearestPlayer(300.0f, true))
-            {
-                std::list<Player*> l_ListPlayers;
-                WoWSource::AnyPlayerInObjectRangeCheck checker(l_NearestPlayer, 10.0f);
-                WoWSource::PlayerListSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcherBigList(l_NearestPlayer, l_ListPlayers, checker);
-                GetCaster()->VisitNearbyWorldObject(10.0f, searcherBigList);
-
-                if (l_Counter >= 8)
-                {
-                    std::list<Player*> l_TempPlayers;
-
-                    if (InstanceScript* l_Instance = GetCaster()->GetInstanceScript())
-                    {
-                        if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                        {
-                            l_ShaOfPride->GetPlayerListInGrid(l_TempPlayers, 300.0f);
-
-                            if (l_TempPlayers.empty())
-                                return;
-
-                            for (auto itr : l_TempPlayers)
-                            {
-                                itr->AddAura(Spells::SPELL_POWER_OF_THE_TITANS, itr);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        void Register()
-        {
-            OnEffectHitTarget += SpellEffectFn(spell_power_of_the_titans_spell_Script::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_power_of_the_titans_spell_Script();
-    }
-};
-
-// Wounded Pride - 144358 
-class spell_wounded_pride : public SpellScriptLoader
-{
-public:
-    spell_wounded_pride() : SpellScriptLoader("spell_wounded_pride") { }
-
-    class spell_wounded_pride_aura_script : public AuraScript
-    {
-        PrepareAuraScript(spell_wounded_pride_aura_script);
-
-        void OnProc(constAuraEffectPtr aurEff, ProcEventInfo& eventInfo)
-        {
-            if (!GetTarget())
-                return;
-
-            if (!GetCaster())
-                return;
-
-            if (Player* player = GetTarget()->ToPlayer())
-            {
-                if (InstanceScript* m_Instance = GetCaster()->GetInstanceScript())
-                {
-                    if (Creature * l_ShaOfPride = m_Instance->instance->GetCreature(m_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                    {
-                        // Only Sha Of Pride can cause the Pride modification.
-                        if (l_ShaOfPride->getVictim() == player)
-                            ModifyPride(l_ShaOfPride, 5, player->GetGUID());
-                    }
-                }
-            }
-        }
-
-        void Register()
-        {
-            OnEffectProc += AuraEffectProcFn(spell_wounded_pride_aura_script::OnProc, EFFECT_0, SPELL_AURA_DUMMY);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_wounded_pride_aura_script();
-    }
-};
-
-// Self-Reflection::SQUIRT 144788  || Last Word 144370 || Mocking blast 144379  || Projection 145320 || Unleahsed 144836 
-class spell_self_reflection : public SpellScriptLoader
-{
-public:
-    spell_self_reflection() : SpellScriptLoader("spell_self_reflection") { }
-
-    class spell_self_reflectionSpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_self_reflectionSpellScript);
-
-        void HandleSwellingCorruption()
-        {
-            if (!GetHitUnit() && GetHitUnit()->GetTypeId() != TYPEID_PLAYER)
-                return;
-
-            if (InstanceScript* l_Instance = GetCaster()->GetInstanceScript())
-            {
-                if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                {
-                    ModifyPride(l_ShaOfPride, 5, GetHitUnit()->ToPlayer()->GetGUID());
-                }
-            }
-        }
-
-        void Register()
-        {
-            OnHit += SpellHitFn(spell_self_reflectionSpellScript::HandleSwellingCorruption);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_self_reflectionSpellScript();
-    }
-};
-
-// Swelling Pride - 144400 
-class spell_swelling_pride : public SpellScriptLoader
-{
-public:
-    spell_swelling_pride() : SpellScriptLoader("spell_swelling_pride") { }
-
-    class spell_swelling_prideSpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_swelling_prideSpellScript);
-
-        void HandleSwellingCorruption()
-        {
-            int32 m_SpellId = NULL;
-
-            if (!GetCaster())
-                return;
-
-            std::list<Player*> listPlayers;
-            GetCaster()->GetPlayerListInGrid(listPlayers, 300.0f);
-
-            if (listPlayers.empty())
-                return;
-
-            for (auto itr : listPlayers)
-            {
-                switch (CheckForPrideValue(itr))
-                {
-                case LOW:
-                    return;
-                    break;
-                case MEDIUM:
-                    m_SpellId = Spells::SPELL_BURSTING_PRIDE;
-                    break;
-                case HARD:
-                    m_SpellId = Spells::SPELL_PROJECTION_DUMMY;
-                    break;
-                case CHAOS:
-                    m_SpellId = Spells::SPELL_AURA_OF_PRIDE_AURA;
-                    break;
-                case FATAL:
-                    m_SpellId = Spells::SPELL_OVERCOME_DAMAGE;
-                    break;
-                }
-
-                if (InstanceScript* l_Instance = GetCaster()->GetInstanceScript())
-                {
-                    if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                    {
-                        ModifyPride(l_ShaOfPride, 5, itr->GetGUID());
-                    }
-                }
-
-                if (m_SpellId != Spells::SPELL_BURSTING_PRIDE)
-                    itr->CastSpell(itr, m_SpellId, true);
-                else
-                    GetCaster()->CastSpell(itr, Spells::SPELL_BURSTING_PRIDE);
-            }
-        }
-
-        void Register()
-        {
-            AfterCast += SpellCastFn(spell_swelling_prideSpellScript::HandleSwellingCorruption);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new spell_swelling_prideSpellScript();
-    }
-};
-
-// Overcome - 144843 
-class spell_overcome : public SpellScriptLoader
-{
-public:
-    spell_overcome() : SpellScriptLoader("spell_overcome") { }
-
-    class spell_overcome_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_overcome_AuraScript);
-
-        void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Unit* l_Caster = GetCaster())
-            {
-                if (Unit* l_Target = GetTarget())
-                {
-                    if (InstanceScript* l_Instance = l_Caster->GetInstanceScript())
-                    {
-                        if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                        {
-                            l_Target->SetCharmedBy(l_ShaOfPride, CHARM_TYPE_CONVERT);
-                        }
-                    }
-                }
-            }
-        }
-
-        void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Unit* l_Target = GetTarget())
-            {
-                if (InstanceScript* l_Instance = l_Target->GetInstanceScript())
-                {
-                    if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                    {
-                        l_Target->RemoveCharmedBy(l_ShaOfPride);
-                    }
-                }
-            }
-        }
-
-        void Register()
-        {
-            AfterEffectApply += AuraEffectApplyFn(spell_overcome_AuraScript::OnApply, EFFECT_0, SPELL_AURA_TRANSFORM, AURA_EFFECT_HANDLE_REAL);
-            AfterEffectRemove += AuraEffectRemoveFn(spell_overcome_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_TRANSFORM, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_overcome_AuraScript();
-    }
-};
-
-// Corrupted Prison        - 144574 
-// spell_mark_of_arrogance - 144351 
-class spell_mark_of_arrogance : public SpellScriptLoader
-{
-public:
-    spell_mark_of_arrogance() : SpellScriptLoader("spell_mark_of_arrogance") { }
-
-    class spell_champion_of_light_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_champion_of_light_AuraScript);
-
-        void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Unit* l_Caster = GetCaster())
-            {
-                if (GetTarget() && GetTarget()->GetTypeId() == TYPEID_PLAYER)
-                {
-                    if (InstanceScript* l_Instance = GetCaster()->GetInstanceScript())
-                    {
-                        if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                        {
-                            ModifyPride(l_ShaOfPride, 5, GetTarget()->ToPlayer()->GetGUID());
-                        }
-                    }
-                }
-            }
-        }
-
-        void Register()
-        {
-            AfterEffectRemove += AuraEffectRemoveFn(spell_champion_of_light_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_champion_of_light_AuraScript();
-    }
-};
-
-// Corrupted Prison        - 144574 
-class spell_corrupted_prison_dot_damage : public SpellScriptLoader
-{
-public:
-    spell_corrupted_prison_dot_damage() : SpellScriptLoader("spell_corrupted_prison_dot_damage") { }
-
-    class spell_corrupted_prison_dot_damageAI : public AuraScript {
-        PrepareAuraScript(spell_corrupted_prison_dot_damageAI);
-
-        int32 cooldownPer;
-
-        void OnUpdate(constAuraEffectPtr aurEff)
-        {
-            if (!GetTarget())
-                return;
-
-            if (GetTarget()->GetTypeId() != TYPEID_PLAYER)
-                return;
-
-            if (InstanceScript* l_Instance = GetCaster()->GetInstanceScript())
-            {
-                if (Creature * l_ShaOfPride = l_Instance->instance->GetCreature(l_Instance->GetData64(Data64::DATA_SHA_OF_PRIDE)))
-                {
-                    ModifyPride(l_ShaOfPride, 5, GetTarget()->ToPlayer()->GetGUID());
-                }
-            }
-        }
-        void Register()
-        {
-            OnEffectPeriodic += AuraEffectPeriodicFn(spell_corrupted_prison_dot_damageAI::OnUpdate, EFFECT_2, SPELL_AURA_PERIODIC_DAMAGE);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_corrupted_prison_dot_damageAI();
-    }
 };
 
 void AddSC_sha_of_pride()
 {
+    new boss_norushen_pride();
     new boss_sha_of_pride();
-    new npc_norushen();
 
-    new npc_projection();
     new npc_manifestation_of_pride();
-    new mob_corrupted_prison();
-    new creature_corrupted_prison_pride_switch();
+    new npc_self_reflection();
+    new npc_rift_of_corruption();
 
-    new spell_overcome();
-    new spell_corrupted_prison_dot_damage();
-    new spell_corrupted_prison();
-    new spell_self_reflection();
-    new spell_mark_of_arrogance();
-    new spell_swelling_pride();
-    new spell_wounded_pride();
-    new spell_power_of_the_titans();
-    new spell_projection_spawn();
+    new npc_jaina_proudmoore_pride();
 }

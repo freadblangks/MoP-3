@@ -487,11 +487,8 @@ void World::LoadConfigSettings(bool reload)
     rate_values[RATE_DROP_ITEM_REFERENCED_AMOUNT] = ConfigMgr::GetFloatDefault("Rate.Drop.Item.ReferencedAmount", 1.0f);
     rate_values[RATE_DROP_MONEY]    = ConfigMgr::GetFloatDefault("Rate.Drop.Money", 1.0f);
     rate_values[RATE_XP_KILL]       = ConfigMgr::GetFloatDefault("Rate.XP.Kill", 1.0f);
-	rate_values[RATE_XP_KILL_VIP]   = ConfigMgr::GetFloatDefault("Rate.XP.Kill.VIP", 1.0f);
     rate_values[RATE_XP_QUEST]      = ConfigMgr::GetFloatDefault("Rate.XP.Quest", 1.0f);
-	rate_values[RATE_XP_QUEST_VIP]  = ConfigMgr::GetFloatDefault("Rate.XP.Quest.VIP", 1.0f);
     rate_values[RATE_XP_EXPLORE]    = ConfigMgr::GetFloatDefault("Rate.XP.Explore", 1.0f);
-	rate_values[RATE_XP_EXPLORE_VIP]  = ConfigMgr::GetFloatDefault("Rate.XP.Explore.VIP", 1.0f);
     rate_values[RATE_XP_GATHERING]  = ConfigMgr::GetFloatDefault("Rate.XP.Gathering", 1.0f);
     rate_values[RATE_REPAIRCOST]    = ConfigMgr::GetFloatDefault("Rate.RepairCost", 1.0f);
     if (rate_values[RATE_REPAIRCOST] < 0.0f)
@@ -504,9 +501,7 @@ void World::LoadConfigSettings(bool reload)
     rate_values[RATE_XP_QUEST_PREMIUM]   = ConfigMgr::GetFloatDefault("Rate.XP.Quest.Premium", 1.0f);
     rate_values[RATE_XP_EXPLORE_PREMIUM] = ConfigMgr::GetFloatDefault("Rate.XP.Explore.Premium", 1.0f);
     rate_values[RATE_REPUTATION_GAIN_PREMIUM]  = ConfigMgr::GetFloatDefault("Rate.Reputation.Gain.Premium", 1.0f);
-	rate_values[RATE_REPUTATION_GAIN_VIP]  = ConfigMgr::GetFloatDefault("Rate.Reputation.Gain.VIP", 1.0f);
     rate_values[RATE_HONOR_PREMIUM] = ConfigMgr::GetFloatDefault("Rate.Honor.Premium", 1.0f);
-	rate_values[RATE_HONOR_VIP] = ConfigMgr::GetFloatDefault("Rate.Honor.VIP", 1.0f);
 
     rate_values[RATE_REPUTATION_GAIN]  = ConfigMgr::GetFloatDefault("Rate.Reputation.Gain", 1.0f);
     rate_values[RATE_REPUTATION_LOWLEVEL_KILL]  = ConfigMgr::GetFloatDefault("Rate.Reputation.LowLevel.Kill", 1.0f);
@@ -1306,9 +1301,6 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_GUILD_SAVE_INTERVAL] = ConfigMgr::GetIntDefault("Guild.SaveInterval", 15);
     m_int_configs[CONFIG_GUILD_MAX_LEVEL] = ConfigMgr::GetIntDefault("Guild.MaxLevel", 25);
     m_int_configs[CONFIG_GUILD_UNDELETABLE_LEVEL] = ConfigMgr::GetIntDefault("Guild.UndeletableLevel", 4);
-    rate_values[RATE_XP_GUILD_MODIFIER] = ConfigMgr::GetFloatDefault("Guild.XPModifier", 0.25f);
-    m_int_configs[CONFIG_GUILD_DAILY_XP_CAP] = ConfigMgr::GetIntDefault("Guild.DailyXPCap", 7807500);
-    m_int_configs[CONFIG_GUILD_WEEKLY_REP_CAP] = ConfigMgr::GetIntDefault("Guild.WeeklyReputationCap", 4375);
 
     // Blackmarket
     m_int_configs[CONFIG_BLACKMARKET_MAX_AUCTIONS] = ConfigMgr::GetIntDefault("BlackMarket.MaxAuctions", 10);
@@ -2169,7 +2161,7 @@ void World::SetInitialWorldSettings()
 
     sLog->outInfo(LOG_FILTER_GENERAL, "Loading realm name...");
 
-    m_realmName = "WoWSource v4 Mop";
+    m_realmName = "Mist of Pandaria servers";
     QueryResult realmResult = LoginDatabase.PQuery("SELECT name FROM realmlist WHERE id = %u", realmID);
     if (realmResult)
         m_realmName = (*realmResult)[0].GetString();
@@ -2567,7 +2559,7 @@ void World::SendGlobalGMMessage(WorldPacket* packet, WorldSession* self, uint32 
     }
 }
 
-namespace WoWSource
+namespace SkyMistCore
 {
     class WorldWorldTextBuilder
     {
@@ -2614,7 +2606,7 @@ namespace WoWSource
             int32 i_textId;
             va_list* i_args;
     };
-}                                                           // namespace WoWSource
+}                                                           // namespace SkyMistCore
 
 /// Send a System Message to all players (except self if mentioned)
 void World::SendWorldText(int32 string_id, ...)
@@ -2622,8 +2614,8 @@ void World::SendWorldText(int32 string_id, ...)
     va_list ap;
     va_start(ap, string_id);
 
-    WoWSource::WorldWorldTextBuilder wt_builder(string_id, &ap);
-    WoWSource::LocalizedPacketListDo<WoWSource::WorldWorldTextBuilder> wt_do(wt_builder);
+    SkyMistCore::WorldWorldTextBuilder wt_builder(string_id, &ap);
+    SkyMistCore::LocalizedPacketListDo<SkyMistCore::WorldWorldTextBuilder> wt_do(wt_builder);
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
     {
         if (!itr->second || !itr->second->GetPlayer() || !itr->second->GetPlayer()->IsInWorld())
@@ -2641,8 +2633,8 @@ void World::SendGMText(int32 string_id, ...)
     va_list ap;
     va_start(ap, string_id);
 
-    WoWSource::WorldWorldTextBuilder wt_builder(string_id, &ap);
-    WoWSource::LocalizedPacketListDo<WoWSource::WorldWorldTextBuilder> wt_do(wt_builder);
+    SkyMistCore::WorldWorldTextBuilder wt_builder(string_id, &ap);
+    SkyMistCore::LocalizedPacketListDo<SkyMistCore::WorldWorldTextBuilder> wt_do(wt_builder);
     for (SessionMap::iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
     {
         if (!itr->second || !itr->second->GetPlayer() || !itr->second->GetPlayer()->IsInWorld())
@@ -3133,7 +3125,7 @@ void World::SendAutoBroadcast()
 
     std::string msg;
 
-    msg = WoWSource::Containers::SelectRandomContainerElement(m_Autobroadcasts);
+    msg = SkyMistCore::Containers::SelectRandomContainerElement(m_Autobroadcasts);
 
     uint32 abcenter = sWorld->getIntConfig(CONFIG_AUTOBROADCAST_CENTER);
 

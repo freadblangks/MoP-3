@@ -173,7 +173,7 @@ class boss_kologarn : public CreatureScript
                 if (!emerged && me->IsWithinDistInMap(who, 40.0f) && who->ToPlayer() && !who->ToPlayer()->isGameMaster())
                 {
                     me->SetStandState(UNIT_STAND_STATE_STAND);
-                    me->HandleEmoteCommand(EMOTE_ONESHOT_EMERGE);
+                    me->HandleEmote(EMOTE_ONESHOT_EMERGE);
                     emerged = true;
                 }
                 BossAI::MoveInLineOfSight(who);
@@ -392,7 +392,7 @@ class boss_kologarn : public CreatureScript
                             return 0;
                     }
 
-                    return WoWSource::Containers::SelectRandomContainerElement(playerList);
+                    return SkyMistCore::Containers::SelectRandomContainerElement(playerList);
                 }
                 else
                     return 0;
@@ -686,8 +686,8 @@ class spell_ulduar_cancel_stone_grip : public SpellScriptLoader
                     case RAID_DIFFICULTY_25MAN_NORMAL:
                         target->RemoveAura(GetSpellInfo()->Effects[EFFECT_1].CalcValue());
                         break;
-                    default:
-                        break;
+
+                    default: break;
                 }
             }
 

@@ -1074,9 +1074,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder, PreparedQueryResu
 
         sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent server info");
     }
-   	
-	ChatHandler(pCurrChar->GetSession()).PSendSysMessage("Your VIP Level is : %u", pCurrChar->GetSession()->GetVipLevel());
-  
+    
     SendTimezoneInformation();
 
     if (sWorld->getBoolConfig(CONFIG_ARENA_SEASON_IN_PROGRESS))

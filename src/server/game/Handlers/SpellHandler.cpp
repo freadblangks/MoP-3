@@ -1385,32 +1385,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         return;
     }
 
-	// Dominate Mind
-	else if (spellInfo->Id == 605)
-	{
-		if (targets.GetUnitTarget() && targets.GetUnitTarget()->GetTypeId() != TYPEID_PLAYER)
-		{
-			SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(20740);
-			if (newSpellInfo)
-			{
-				spellInfo = newSpellInfo;
-				spellId = newSpellInfo->Id;
-			}
-		}
-	}
-    // Ring of Frost - 113724 and Ring of Frost with Presence of Mind - 140376
-    else if (spellInfo->Id == 113724 && _player->HasAura(12043))
-    {
-        SpellInfo const* newSpellInfo = sSpellMgr->GetSpellInfo(140376);
-        if (newSpellInfo)
-        {
-            spellInfo = newSpellInfo;
-            spellId = newSpellInfo->Id;
-        }
-    }
-
     Spell* spell = new Spell(mover, spellInfo, TRIGGERED_NONE, 0, false);
-
     spell->m_cast_count = castCount;                       // set count of casts
     spell->m_glyphIndex = glyphIndex;
     spell->prepare(&targets);

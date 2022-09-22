@@ -337,8 +337,8 @@ class npc_thorim_controller : public CreatureScript
                             if (!_gotActivated)
                             {
                                 Player* player = 0;
-                                WoWSource::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
-                                WoWSource::PlayerSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
+                                SkyMistCore::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
+                                SkyMistCore::PlayerSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
                                 me->VisitNearbyObject(50.0f, searcher);
                                 if (player)
                                     if (!player->isGameMaster())
@@ -359,8 +359,8 @@ class npc_thorim_controller : public CreatureScript
                         case EVENT_CHECK_WIPE:
                             {
                                 Player* player = NULL;
-                                WoWSource::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
-                                WoWSource::PlayerSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
+                                SkyMistCore::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
+                                SkyMistCore::PlayerSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
                                 me->VisitNearbyObject(50.0f, searcher);
                                 if (player)
                                     _events.ScheduleEvent(EVENT_CHECK_WIPE, 3*IN_MILLISECONDS);
@@ -445,7 +445,7 @@ class boss_thorim : public CreatureScript
                 me->SetReactState(REACT_PASSIVE);
                 me->RemoveAurasDueToSpell(SPELL_BERSERK_PHASE_1);
 
-//                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_NON_ATTACKABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_NON_ATTACKABLE);
 
                 phase = PHASE_IDLE;
                 gotAddsWiped = false;
@@ -518,7 +518,7 @@ class boss_thorim : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
-                //_EnterCombat();
+                _EnterCombat();
                 Talk(SAY_AGGRO_1);
 
                 // Spawn Thunder Orbs
@@ -551,39 +551,9 @@ class boss_thorim : public CreatureScript
                     go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
 
                 me->SetFacingToObject(who);
-
-
-                    Creature* colossus = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_RUNIC_COLOSSUS));
-                    Creature* giant = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_RUNE_GIANT));
-
-                        Talk(SAY_JUMPDOWN);
-                        phase = PHASE_ARENA;
-                        events.SetPhase(PHASE_ARENA);
-                        me->RemoveAurasDueToSpell(SPELL_SHEAT_OF_LIGHTNING);
-                        me->SetReactState(REACT_AGGRESSIVE);
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-                        me->GetMotionMaster()->MoveJump(2134.79f, -263.03f, 419.84f, 20.0f, 30.0f);
-                        summons.DespawnEntry(NPC_THUNDER_ORB); // despawn charged orbs
-                        events.ScheduleEvent(EVENT_UNBALANCING_STRIKE, 15*IN_MILLISECONDS, 0, PHASE_ARENA);
-                        events.ScheduleEvent(EVENT_CHAIN_LIGHTNING, 20*IN_MILLISECONDS, 0, PHASE_ARENA);
-                        events.ScheduleEvent(EVENT_TRANSFER_ENERGY, 20*IN_MILLISECONDS, 0, PHASE_ARENA);
-                        events.ScheduleEvent(EVENT_BERSERK_PHASE_2, 5*MINUTE*IN_MILLISECONDS, 0, PHASE_ARENA);
-                        // Check for Hard Mode
-                        if (EncounterTime <= MAX_HARD_MODE_TIME)
-                        {
-                            HardMode = true;
-                            // Achievement
-                            instance->DoUpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, SPELL_THORIM_SIFFED_CREDIT);
-                            // Summon Sif
-                            me->SummonCreature(NPC_SIF, 2148.3f, -297.845f, 438.331f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN);
-                        }
-                        else
-                            me->AddAura(SPELL_TOUCH_OF_DOMINION, me);
-
-                DoZoneInCombat();
             }
 
-          /*  void EnterEvadeMode()
+            void EnterEvadeMode()
             {
                 if (!_EnterEvadeMode())
                     return;
@@ -591,7 +561,7 @@ class boss_thorim : public CreatureScript
                 me->SetHomePosition(homePosition);
                 me->GetMotionMaster()->MoveTargetedHome();
                 Reset();
-            }*/
+            }
 
             void SpellHitTarget(Unit* target, SpellInfo const* spell)
             {
@@ -1006,8 +976,8 @@ class npc_thorim_pre_phase_add : public CreatureScript
                             if (!me->isInCombat())
                             {
                                 Player* player = 0;
-                                WoWSource::AnyPlayerInObjectRangeCheck u_check(me, 70.0f, true);
-                                WoWSource::PlayerSearcher<WoWSource::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
+                                SkyMistCore::AnyPlayerInObjectRangeCheck u_check(me, 70.0f, true);
+                                SkyMistCore::PlayerSearcher<SkyMistCore::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
                                 me->VisitNearbyObject(30.0f, searcher);
                                 if (player)
                                     if (!player->isGameMaster())
@@ -1804,7 +1774,7 @@ class spell_stormhammer_targeting : public SpellScriptLoader
                 if (targets.empty())
                     return;
 
-                _target = WoWSource::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 SetTarget(targets);
             }
 
@@ -1850,7 +1820,7 @@ class spell_thorim_charge_orb_targeting : public SpellScriptLoader
                     return;
 
                 // Charge Orb should be cast always only on 1 orb
-                _target = WoWSource::Containers::SelectRandomContainerElement(targets);
+                _target = SkyMistCore::Containers::SelectRandomContainerElement(targets);
                 SetTarget(targets);
             }
 

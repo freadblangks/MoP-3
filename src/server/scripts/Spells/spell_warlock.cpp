@@ -113,11 +113,6 @@ enum WarlockSpells
     WARLOCK_SUMMON_WRATHGUARD               = 112870,
     WARLOCK_SUMMON_ABYSSAL                  = 112921,
     WARLOCK_SUMMON_TERRORGUARD              = 112927,
-    WARLOCK_SUMMON_GRIMOIRE_IMP             = 111859,
-    WARLOCK_SUMMON_GRIMOIRE_VOIDWALKER      = 111895,
-    WARLOCK_SUMMON_GRIMOIRE_SUCCUBUS        = 111896,
-    WARLOCK_SUMMON_GRIMOIRE_FELHUNTER       = 111897,
-    WARLOCK_SUMMON_GRIMOIRE_FELGUARD        = 111898,
     WARLOCK_HARVEST_LIFE                    = 108371,
     WARLOCK_IMMOLATION_AURA                 = 104025,
     WARLOCK_DARK_APOTHEOSIS                 = 114168,
@@ -1187,48 +1182,102 @@ class spell_warl_flames_of_xoroth : public SpellScriptLoader
         }
 };
 
-// Soul Link - 108446
-class spell_warl_soul_link_dummy : public SpellScriptLoader
-{
-public:
-    spell_warl_soul_link_dummy() : SpellScriptLoader("spell_warl_soul_link_dummy") { }
+// // Soul Link - 108446
+// class spell_warl_soul_link_dummy : public SpellScriptLoader
+// {
+//     public:
+//         spell_warl_soul_link_dummy() : SpellScriptLoader("spell_warl_soul_link_dummy") { }
+// 
+//         class spell_warl_soul_link_dummy_AuraScript : public AuraScript
+//         {
+//             PrepareAuraScript(spell_warl_soul_link_dummy_AuraScript);
+// 
+//             void HandleRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes mode)
+//             {
+//                 if (!GetCaster() || !GetTarget())
+//                     return;
+// 
+//                 if (Player* _player = GetCaster()->ToPlayer())
+//                 {
+//                     if (GetTarget()->GetGUID() == _player->GetGUID())
+//                         if (Pet* pet = _player->GetPet())
+//                             if (pet->HasAura(WARLOCK_SOUL_LINK_DUMMY_AURA))
+//                                 pet->RemoveAura(WARLOCK_SOUL_LINK_DUMMY_AURA);
+// 
+//                     if (_player->HasAura(WARLOCK_SOUL_LINK_DUMMY_AURA))
+//                         _player->RemoveAura(WARLOCK_SOUL_LINK_DUMMY_AURA);
+// 
+//                     if (AuraPtr grimoireOfSacrifice = _player->GetAura(WARLOCK_GRIMOIRE_OF_SACRIFICE))
+//                         if (grimoireOfSacrifice->GetEffect(EFFECT_6))
+//                                 grimoireOfSacrifice->GetEffect(EFFECT_6)->SetAmount(0);
+//                 }
+//             }
+// 
+//             void Register()
+//             {
+//                 OnEffectRemove += AuraEffectApplyFn(spell_warl_soul_link_dummy_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+//             }
+//         };
+// 
+//         AuraScript* GetAuraScript() const
+//         {
+//             return new spell_warl_soul_link_dummy_AuraScript();
+//         }
+// };
 
-    class spell_warl_soul_link_dummy_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_warl_soul_link_dummy_AuraScript);
-
-        void HandleRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes mode)
-        {
-            if (!GetCaster() || !GetTarget())
-                return;
-
-            if (Player* _player = GetCaster()->ToPlayer())
-            {
-                if (GetTarget()->GetGUID() == _player->GetGUID())
-                    if (Pet* pet = _player->GetPet())
-                        if (pet->HasAura(WARLOCK_SOUL_LINK_DUMMY_AURA))
-                            pet->RemoveAura(WARLOCK_SOUL_LINK_DUMMY_AURA);
-
-                if (_player->HasAura(WARLOCK_SOUL_LINK_DUMMY_AURA))
-                    _player->RemoveAura(WARLOCK_SOUL_LINK_DUMMY_AURA);
-
-                if (AuraPtr grimoireOfSacrifice = _player->GetAura(WARLOCK_GRIMOIRE_OF_SACRIFICE))
-                    if (grimoireOfSacrifice->GetEffect(EFFECT_6))
-                        grimoireOfSacrifice->GetEffect(EFFECT_6)->SetAmount(0);
-            }
-        }
-
-        void Register()
-        {
-            OnEffectRemove += AuraEffectApplyFn(spell_warl_soul_link_dummy_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_warl_soul_link_dummy_AuraScript();
-    }
-};
+// // Soul Link - 108415
+// class spell_warl_soul_link : public SpellScriptLoader
+// {
+//     public:
+//         spell_warl_soul_link() : SpellScriptLoader("spell_warl_soul_link") { }
+// 
+//         class spell_warl_soul_link_SpellScript : public SpellScript
+//         {
+//             PrepareSpellScript(spell_warl_soul_link_SpellScript);
+// 
+//             void HandleOnHit()
+//             {
+//                 if (Player* _player = GetCaster()->ToPlayer())
+//                 {
+//                     if (Unit* target = GetHitUnit())
+//                     {
+//                         /*if (!target->HasAura(WARLOCK_SOUL_LINK_DUMMY_AURA))
+//                         {
+//                             uint32 health = target->CountPctFromMaxHealth(50);
+// 
+//                             if (target->GetHealth() > health)
+//                                 target->SetHealth(health);
+//                             target->SetMaxHealth(health);
+// 
+//                             _player->CastSpell(_player, WARLOCK_SOUL_LINK_DUMMY_AURA, true);
+//                         }
+//                         else
+//                         {
+//                             target->SetMaxHealth(target->GetMaxHealth() * 2);
+//                             target->SetHealth(target->GetHealth() * 2);
+//                             _player->RemoveAura(WARLOCK_SOUL_LINK_DUMMY_AURA);
+//                             target->RemoveAura(WARLOCK_SOUL_LINK_DUMMY_AURA);
+//                         }*/
+//                         if (Pet* pet = _player->GetPet())
+//                         {
+//                             _player->CastSpell(_player, WARLOCK_SOUL_LINK_DUMMY_AURA, true);
+//                             //_player->CastSpell(pet, WARLOCK_SOUL_LINK_DUMMY_AURA, true);
+//                         }
+//                     }
+//                 }
+//             }
+// 
+//             void Register()
+//             {
+//                 OnHit += SpellHitFn(spell_warl_soul_link_SpellScript::HandleOnHit);
+//             }
+//         };
+// 
+//         SpellScript* GetSpellScript() const
+//         {
+//             return new spell_warl_soul_link_SpellScript();
+//         }
+// };
 
 // Archimonde's Vengeance (Cooldown marker) - 108505
 class spell_warl_archimondes_vengeance_cooldown : public SpellScriptLoader
@@ -1448,24 +1497,10 @@ class spell_warl_decimate : public SpellScriptLoader
             {
                 if (Player* _player = GetCaster()->ToPlayer())
                 {
-                    Unit* target = GetHitUnit();
-                    if (target)
+                    if (Unit* target = GetHitUnit())
                         if (_player->HasAura(WARLOCK_DECIMATE_AURA) && _player->getLevel() >= 73)
                             if (target->GetHealthPct() < 25.0f)
                                 _player->CastSpell(_player, WARLOCK_MOLTEN_CORE, true);
-
-                    if (_player->HasAura(145072))
-                    {
-                        if (m_scriptSpellId == 6353 && roll_chance_i(20))
-                        {
-                            _player->CastSpell(_player, 145085, true);
-                        }
-                    }
-                    if (_player->HasAura(145091))
-                    {
-                        if (m_scriptSpellId == 686 && roll_chance_i(8) && target)
-                            _player->CastSpell(target, 105174, true);
-                    }
 
                      /*if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY)
                          if (GetSpellInfo()->Id == 686 || 6353)
@@ -2595,11 +2630,6 @@ class spell_warl_burning_embers : public SpellScriptLoader
                         // hotfix 5.4 - this spells can generate additional burning ember with 15% chance
                         if (roll_chance_i(15))
                             _player->SetPower(POWER_BURNING_EMBERS, _player->GetPower(POWER_BURNING_EMBERS) + 1);
-
-                        if (GetSpellInfo()->Id == 29722)
-                            if (_player->HasAura(138134))
-                                if (roll_chance_i(8))
-                                    _player->SetPower(POWER_BURNING_EMBERS, _player->GetPower(POWER_BURNING_EMBERS) + 1);
                     }
                 }
             }
@@ -2844,62 +2874,6 @@ class spell_warl_life_tap : public SpellScriptLoader
         {
             return new spell_warl_life_tap_SpellScript();
         }
-};
-
-// Soulburn : Harvest Life - 115707
-class spell_warl_soulburn_harvest_life : public SpellScriptLoader
-{
-public:
-    spell_warl_soulburn_harvest_life() : SpellScriptLoader("spell_warl_soulburn_harvest_life") { }
-
-    class spell_warl_soulburn_harvest_life_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_warl_soulburn_harvest_life_AuraScript);
-
-        void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (!GetCaster())
-                return;
-
-            if (Player* player = GetCaster()->ToPlayer())
-                if (player->HasAura(WARLOCK_SOULBURN_AURA))
-                    player->RemoveAurasDueToSpell(WARLOCK_SOULBURN_AURA);
-        }
-
-        void OnTick(constAuraEffectPtr aurEff)
-        {
-            if (!GetCaster())
-                return;
-
-            if (Player* _player = GetCaster()->ToPlayer())
-            {
-                // Restoring 3-4.5% of the caster's total health every 1s - With 33% bonus
-                int32 basepoints = int32(frand(0.03f, 0.045f) * _player->GetMaxHealth());
-
-                AddPct(basepoints, 33);
-
-                if (!_player->HasSpellCooldown(WARLOCK_HARVEST_LIFE_HEAL))
-                {
-                    _player->CastCustomSpell(_player, WARLOCK_HARVEST_LIFE_HEAL, &basepoints, NULL, NULL, true);
-                    // prevent the heal to proc off for each targets
-                    _player->AddSpellCooldown(WARLOCK_HARVEST_LIFE_HEAL, 0, time(NULL) + 1);
-                }
-
-                _player->EnergizeBySpell(_player, aurEff->GetSpellInfo()->Id, 4, POWER_DEMONIC_FURY);
-            }
-        }
-
-        void Register()
-        {
-            OnEffectApply += AuraEffectApplyFn(spell_warl_soulburn_harvest_life_AuraScript::OnApply, EFFECT_2, SPELL_AURA_PERIODIC_DAMAGE, AURA_EFFECT_HANDLE_REAL);
-            OnEffectPeriodic += AuraEffectPeriodicFn(spell_warl_soulburn_harvest_life_AuraScript::OnTick, EFFECT_2, SPELL_AURA_PERIODIC_DAMAGE);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_warl_soulburn_harvest_life_AuraScript();
-    }
 };
 
 // Fear - 5782
@@ -3428,12 +3402,6 @@ class spell_warl_touch_of_chaos : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
-                        if (_player->HasAura(145091))
-                        {
-                            if (roll_chance_i(8))
-                                _player->CastSpell(target, 105174, true);
-                        }
-
                         if (AuraPtr aura = target->GetAura(146739, GetCaster()->GetGUID()))
                         {
                             int32 maxDuration = aura->GetMaxDuration();
@@ -3537,7 +3505,7 @@ class spell_warl_glyph_of_soul_consumption : public SpellScriptLoader
             {
                 PreventDefaultAction();
 
-                if (!GetCaster() || !eventInfo.GetDamageInfo()->getVictim())
+                if (!GetCaster() || !eventInfo.GetDamageInfo()->GetVictim())
                     return;
 
                 if (GetCaster()->ToPlayer()->InArena())
@@ -3551,7 +3519,7 @@ class spell_warl_glyph_of_soul_consumption : public SpellScriptLoader
                         !GetCaster()->HasAura(103958)))
                     return;
 
-                int32 final = eventInfo.GetDamageInfo()->getVictim()->GetHealth() - eventInfo.GetDamageInfo()->GetDamage();
+                int32 final = eventInfo.GetDamageInfo()->GetVictim()->GetHealth() - eventInfo.GetDamageInfo()->GetDamage();
 
                 if (final >= 0)
                     return;
@@ -3619,64 +3587,6 @@ class spell_warl_incinerate : public SpellScriptLoader
         }
 };
 
-// Grimoire of Service - 108501
-class spell_warl_grimoire_of_service : public SpellScriptLoader
-{
-public:
-    spell_warl_grimoire_of_service() : SpellScriptLoader("spell_warl_grimoire_of_service") { }
-
-    class spell_warl_grimoire_of_service_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_warl_grimoire_of_service_AuraScript);
-
-        void OnApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Player* _player = GetTarget()->ToPlayer())
-            {
-                _player->learnSpell(WARLOCK_SUMMON_GRIMOIRE_IMP, false);
-                _player->learnSpell(WARLOCK_SUMMON_GRIMOIRE_VOIDWALKER, false);
-                _player->learnSpell(WARLOCK_SUMMON_GRIMOIRE_SUCCUBUS, false);
-                _player->learnSpell(WARLOCK_SUMMON_GRIMOIRE_FELHUNTER, false);
-
-                if (_player->GetSpecializationId(_player->GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY)
-                    _player->learnSpell(WARLOCK_SUMMON_GRIMOIRE_FELGUARD, false);
-            }
-        }
-
-        void OnRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            if (Player* _player = GetTarget()->ToPlayer())
-            {
-                if (_player->HasSpell(WARLOCK_SUMMON_GRIMOIRE_IMP))
-                    _player->removeSpell(WARLOCK_SUMMON_GRIMOIRE_IMP, false, false);
-
-                if (_player->HasSpell(WARLOCK_SUMMON_GRIMOIRE_VOIDWALKER))
-                    _player->removeSpell(WARLOCK_SUMMON_GRIMOIRE_VOIDWALKER, false, false);
-
-                if (_player->HasSpell(WARLOCK_SUMMON_GRIMOIRE_SUCCUBUS))
-                    _player->removeSpell(WARLOCK_SUMMON_GRIMOIRE_SUCCUBUS, false, false);
-
-                if (_player->HasSpell(WARLOCK_SUMMON_GRIMOIRE_FELHUNTER))
-                    _player->removeSpell(WARLOCK_SUMMON_GRIMOIRE_FELHUNTER, false, false);
-
-                if (_player->HasSpell(WARLOCK_SUMMON_GRIMOIRE_FELGUARD))
-                    _player->removeSpell(WARLOCK_SUMMON_GRIMOIRE_FELGUARD, false, false);
-            }
-        }
-
-        void Register()
-        {
-            OnEffectApply += AuraEffectApplyFn(spell_warl_grimoire_of_service_AuraScript::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            OnEffectRemove += AuraEffectRemoveFn(spell_warl_grimoire_of_service_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_warl_grimoire_of_service_AuraScript();
-    }
-};
-
 // Called by Legion Strike - 30213, Mortal Cleave - 115625
 class spell_warl_reduce_heal : public SpellScriptLoader
 {
@@ -3714,46 +3624,6 @@ class spell_warl_reduce_heal : public SpellScriptLoader
         }
 };
 
-
-class spell_warl_glyph_of_nightmares : public SpellScriptLoader
-{
-public:
-    spell_warl_glyph_of_nightmares() : SpellScriptLoader("spell_warl_glyph_of_nightmares") {}
-
-    enum
-    {
-        SPELL_WARL_GLYPH_OF_NIGHTMARES_PASSIVE = 143314
-    };
-
-    class script_impl : public AuraScript
-    {
-        PrepareAuraScript(script_impl);
-
-        void HandleApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes mode)
-        {
-            if (Player* caster = GetCaster()->ToPlayer())
-                caster->AddAura(SPELL_WARL_GLYPH_OF_NIGHTMARES_PASSIVE, caster);
-        }
-
-        void HandleRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes mode)
-        {
-            if (Player* caster = GetCaster()->ToPlayer())
-                caster->RemoveAurasDueToSpell(SPELL_WARL_GLYPH_OF_NIGHTMARES_PASSIVE);
-        }
-
-        void Register()
-        {
-            OnEffectApply += AuraEffectApplyFn(script_impl::HandleApply, EFFECT_0, SPELL_AURA_MOUNTED, AURA_EFFECT_HANDLE_REAL);
-            OnEffectRemove += AuraEffectRemoveFn(script_impl::HandleRemove, EFFECT_0, SPELL_AURA_MOUNTED, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const override
-    {
-        return new script_impl();
-    }
-};
-
 void AddSC_warlock_spell_scripts()
 {
     new spell_warl_demonic_slash();
@@ -3777,7 +3647,8 @@ void AddSC_warlock_spell_scripts()
     new spell_warl_agony();
     new spell_warl_grimoire_of_sacrifice();
     new spell_warl_flames_of_xoroth();
-    new spell_warl_soul_link_dummy();
+    // new spell_warl_soul_link_dummy();
+    // new spell_warl_soul_link();
     new spell_warl_archimondes_vengeance_cooldown();
     new spell_warl_archimondes_vengance();
     new spell_warl_archimondes_vengance_passive();
@@ -3814,7 +3685,6 @@ void AddSC_warlock_spell_scripts()
     new spell_warl_drain_life();
     new spell_warl_soul_harverst();
     new spell_warl_life_tap();
-    new spell_warl_soulburn_harvest_life();
     new spell_warl_fear();
     new spell_warl_banish();
     new spell_warl_create_healthstone();
@@ -3832,6 +3702,4 @@ void AddSC_warlock_spell_scripts()
     new spell_warl_glyph_of_soul_consumption();
     new spell_warl_incinerate();
     new spell_warl_reduce_heal();
-    new spell_warl_glyph_of_nightmares();
-    new spell_warl_grimoire_of_service();
 }

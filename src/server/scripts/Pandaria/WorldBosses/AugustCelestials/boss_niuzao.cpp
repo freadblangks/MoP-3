@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2011-2015 SkyMist Gaming
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -14,380 +13,256 @@
  *
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+ *
+ * World Boss: Niuzao <The Black Ox>.
+ *
+ * ======= QUESTS =======
+ *
+ * [90] Celestial Blessings
+ *
+ * Quest accept:
+ * 
+ * Wrathion says: I will meet you at each of the four shrines, champion.
+ * Wrathion says: Remember, we must visit all four, but we only need to complete ONE of the four challenges.
+ * Wrathion says: Choose the challenge most appropriate for your unique talents.
+ * // Wrathion transforms into his whelp form.
+ * Wrathion says: Good luck! 
+ *
+ * Quest complete:
+ *
+ * Wrathion says: We have done it, hero! We have the blessings of the celestials, and we have completed their challenge.
+ * Wrathion says: I know our next step. Meet me back atop Mason's folly - you'll be pleasantly surprised at what I have in store for you! 
+ *
+ * Niuzao Temple - ! Tank spec challenge.
+ *
+ * Wrathion says: Here we are, the home of Niuzao, the Black Ox. He is the patron spirit of Pandaren fortitude, the only celestial who chooses to live beyond the wall.
+ * Wrathion says: Mighty Black Ox! Hear our plea.
+ * Wrathion says: My champion and I seek the blessing of fortitude.
+ * Niuzao says: So enters the dragon, and his mortal champion. You are welcome here.
+ * Niuzao says: Tell me, Black Prince: What is the nature of fortitude?
+ * Wrathion says: The strength to overcome any hardship! That is fortitude.
+ * Niuzao says: You confuse strength with fortitude, young dragon. But power is worthless without spirit!
+ * Niuzao says: I have seen humble slaves endure unimaginable torture. Only to rise up and overthrow their masters.
+ * Niuzao says: And I have seen the mightiest of emperors laid low by the perseverance of the smallest of enemies.
+ * Wrathion says: You mean to say - physical strength is developed without, but fortitude comes from within?
+ * Niuzao says: Precisely!
+ * Wrathion says: ...Sure, I knew that.
+ * Niuzao says: Of course you did. We will put your understanding to the test.
+ * Niuzao says: My challenge, if you accept it, will test your champion's ability to defend and protect while enduring terrible hardship. 
+ *
+ * - Tank Challenge -
+ *
+ * Niuzao says: Let the challenge begin! Hero, you must defend the Black Prince while he faces his inner turmoil.
+ * Wrathion says: I'm a black dragon. I won't need any help.
+ * Niuzao says: Is that so? You are filled with doubts and fears, young Prince.
+ * Niuzao says: Face your inner demons. Now is the time.
+ * Wrathion says: What - wait - father!?
+ * Vision of Deathwing yells: I shall tear this world apart!
+ * Wrathion says: Please - don't make me do this.
+ * Niuzao yells: Your champion will defend you. Begin!
+ * Vision of Deathwing yells: Your efforts are insignificant!
+ * 
+ * Niuzao yells: The elements will not die! Make use of your time before they rise again!
+ * Niuzao yells: Control the combat. Pay attention to ALL your foes.
+ * Niuzao yells: Use the battlefield to regenerate yourself!
+ * Niuzao yells: Protect the Black Prince! Distract his enemies!
+ * Niuzao yells: Do not allow your foe to complete his attack!
+ * Niuzao yells: You must sacrifice yourself to keep the Prince from falling!
+ * 
+ * Vision of Deathwing yells: Your tenacity is admirable, but pointless!
+ * Vision of Deathwing yells: There's no shelter from my fury!
+ * Vision of Deathwing yells: Your armor means nothing! Your faith - even less!
+ * 
+ * Failure
+ * Wrathion yells: Enough! Make it stop!
+ * Niuzao yells: So be it. The test is over.
+ * Niuzao says: Remember: You are never defeated until you decide to remain so. Those with true fortitude always rise whenever they fall.
+ * Niuzao says: Try again - I know you can defeat this challenge!
+ * 
+ * Victory
+ * Niuzao yells: Well done! You have triumphant!
+ * Wrathion says: Such... madness...
+ * Niuzao says: You are stronger than your father, young prince.
+ * Niuzao says: You have friends. Your champion did not allow you to fall. Take this lesson to heart.
+ * Wrathion says: I understand. Thank you, Mighty Ox. 
+ *
+ * ===================================================================================================================
+ *
+ *[90] The Emperor's Way - Actual Boss fight.
+ *
+ * Intro
+ * Emperor Shaohao yells: In the face of great fear, the black ox taught me fortitude, Through terror and darkness it persevered. The fear was vanquished.
+ * Niuzao yells: Can you stand on the tallest peak? Winds and sleet buffeting your skin, until the trees wither and the mountains fall into the sea?
+ *
+ * Aggro
+ * We shall see.
+ *
+ * Charge
+ * The winds may be strong, and the sleets may sting.
+ * You are the mountain unmovable by all but time!
+ *
+ * Massive Quake
+ * Be vigilant in your stand or you will never achieve your goals!
+ *
+ * Kills player
+ * You must persevere!
+ *
+ * Death
+ * Niuzao yells: Though you will be surrounded by foes greater than you can imagine, your fortitude shall allow you to endure. Remember this in the times ahead.
+ * Emperor Shaohao yells: You have walked the trial of fortitude, and learned of the path of the black ox. May it bless your passage.
+*/
 
-#include "ScriptMgr.h"
-#include "ScriptedCreature.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "CreatureTextMgr.h"
+#include "SpellScript.h"
+#include "SpellAuras.h"
+#include "SpellAuraEffects.h"
+#include "Player.h"
 
-
-#define MAX_HEALTH_POINTS 392500000
-#define INITIAL_HEALTH_POINTS 98125000
-#define INCREMENTAL 3212500
-
-const float _chargePos[5][3] = 
+enum Texts
 {
-    { -740.79f, -5019.06f, -6.277f },
-    { -740.41f, -4962.37f, -6.277f },
-    { -563.80f, -4963.35f, -6.277f },
-    { -563.88f, -5069.82f, -6.277f },
-    { -737.17f, -5072.31f, -6.277f }
+    // Niuzao
+    SAY_INTRO               = 0, // Can you stand on the tallest peak? Winds and sleet buffeting your skin, until the trees wither and the mountains fall into the sea?
+    SAY_AGGRO               = 1, // We shall see.
+    SAY_DEATH               = 2, // Though you will be surrounded by foes greater than you can imagine, your fortitude shall allow you to endure. Remember this in the times ahead.
+    SAY_SLAY                = 3, // You must persevere!
+    SAY_MASSIVE_QUAKE       = 4, // Be vigilant in your stand or you will never achieve your goals!
+    SAY_CHARGE              = 5  // 0 - The winds may be strong, and the sleets may sting. ; 1 - You are the mountain unmovable by all but time!
 };
 
-enum eSpells
+enum Spells
 {
-    SPELL_NIUZAO_CHARGE = 144608,
-    SPELL_NIUZAO_HEADBUTT = 144610,
-    SPELL_NIUZAO_MASSIVE_QUAKE = 144611,
-    SPELL_NIUZAO_OXEN_FORTITUDE = 144606,
-    SPELL_NIUZAO_OXEN_FORTITUDE_ACTIVE = 144607
+    // Niuzao
+    SPELL_HEADBUTT          = 144610, // Damage, knockback and threat removal.
+    SPELL_OXEN_FORTITUDE    = 144606, // Player health + boss damage increase.
+    SPELL_OXEN_FORTITUDE_T  = 144607, // Triggered on players by above.
+    SPELL_MASSIVE_QUAKE     = 144611, // Damage each sec.
+    SPELL_MASSIVE_QUAKE_D   = 144612, // Triggered by above.
+    SPELL_CHARGE            = 144608, // Charge cast time and aura.
+    SPELL_CHARGE_D          = 144609, // Per. dmg., triggered by above each sec.
 };
 
-enum eEvents
+enum Events
 {
-    EVENT_NIUZAO_OXEN_FORTITUDE = 1,
-    EVENT_NIUZAO_HEADBUTT,
-    EVENT_NIUZAO_MASSIVE_QUAKE,
-    EVENT_NIUZAO_HEALTH_66_PERCENT,
-    EVENT_NIUZAO_HEALTH_33_PERCENT,
-    EVENT_NIUZAO_DEFEATED,
-    EVENT_NIUZAO_DEATH,
-    EVENT_NIUZAO_CHARGE,
-    EVENT_NIUZAO_SHAO_DO_INTRO,
-    EVENT_NIUZAO_SHAO_DO_INTRO_ATTACKABLE,
-    EVENT_NIUZAO_SHAO_DO_OUTRO
+    // Niuzao
+    EVENT_HEADBUTT          = 1, // 20s from aggro, 30s after.
+    EVENT_OXEN_FORTITUDE    = 2, // 12s from aggro, 45s after.
+    EVENT_MASSIVE_QUAKE     = 3, // 45s from aggro, 65s after.
+    EVENT_NIUZAO_CHARGE     = 4  // 66 and 33%.
 };
 
-enum eSays
+enum ChargeStates
 {
-    SAY_AGGRO = 0,
-    SAY_INTRO = 1,
-    SAY_DEATH = 2,
-    SAY_KILL = 3,
-    SAY_SPELL_1 = 4,
-    SAY_SPELL_2 = 5,
-    SAY_SPELL_3 = 6
+    DONE_NONE               = 0, // No casts done.
+    DONE_66                 = 1, // First cast done.
+    DONE_33                 = 2  // Both casts done.
 };
 
-enum eActions
-{
-    ACTION_NIUZAO_CHARGE_66 = 1,
-    ACTION_NIUZAO_CHARGE_33,
-    ACTION_NIUZAO_CHARGE
-};
-
-enum eMovement
-{
-    MOVEMENT_NIUZAO_CHARGE = 2
-};
-
-enum Factions
-{
-    FACTION_FRIENDLY = 35,
-    FACTION_HOSTILE_NEUTRAL = 31
-};
-
-#define MIDDLE_FACING_ANGLE 1.573f
-
-enum Datas
-{
-    DATA_NIUZAO = 0,
-};
-
-enum Bosses
-{
-    BOSS_CHI_JI = 71952,
-    BOSS_NIUZAO = 71954,
-    BOSS_YU_LON = 71955,
-    BOSS_XUEN = 71953,
-    BOSS_ORDOS = 72057
-};
-
-#define CELESTIAL_COURT_BOSS_INTRO_TIMER_1 1000
-#define CELESTIAL_COURT_BOSS_INTRO_TIMER_2 15000
-
-static Position _timelessIsleMiddle = { -650.04f, -5016.84f, -6.27f, 1.573f };
-
-enum EmperorActions
-{
-    ACTION_XUEN = 1,
-    ACTION_CHIJI = 2,
-    ACTION_NIUZAO = 3,
-    ACTION_YULON = 4,
-    ACTION_MOVE_TO_MIDDLE = 100
-};
-
-enum EmprerorTalk
-{
-    EMPEROR_TALK_INTRO_YULON,
-    EMPEROR_TALK_INTRO_XUEN,
-    EMPEROR_TALK_INTRO_CHIJI,
-    EMPEROR_TALK_INTRO_NIUZAO,
-    EMPEROR_TALK_OUTRO_YULON,
-    EMPEROR_TALK_OUTRO_XUEN,
-    EMPEROR_TALK_OUTRO_CHIJI,
-    EMPEROR_TALK_OUTRO_NIUZAO,
-    EMPEROR_TALK_INTRO
-};
-
-enum Creatures
-{
-    NPC_SKUNKY_ALEMENTAL = 71908,
-    NPC_EMPEROR_SHAOHAO_TI = 73303,
-    NPC_ETERNAL_KILNMASTER = 72896,
-    NPC_HIGH_PRIEST_OF_ORDOS = 72898,
-    NPC_BLAZEBOUND_CHANTER = 72897,
-
-    // Generic (Invisible)
-    NPC_TIME_LOST_SHRINE_TRIGGER = 73461 // I think this is the correct ID :P
-};
-
+// ToDo: Script Charge, fix timers.
 class boss_niuzao : public CreatureScript
 {
     public:
         boss_niuzao() : CreatureScript("boss_niuzao") { }
 
-        struct boss_niuzaoAI : public BossAI
+        struct boss_niuzaoAI : public ScriptedAI
         {
-            boss_niuzaoAI(Creature* creature) : BossAI(creature, DATA_NIUZAO) { }
+            boss_niuzaoAI(Creature* creature) : ScriptedAI(creature) { }
+
+            EventMap events;
+            uint8 chargeDone;
+
+            void InitializeAI()
+            {
+                if (!me->isDead())
+                    Reset();
+            }
 
             void Reset()
             {
                 events.Reset();
-                _Reset();
 
-                if (me->getFaction() == FACTION_HOSTILE_NEUTRAL)
-                {
-                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                    me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                }
-
-                me->RemoveAllAuras();
-                summons.DespawnAll();
-                _charges = 0;
-                me->SetWalk(true);
-                me->setActive(true);
+                chargeDone = DONE_NONE;
             }
-
-            void EnterCombat(Unit* /*target*/)
+    
+            void EnterCombat(Unit* /*who*/)
             {
-                me->SetWalk(false);
-                death = false;
                 Talk(SAY_AGGRO);
-                events.ScheduleEvent(urand(EVENT_NIUZAO_OXEN_FORTITUDE, EVENT_NIUZAO_MASSIVE_QUAKE), urand(10000, 20000));
+
+                events.ScheduleEvent(EVENT_HEADBUTT, urand(18000, 23000)); // 18-23
+                events.ScheduleEvent(EVENT_OXEN_FORTITUDE, urand(12000, 14000)); // 12-14
+                events.ScheduleEvent(EVENT_MASSIVE_QUAKE, urand(44000, 48000)); // 44-48
             }
 
-            void DoAction(const int32 action)
+            void KilledUnit(Unit* victim)
             {
-                switch (action)
-                {
-                    case ACTION_NIUZAO_CHARGE_66:
-                    {
-                        DoCast(SPELL_NIUZAO_CHARGE);
-                        Talk(SAY_SPELL_1);
-                        break;
-                    }
-                    case ACTION_NIUZAO_CHARGE_33:
-                    {
-                        DoCast(SPELL_NIUZAO_CHARGE);
-                        Talk(SAY_SPELL_2);
-                        break;
-                    }
-                    case ACTION_NIUZAO_CHARGE:
-                    {
-                        events.ScheduleEvent(urand(EVENT_NIUZAO_OXEN_FORTITUDE, EVENT_NIUZAO_MASSIVE_QUAKE), urand(10000, 20000));
-                        me->GetMotionMaster()->MoveCharge(_chargePos[_charges][0], _chargePos[_charges][1], _chargePos[_charges][2], 15.0f, MOVEMENT_NIUZAO_CHARGE);
-                        break;
-                    }
-                    default: break;
-                };
+                if (victim->GetTypeId() == TYPEID_PLAYER)
+                    Talk(SAY_SLAY);
             }
 
-            void DamageTaken(Unit* caster, uint32 &dmg)
+            void EnterEvadeMode()
             {
-                if (me->GetHealthPct() > 66.6f)
-                {
-                    _charge66 = false;
-                    _charge33 = false;
-                }
-
-                if (me->GetHealthPct() < 66.6f && !_charge66)
-                {
-                    _charge66 = true;
-                    events.ScheduleEvent(EVENT_NIUZAO_HEALTH_66_PERCENT, 500);
-                }
-
-                if (me->GetHealthPct() < 33.3f && !_charge33)
-                {
-                    _charge33 = true;
-                    events.ScheduleEvent(EVENT_NIUZAO_HEALTH_33_PERCENT, 500);
-                }
+                me->RemoveAllAuras();
+                Reset();
+                me->DeleteThreatList();
+                me->CombatStop(true);
+                me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void MovementInform(uint32 type, uint32 point)
+            void JustDied(Unit* /*killer*/)
             {
-                if (type != POINT_MOTION_TYPE)
-                    return;
-
-                switch (point)
-                {
-                    case 1:
-                    {
-                        events.ScheduleEvent(EVENT_NIUZAO_SHAO_DO_INTRO, CELESTIAL_COURT_BOSS_INTRO_TIMER_1);
-                        me->setFaction(FACTION_HOSTILE_NEUTRAL);
-                        me->SetFacingTo(MIDDLE_FACING_ANGLE);
-                        me->SetHomePosition(_timelessIsleMiddle);
-                        break;
-                    }
-                    case MOVEMENT_NIUZAO_CHARGE:
-                    {
-                        if (_charges >= 4)
-                        {
-                            _charges = 0;
-                            me->RemoveAura(SPELL_NIUZAO_CHARGE);
-                            events.ScheduleEvent(urand(EVENT_NIUZAO_OXEN_FORTITUDE, EVENT_NIUZAO_MASSIVE_QUAKE), urand(8500, 15000));
-                            return;
-                        }
-
-                        events.ScheduleEvent(EVENT_NIUZAO_CHARGE, 100);
-                        break;
-                    }
-                    default:
-                        break;
-                }
+                Talk(SAY_DEATH);
             }
-
-            void KilledUnit(Unit* who)
-            {
-                if (who->GetTypeId() == TYPEID_PLAYER)
-                    Talk(SAY_KILL);
-                        return;
-            }
-
-            void UpdateHealth()
-            {
-                if (!me->isInCombat())
-                    return;
-
-                // Get the Threat List
-                std::list<HostileReference*> threatlist = me->getThreatManager().getThreatList();
-                if (threatlist.empty()) // He doesn't have anyone in his threatlist, useless to continue
-                    return;
-
-                uint8 count = 0;
-                for (auto itr = threatlist.begin(); itr != threatlist.end(); ++itr)
-                    if (Unit* unit = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
-                        if (unit->IsWithinDist(me, 100.0f))
-                            count++;
-
-                uint32 hp = me->GetMaxHealth() - me->GetHealth();
-                uint32 newhp = std::min<uint32>((INCREMENTAL * count), MAX_HEALTH_POINTS);
-                if (newhp != me->GetMaxHealth() && newhp > INITIAL_HEALTH_POINTS)
-                {
-                    me->SetMaxHealth(std::min<uint32>((me->GetMaxHealth() * count), MAX_HEALTH_POINTS));
-                    me->SetHealth(newhp - hp);
-                }
-            }; 
 
             void UpdateAI(const uint32 diff)
             {
+                if (!UpdateVictim())
+                    return;
+
                 events.Update(diff);
+
                 if (me->HasUnitState(UNIT_STATE_CASTING))
                     return;
 
-                switch (events.ExecuteEvent())
+                // Set Crane Rush phases execution.
+                if (me->HealthBelowPct(67) && chargeDone == DONE_NONE || me->HealthBelowPct(34) && chargeDone == DONE_66)
                 {
-                    case EVENT_NIUZAO_SHAO_DO_INTRO:
-                    {
-                        Talk(SAY_INTRO);
-                        events.ScheduleEvent(EVENT_NIUZAO_SHAO_DO_INTRO_ATTACKABLE, CELESTIAL_COURT_BOSS_INTRO_TIMER_2);
-                        break;
-                    }
-                    case EVENT_NIUZAO_SHAO_DO_INTRO_ATTACKABLE:
-                    {
-                        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                        me->SetMaxHealth(INITIAL_HEALTH_POINTS);
-                        break;
-                    }
-                    case EVENT_NIUZAO_CHARGE:
-                    {
-                        ++_charges;
-                        DoAction(ACTION_NIUZAO_CHARGE);
-                        break;
-                    }
-                    case EVENT_NIUZAO_MASSIVE_QUAKE:
-                    {
-                        if (me->HasAura(SPELL_NIUZAO_CHARGE))
-                            return;
-
-                        DoCast(SPELL_NIUZAO_MASSIVE_QUAKE);
-                        Talk(SAY_SPELL_3);
-                        events.ScheduleEvent(urand(EVENT_NIUZAO_OXEN_FORTITUDE, EVENT_NIUZAO_MASSIVE_QUAKE), urand(8500, 15000));
-                        break;
-                    }
-                    case EVENT_NIUZAO_HEADBUTT:
-                    {
-                        if (me->HasAura(SPELL_NIUZAO_CHARGE))
-                            return;
-
-                        DoCast(SPELL_NIUZAO_HEADBUTT);
-                        events.ScheduleEvent(urand(EVENT_NIUZAO_OXEN_FORTITUDE, EVENT_NIUZAO_MASSIVE_QUAKE), urand(8500, 15000));
-                        break;
-                    }
-                    case EVENT_NIUZAO_OXEN_FORTITUDE:
-                    {
-                        if (me->HasAura(SPELL_NIUZAO_CHARGE))
-                            return;
-
-                        DoCast(SPELL_NIUZAO_OXEN_FORTITUDE);
-                        events.ScheduleEvent(urand(EVENT_NIUZAO_OXEN_FORTITUDE, EVENT_NIUZAO_MASSIVE_QUAKE), urand(8500, 15000));
-                        break;
-                    }
-                    case EVENT_NIUZAO_HEALTH_66_PERCENT:
-                    {
-                        DoAction(ACTION_NIUZAO_CHARGE_66);
-                        break;
-                    }
-                    case EVENT_NIUZAO_HEALTH_33_PERCENT:
-                    {
-                        DoAction(ACTION_NIUZAO_CHARGE_33);
-                        break;
-                    }
-                    case EVENT_NIUZAO_SHAO_DO_OUTRO:
-                    {
-                        if (Creature* shao = me->FindNearestCreature(NPC_EMPEROR_SHAOHAO_TI, 300.0f, true))
-                            shao->AI()->Talk(EMPEROR_TALK_OUTRO_CHIJI);
-                        break;
-                    }
-                    case EVENT_NIUZAO_DEATH:
-                    {
-                        if (death)
-                        {
-                            if (Creature* shao = me->FindNearestCreature(NPC_EMPEROR_SHAOHAO_TI, 300.0f, true))
-                                shao->AI()->DoAction(ACTION_YULON);
-
-                            me->DisappearAndDie();
-                            death = false;
-                        }
-                        break;
-                    }
-                    default:
-                        break;
+                    events.ScheduleEvent(EVENT_NIUZAO_CHARGE, 2000);
+                    chargeDone++;
                 }
 
-                if (!death && !me->HasAura(SPELL_NIUZAO_CHARGE))
-                    if (!UpdateVictim())
-                        return;
+                while (uint32 eventId = events.ExecuteEvent())
+                {
+                    switch (eventId)
+                    {
+                        case EVENT_HEADBUTT:
+                            DoCastVictim(SPELL_HEADBUTT);
+                            events.ScheduleEvent(EVENT_HEADBUTT, urand(35000, 40000));
+                            break;
+
+                        case EVENT_OXEN_FORTITUDE:
+                            DoCast(me, SPELL_OXEN_FORTITUDE);
+                            events.ScheduleEvent(EVENT_OXEN_FORTITUDE, urand(43000, 47000));
+                            break;
+
+                        case EVENT_MASSIVE_QUAKE:
+                            Talk(SAY_MASSIVE_QUAKE);
+                            DoCast(me, SPELL_MASSIVE_QUAKE);
+                            events.ScheduleEvent(EVENT_MASSIVE_QUAKE, urand(70000, 75000));
+                            break;
+
+                        case EVENT_NIUZAO_CHARGE:
+                            Talk(SAY_CHARGE);
+                            DoCast(me, SPELL_CHARGE);
+                            break;
+
+                        default: break;
+                    }
+                }
 
                 DoMeleeAttackIfReady();
             }
-
-            private:
-                bool _charge66, _charge33 = false;
-                bool death = false;
-                uint8 _charges;
-                EventMap events;
         };
 
         CreatureAI* GetAI(Creature* creature) const
@@ -396,71 +271,7 @@ class boss_niuzao : public CreatureScript
         }
 };
 
-// Headbutt - 144610
-class spell_niuzao_headbutt : public SpellScriptLoader
-{
-    public:
-        spell_niuzao_headbutt() : SpellScriptLoader("spell_niuzao_headbutt") { }
-
-        class spell_niuzao_headbutt_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_niuzao_headbutt_SpellScript)
-
-            void RemoveThreat(SpellEffIndex /*eff*/)
-            {
-                if (!GetHitUnit())
-                    return;
-
-                if (Unit* target = GetHitUnit())
-                    GetCaster()->SetReducedThreatPercent(1000, target->GetGUID());
-            }
-
-            void Register()
-            {
-                OnEffectHitTarget += SpellEffectFn(spell_niuzao_headbutt_SpellScript::RemoveThreat, EFFECT_1, SPELL_EFFECT_KNOCK_BACK);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_niuzao_headbutt_SpellScript();
-        }
-};
-
-// Charge - 144608
-class spell_niuzao_charge : public SpellScriptLoader
-{
-    public:
-        spell_niuzao_charge() : SpellScriptLoader("spell_niuzao_charge") { }
-
-        class spell_niuzao_charge_AuraScript : public AuraScript
-        {
-            PrepareAuraScript(spell_niuzao_charge_AuraScript)
-
-            void HandleEffectApply(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
-            {
-                if (!GetOwner())
-                    return;
-
-                if (Creature *pOwner = GetOwner()->ToCreature())
-                    pOwner->AI()->DoAction(ACTION_NIUZAO_CHARGE);
-            }
-
-            void Register()
-            {
-                OnEffectApply += AuraEffectApplyFn(spell_niuzao_charge_AuraScript::HandleEffectApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
-            }
-        };
-
-        AuraScript* GetAuraScript() const
-        {
-            return new spell_niuzao_charge_AuraScript();
-        }
-};
-
 void AddSC_boss_niuzao()
 {
-    new spell_niuzao_headbutt();
-    new spell_niuzao_charge();
     new boss_niuzao();
 }

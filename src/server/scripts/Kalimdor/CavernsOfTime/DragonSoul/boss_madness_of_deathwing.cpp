@@ -355,13 +355,12 @@ const Position mutatedcorruptionPos[4] =
     {-12160.9f, 12057.0f, 2.47362f, 0.733038f}  // 4
 };
 
-const Position limbsPos[5] = 
+const Position limbsPos[4] = 
 {
     {-11941.2f, 12248.9f, 12.1499f, 1.98968f},
-    {-12015.8f, 12195.3f, -4.79399f, 2.1293f},	
     {-12005.8f, 12190.3f, -6.59399f, 2.1293f},
-    {-12065.0f, 12140.2f, -1.0946f, 2.338740f},
-	{-12097.8f, 12067.4f, 13.4888f, 2.21657f}
+    {-12065.0f, 12127.2f, -3.2946f, 2.338740f},
+    {-12097.8f, 12067.4f, 13.4888f, 2.21657f}
 };
 
 const Position hemorrhagePos[4] = 
@@ -1071,7 +1070,7 @@ class npc_dragon_soul_thrall_1 : public CreatureScript
             {
                 Player* player = NULL;
                 AnyLivePlayerNoGmCheck check(me, 500.0f);
-                WoWSource::PlayerSearcher<AnyLivePlayerNoGmCheck> searcher(me, player, check);
+                SkyMistCore::PlayerSearcher<AnyLivePlayerNoGmCheck> searcher(me, player, check);
                 me->VisitNearbyWorldObject(500.0f, searcher);
                 return (player ? true : false);
             }
@@ -2649,7 +2648,7 @@ class npc_madness_of_deathwing_jump_pad : public CreatureScript
                 {
                     std::list<Player*> players;
                     PlayerCheck check(me, spellIdEx1, spellIdEx2);
-                    WoWSource::PlayerListSearcher<PlayerCheck> searcher(me, players, check);
+                    SkyMistCore::PlayerListSearcher<PlayerCheck> searcher(me, players, check);
                     me->VisitNearbyObject(32.0f, searcher);
                     if (!players.empty())
                         for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++ itr)
@@ -2788,7 +2787,7 @@ class spell_madness_of_deathwing_crush_force : public SpellScriptLoader
                 if (targets.empty())
                     return;
 
-                WoWSource::Containers::RandomResizeList(targets, 1);
+                SkyMistCore::Containers::RandomResizeList(targets, 1);
             }
 
             void Register()
@@ -3062,7 +3061,7 @@ class spell_madness_of_deathwing_shrapnel_aoe : public SpellScriptLoader
 
                 targets.remove_if(PlayersCheck());
 
-                WoWSource::Containers::RandomResizeList(targets, fragments.size());
+                SkyMistCore::Containers::RandomResizeList(targets, fragments.size());
 
                 for (std::list<uint64>::const_iterator itr = fragments.begin(); itr != fragments.end(); ++itr)
                 {

@@ -169,7 +169,7 @@ class UnitAI
                 return NULL;
 
             if (targetType == SELECT_TARGET_NEAREST || targetType == SELECT_TARGET_FARTHEST)
-                targetList.sort(WoWSource::ObjectDistanceOrderPred(me));
+                targetList.sort(SkyMistCore::ObjectDistanceOrderPred(me));
 
             switch (targetType)
             {
@@ -218,13 +218,13 @@ class UnitAI
                 return;
 
             if (targetType == SELECT_TARGET_NEAREST || targetType == SELECT_TARGET_FARTHEST)
-                targetList.sort(WoWSource::ObjectDistanceOrderPred(me));
+                targetList.sort(SkyMistCore::ObjectDistanceOrderPred(me));
 
             if (targetType == SELECT_TARGET_FARTHEST || targetType == SELECT_TARGET_BOTTOMAGGRO)
                 targetList.reverse();
 
             if (targetType == SELECT_TARGET_RANDOM)
-                WoWSource::Containers::RandomResizeList(targetList, maxTargets);
+                SkyMistCore::Containers::RandomResizeList(targetList, maxTargets);
             else
                 targetList.resize(maxTargets);
         }
@@ -255,7 +255,6 @@ class UnitAI
         void DoCastToAllHostilePlayers(uint32 spellid, bool triggered = false);
         void DoCastVictim(uint32 spellId, bool triggered = false);
         void DoCastAOE(uint32 spellId, bool triggered = false);
-        void DoCastRandom(uint32 spellId, float dist, bool triggered = false, int32 aura = 0, uint32 position = 0); // To players only
 
         float DoGetSpellMaxRange(uint32 spellId, bool positive = false);
 

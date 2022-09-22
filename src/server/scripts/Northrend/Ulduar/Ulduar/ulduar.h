@@ -47,7 +47,6 @@ enum UlduarBosses
     BOSS_VEZAX               = 17,
     BOSS_YOGGSARON           = 18,
     BOSS_ALGALON             = 19,
-    BOSS_YOGG_SARON          = 20,
 };
 
 enum UlduarNPCs
@@ -190,9 +189,6 @@ enum UlduarNPCs
     NPC_ALGALON_STALKER_ASTEROID_TARGET_01  = 33104,
     NPC_ALGALON_STALKER_ASTEROID_TARGET_02  = 33105,
     NPC_UNLEASHED_DARK_MATTER               = 34097,
-    
-
-    
 };
 
 enum UlduarGameObjects
@@ -353,19 +349,6 @@ enum UlduarData
     DATA_UNIVERSE_GLOBE,
     DATA_ALGALON_TRAPDOOR,
     DATA_BRANN_BRONZEBEARD_ALG,
-    
-  // Yogg-Saron
-    DATA_VOICE_OF_YOGG_SARON,
-    DATA_SARA,
-    DATA_BRAIN_OF_YOGG_SARON,
-    DATA_FREYA_YS,
-    DATA_HODIR_YS,
-    DATA_THORIM_YS,
-    DATA_MIMIRON_YS,
-    DATA_ILLUSION,
-    DATA_DRIVE_ME_CRAZY,
-    DATA_KEEPERS_COUNT,    
-    
 };
 
 enum UlduarWorldStates

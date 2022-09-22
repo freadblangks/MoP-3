@@ -92,10 +92,6 @@ bool AreaTrigger::CreateAreaTrigger(uint32 guidlow, uint32 triggerEntry, Unit* c
             SetVisualRadius(3.5f);
             break;
 
-        case 51052:
-        case 62618:
-            SetVisualRadius(8.0f);
-            break;
         // Heart of Fear.
 
         case 123811: // Pheromones of Zeal Zor'lok.
@@ -171,30 +167,13 @@ void AreaTrigger::Update(uint32 p_time)
     // Custom MoP Script
     switch (m_spellInfo->Id)
     {
-        case 51052: // Anti-Magic Zone
-        {
-            UnitList targets;
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck checker(this, m_caster, 4.5f);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targets, checker);
-            VisitNearbyObject(4.5f, searcher);
-
-            for (Unit* target : targets)
-            {
-                if (!target->HasAura(145629))
-                {
-                    if (AuraPtr aura = m_caster->AddAura(145629, target))
-                        aura->SetDuration(_duration);
-                }
-            }
-            break;
-    }
         case 13810: // Ice Trap
         {
             std::list<Unit*> targetList;
             radius = 10.0f;
 
-            WoWSource::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -208,8 +187,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 8.0f;
 
-            WoWSource::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -217,23 +196,6 @@ void AreaTrigger::Update(uint32 p_time)
                     if (!itr->HasAura(127797))
                         caster->CastSpell(itr, 127797, true);
 
-            break;
-        }
-        case 62618: // Power Word: Barrier
-        {
-            UnitList targets;
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck checker(this, m_caster, 4.5f);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targets, checker);
-            VisitNearbyObject(4.5f, searcher);
-
-            for (Unit* target : targets)
-            {
-                AuraPtr aura = target->GetAura(81782);
-                if (!aura)
-                    aura = m_caster->AddAura(81782, target);
-                if (aura)
-                    aura->SetDuration(101);
-            }
             break;
         }
         case 144692: // Pool of Fire Ordos
@@ -261,8 +223,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -272,11 +234,6 @@ void AreaTrigger::Update(uint32 p_time)
                     if (itr->GetHealthPct() < 100.0f && caster->IsInRaidWith(itr))
                     {
                         caster->CastSpell(itr, 115464, true); // Healing Sphere heal
-                        if (caster->HasAura(145439))
-                        {
-                            int32 amount = caster->GetTotalAttackPowerValue(BASE_ATTACK) * 0.3375f;
-                            caster->CastCustomSpell(145441, SPELLVALUE_BASE_POINT0, amount, itr, true);
-                        }
                         SetDuration(0);
 
                         // we should remove stack from caster healing sphere counter
@@ -300,8 +257,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 100.0f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -321,8 +278,8 @@ void AreaTrigger::Update(uint32 p_time)
             bool affected = false;
             radius = 2.25f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -352,8 +309,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 10.0f;
 
-            WoWSource::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -401,8 +358,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 30.0f;
 
-            WoWSource::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -426,8 +383,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -460,8 +417,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -481,8 +438,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -500,37 +457,13 @@ void AreaTrigger::Update(uint32 p_time)
 
             break;
         }
-        case 138310:
-        {
-            std::list<Unit*> targetList;
-            radius = 1.0f;
-
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
-            VisitNearbyObject(radius, searcher);
-
-            if (!targetList.empty())
-            {
-                for (auto itr : targetList)
-                {
-                    if (itr->GetGUID() == caster->GetGUID())
-                    {
-                        caster->CastSpell(itr, 138311, true);
-                        SetDuration(0);
-                        return;
-                    }
-                }
-            }
-
-            break;
-        }
         case 121536: // Angelic Feather
         {
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -550,8 +483,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            WoWSource::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -572,8 +505,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 1.0f;
 
-            WoWSource::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::AnyFriendlyUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::AnyFriendlyUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())
@@ -623,8 +556,8 @@ void AreaTrigger::Update(uint32 p_time)
             std::list<Unit*> targetList;
             radius = 10.0f;
 
-            WoWSource::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
-            WoWSource::UnitListSearcher<WoWSource::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
+            SkyMistCore::NearestAttackableUnitInObjectRangeCheck u_check(this, caster, radius);
+            SkyMistCore::UnitListSearcher<SkyMistCore::NearestAttackableUnitInObjectRangeCheck> searcher(this, targetList, u_check);
             VisitNearbyObject(radius, searcher);
 
             if (!targetList.empty())

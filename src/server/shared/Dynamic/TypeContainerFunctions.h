@@ -29,7 +29,7 @@
 #include "Dynamic/TypeList.h"
 #include <map>
 
-namespace WoWSource
+namespace SkyMistCore
 {
     /* ContainerMapList Helpers */
     // count functions

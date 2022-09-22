@@ -2,159 +2,152 @@
 #include "ScriptedCreature.h"
 #include "siege_of_orgrimmar.h"
 
-enum Texts
+enum eSpells
 {
-	SAY_AGGRO = 0,
-	SAY_EARTHQUAKE = 1,
-	SAY_OVERRUN = 2,
-	SAY_SLAY = 3,
-	SAY_DEATH = 4
+    SPELL_BATTLE_STANCE     = 143589,
+    SPELL_BERSERK           = 47008,
+    SPELL_BERSERKER_STANCE  = 143594,
+    SPELL_BONECRACKER       = 143638,
+    SPELL_COOLING_OFF       = 143484,
+    SPELL_DEFENSIVE_STANCE  = 143593,
+    SPELL_EXECUTE           = 143502,
+    SPELL_HEROIC_SHOCKWAVE  = 143716,
+    SPELL_RAVAGER           = 143872,
+    SPELL_SUNDERING_BLOW    = 143494,
+    SPELL_WAR_SONG          = 143503,
+    SPELL_AFRTERSHOCK       = 143712,
+    SPELL_KORKRON_BANNER    = 143501
 };
 
-enum Spells
+enum eEvents
 {
-	SPELL_EARTHQUAKE = 143502,
-	SPELL_SUNDER_ARMOR = 143494,
-	SPELL_CHAIN_LIGHTNING = 143503,
-	SPELL_OVERRUN = 143638,
-	SPELL_ENRAGE = 143594,
-	SPELL_MARK_DEATH = 143716,
-	SPELL_AURA_DEATH = 40936
+	EVENT_BERSERK                   = 1,
+	EVENT_BERSERKER_STANCE          = 2,
+	EVENT_BONECRACKER               = 3,
+	EVENT_COOLING_OFF               = 4,
+	EVENT_DEFENSIVE_STANCE          = 5,
+	EVENT_EXECUTE                   = 6,
+	EVENT_HEROIC_SHOCKWAVE          = 7,
+	EVENT_RAVAGER                   = 8,
+	EVENT_WAR_SONG                  = 9,
+	EVENT_AFRTERSHOCK               = 10,
+	EVENT_KORKRON_BANNER            = 11,
+	EVENT_SUNDERING_BLOW            = 12,
+	EVENT_BATTLE_STANCE             = 13
 };
 
-enum Events
+enum eSays
 {
-	EVENT_ENRAGE = 1,
-	EVENT_ARMOR = 2,
-	EVENT_CHAIN = 3,
-	EVENT_QUAKE = 4,
-	EVENT_OVERRUN = 5
+    SAY_AGGRO   = 1,
+    SAY_KILL    = 2,
+    SAY_DEATH   = 3
 };
 
-class boss_general_nazgrim : public CreatureScript
+enum eAdds
 {
-public:
-	boss_general_nazgrim() : CreatureScript("boss_general_nazgrim") { }
+	mob_orgrimmar_faithful = 71715,
+	mob_korkron_ironblade  = 71516,
+	mob_korkron_arcweaver  = 71517,
+	mob_korkron_assassin   = 71518,
+	mob_korkron_warshaman  = 71519
+}
 
-	struct boss_general_nazgrimAI : public ScriptedAI
-	{
-		boss_general_nazgrimAI(Creature* creature) : ScriptedAI(creature)
+class boss_general_nazgrim : public CreatureScript //71515
+{
+	public:
+		boss_general_nazgrim() : CreatureScript("boss_general_nazgrim") { }
+
+		struct boss_general_nazgrimAI : public BossAI
 		{
-			Initialize();
-		}
-
-		void Initialize()
-		{
-			_inEnrage = false;
-		}
-
-		void Reset() override
-		{
-			_events.Reset();
-			_events.ScheduleEvent(EVENT_ENRAGE, 0);
-			_events.ScheduleEvent(EVENT_ARMOR, urand(5000, 13000));
-			_events.ScheduleEvent(EVENT_CHAIN, urand(10000, 30000));
-			_events.ScheduleEvent(EVENT_QUAKE, urand(25000, 35000));
-			_events.ScheduleEvent(EVENT_OVERRUN, urand(30000, 45000));
-			Initialize();
-		}
-
-		void KilledUnit(Unit* victim) override
-		{
-
-
-			if (urand(0, 4))
-				return;
-
-			Talk(SAY_SLAY);
-		}
-
-		void JustDied(Unit* killer) override
-		{
-			if (killer) { if (killer->GetTypeId() == TYPEID_PLAYER)         if (AchievementEntry const* achievementEntry = sAchievementStore.LookupEntry(8471)) killer->ToPlayer()->CompletedAchievement(achievementEntry); }Talk(SAY_DEATH);
-		}
-
-		void EnterCombat(Unit* /*who*/) override
-		{
-			Talk(SAY_AGGRO);
-		}
-
-		void MoveInLineOfSight(Unit* who) override
-
-		{
-
-
-
-		}
-
-		void UpdateAI(uint32 const diff) override
-		{
-			if (!UpdateVictim())
-				return;
-
-			_events.Update(diff);
-
-			if (me->HasUnitState(UNIT_STATE_CASTING))
-				return;
-
-			while (uint32 eventId = _events.ExecuteEvent())
+			boss_general_nazgrimAI(Creature* creature) : BossAI(creature, DATA_GENERAL_NAZGRIM)
 			{
-				switch (eventId)
-				{
-				case EVENT_ENRAGE:
-					if (!HealthAbovePct(30))
-					{
-						DoCast(me, SPELL_ENRAGE);
-						_events.ScheduleEvent(EVENT_ENRAGE, 6000);
-						_inEnrage = true;
-					}
-					break;
-				case EVENT_OVERRUN:
-					Talk(SAY_OVERRUN);
-					DoCastVictim(SPELL_OVERRUN);
-					_events.ScheduleEvent(EVENT_OVERRUN, urand(25000, 40000));
-					break;
-				case EVENT_QUAKE:
-					if (urand(0, 1))
-						return;
-
-					Talk(SAY_EARTHQUAKE);
-
-					//remove enrage before casting earthquake because enrage + earthquake = 16000dmg over 8sec and all dead
-					if (_inEnrage)
-						me->RemoveAurasDueToSpell(SPELL_ENRAGE);
-
-					DoCastVictim(SPELL_EARTHQUAKE);
-					_events.ScheduleEvent(EVENT_QUAKE, urand(30000, 55000));
-					break;
-				case EVENT_CHAIN:
-					if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 0.0f, true))
-						DoCast(target, SPELL_CHAIN_LIGHTNING);
-					_events.ScheduleEvent(EVENT_CHAIN, urand(7000, 27000));
-					break;
-				case EVENT_ARMOR:
-					Talk(irand(5, 12)); if (irand(0, 5) == 0) DoCastVictim(SPELL_MARK_DEATH); else if (irand(0, 5) == 1) DoCastVictim(SPELL_AURA_DEATH); else DoCastVictim(SPELL_SUNDER_ARMOR);
-					_events.ScheduleEvent(EVENT_ARMOR, urand(10000, 25000));
-					break;
-				default:
-					break;
-				}
+				pInstance = creature->GetInstanceScript();
 			}
-			DoMeleeAttackIfReady();
+			
+			EventMap events;
+			InstanceScript* pInstance;
+			
+			void Reset()
+			{
+				Reset();
+				
+				events.Reset();
+				
+				summons.DespawnAll();
+				
+				if (pInstance)
+                    pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
+			}
+			
+			void JustReachedHome()
+            {
+                _JustReachedHome();
+
+                if (pInstance)
+                    pInstance->SetBossState(DATA_GENERAL_NAZGRIM, FAIL);
+            }
+			
+			void EnterCombat(Unit* attacker)
+            {
+                if (pInstance)
+                {
+                    pInstance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
+                    pInstance->SetBossState(DATA_GENERAL_NAZGRIM, IN_PROGRESS);
+                }
+                Talk(SAY_AGGRO);
+
+                events.ScheduleEvent(EVENT_SUNDERING_BLOW, urand(5000, 6000));
+                events.ScheduleEvent(EVENT_BONECRACKER, urand(16000, 16000));
+                events.ScheduleEvent(EVENT_BERSERK, urand(600000, 600000));
+                events.ScheduleEvent(EVENT_BATTLE_STANCE, urand(0, 0));
+                events.ScheduleEvent(EVENT_BERSERKER_STANCE, urand(120000, 120000));
+                events.ScheduleEvent(EVENT_DEFENSIVE_STANCE, urand(180000, 180000));
+            }
+			
+			void JustSummoned(Creature* summon)
+            {
+                summons.Summon(summon);
+            }
+            
+            void SummonedCreatureDespawn(Creature* summon)
+            {
+                summons.Despawn(summon);
+            }
+			
+			void KilledUnit(Unit* who)
+            {
+            }
+			
+			void JustDied(Unit* killer)
+            {
+                _JustDied();
+
+                if (pInstance)
+                {
+                    pInstance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, me);
+                    pInstance->SetBossState(DATA_GENERAL_NAZGRIM, DONE);
+                }
+            }
+			
+			void UpdateAI(const uint32 diff)
+            {
+                if (!UpdateVictim())
+                    return;
+
+                if (me->HasUnitState(UNIT_STATE_CASTING))
+                    return;
+
+                events.Update(diff);
+			}
+		};
+
+        CreatureAI* GetAI(Creature* pCreature) const
+		{
+			return new boss_general_nazgrimAI(pCreature);
 		}
+};
 
-	private:
-		EventMap _events;
-		bool _inEnrage;
-	};
-
-	CreatureAI* GetAI(Creature* creature) const override
-	{
-		return new boss_general_nazgrimAI(creature);
-	}
-};	
-
-class mob_orgrimmar_faithful : public CreatureScript
+class mob_orgrimmar_faithful : public CreatureScript //71715
 {
     public:
         mob_orgrimmar_faithful() : CreatureScript("mob_orgrimmar_faithful") { }
@@ -187,7 +180,7 @@ class mob_orgrimmar_faithful : public CreatureScript
         }
 };
 
-class mob_korkron_ironblade : public CreatureScript
+class mob_korkron_ironblade : public CreatureScript //71516
 {
     public:
         mob_korkron_ironblade() : CreatureScript("mob_korkron_ironblade") { }
@@ -220,7 +213,7 @@ class mob_korkron_ironblade : public CreatureScript
         }
 };
 
-class mob_korkron_arcweaver : public CreatureScript
+class mob_korkron_arcweaver : public CreatureScript //71517
 {
     public:
         mob_korkron_arcweaver() : CreatureScript("mob_korkron_arcweaver") { }
@@ -253,7 +246,7 @@ class mob_korkron_arcweaver : public CreatureScript
         }
 };
 
-class mob_korkron_assassin : public CreatureScript
+class mob_korkron_assassin : public CreatureScript //71518
 {
     public:
         mob_korkron_assassin() : CreatureScript("mob_korkron_assassin") { }
@@ -286,7 +279,8 @@ class mob_korkron_assassin : public CreatureScript
         }
 };
 
-class mob_korkron_warshaman : public CreatureScript
+
+class mob_korkron_warshaman : public CreatureScript //71519
 {
     public:
         mob_korkron_warshaman() : CreatureScript("mob_korkron_warshaman") { }
@@ -321,7 +315,7 @@ class mob_korkron_warshaman : public CreatureScript
 
 void AddSC_general_nazgrim()
 {
-	new boss_general_nazgrim();
+    new boss_general_nazgrim();
     new mob_orgrimmar_faithful();
     new mob_korkron_ironblade();
     new mob_korkron_arcweaver();

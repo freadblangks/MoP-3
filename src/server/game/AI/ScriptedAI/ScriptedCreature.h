@@ -45,7 +45,7 @@ class SummonList : public std::list<uint64>
         {
             // We need to use a copy of SummonList here, otherwise original SummonList would be modified
             std::list<uint64> listCopy = *this;
-            WoWSource::Containers::RandomResizeList<uint64, Predicate>(listCopy, predicate, max);
+            SkyMistCore::Containers::RandomResizeList<uint64, Predicate>(listCopy, predicate, max);
             for (iterator i = listCopy.begin(); i != listCopy.end(); )
             {
                 Creature* summon = Unit::GetCreature(*me, *i++);
@@ -331,8 +331,6 @@ struct ScriptedAI : public CreatureAI
 
         return normal10; // Return Normal Difficulty spell by default.
     }
-
-    void SetImmuneToPullPushEffects(bool immune);
 
     private:
         Difficulty _difficulty;

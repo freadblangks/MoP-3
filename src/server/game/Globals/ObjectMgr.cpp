@@ -1670,7 +1670,7 @@ void ObjectMgr::AddCreatureToGrid(uint32 guid, CreatureData const* data)
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = WoWSource::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.creatures.insert(guid);
         }
@@ -1684,7 +1684,7 @@ void ObjectMgr::RemoveCreatureFromGrid(uint32 guid, CreatureData const* data)
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = WoWSource::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.creatures.erase(guid);
         }
@@ -1988,7 +1988,7 @@ void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = WoWSource::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.gameobjects.insert(guid);
         }
@@ -2002,7 +2002,7 @@ void ObjectMgr::RemoveGameobjectFromGrid(uint32 guid, GameObjectData const* data
     {
         if (mask & 1)
         {
-            CellCoord cellCoord = WoWSource::ComputeCellCoord(data->posX, data->posY);
+            CellCoord cellCoord = SkyMistCore::ComputeCellCoord(data->posX, data->posY);
             CellObjectGuids& cell_guids = _mapObjectGuidsStore[MAKE_PAIR32(data->mapid, i)][cellCoord.GetId()];
             cell_guids.gameobjects.erase(guid);
         }
@@ -4552,7 +4552,7 @@ void ObjectMgr::LoadScripts(ScriptsType type)
                     continue;
                 }
 
-                if (!WoWSource::IsValidMapCoord(tmp.TeleportTo.DestX, tmp.TeleportTo.DestY, tmp.TeleportTo.DestZ, tmp.TeleportTo.Orientation))
+                if (!SkyMistCore::IsValidMapCoord(tmp.TeleportTo.DestX, tmp.TeleportTo.DestY, tmp.TeleportTo.DestZ, tmp.TeleportTo.Orientation))
                 {
                     sLog->outError(LOG_FILTER_SQL, "Table `%s` has invalid coordinates (X: %f Y: %f Z: %f O: %f) in SCRIPT_COMMAND_TELEPORT_TO for script id %u",
                         tableName.c_str(), tmp.TeleportTo.DestX, tmp.TeleportTo.DestY, tmp.TeleportTo.DestZ, tmp.TeleportTo.Orientation, tmp.id);
@@ -4650,7 +4650,7 @@ void ObjectMgr::LoadScripts(ScriptsType type)
 
             case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:
             {
-                if (!WoWSource::IsValidMapCoord(tmp.TempSummonCreature.PosX, tmp.TempSummonCreature.PosY, tmp.TempSummonCreature.PosZ, tmp.TempSummonCreature.Orientation))
+                if (!SkyMistCore::IsValidMapCoord(tmp.TempSummonCreature.PosX, tmp.TempSummonCreature.PosY, tmp.TempSummonCreature.PosZ, tmp.TempSummonCreature.Orientation))
                 {
                     sLog->outError(LOG_FILTER_SQL, "Table `%s` has invalid coordinates (X: %f Y: %f Z: %f O: %f) in SCRIPT_COMMAND_TEMP_SUMMON_CREATURE for script id %u",
                         tableName.c_str(), tmp.TempSummonCreature.PosX, tmp.TempSummonCreature.PosY, tmp.TempSummonCreature.PosZ, tmp.TempSummonCreature.Orientation, tmp.id);
@@ -5780,7 +5780,7 @@ void ObjectMgr::LoadGraveyardZones()
             continue;
         }
 
-        if (areaEntry->zone != 0 && zoneId != 33 && zoneId != 4755 && zoneId != 5287 && zoneId != 6170 && zoneId != 6176 && zoneId != 6450 && zoneId != 6451
+        if (areaEntry->zone != 0 && zoneId != 33 && zoneId != 5287 && zoneId != 6170 && zoneId != 6176 && zoneId != 6450 && zoneId != 6451
                              && zoneId != 6452 && zoneId != 6453 && zoneId != 6454 && zoneId != 6455 && zoneId != 6456 && zoneId != 6450) 
         {
             sLog->outError(LOG_FILTER_SQL, "Table `game_graveyard_zone` has a record for subzone id (%u) instead of zone, skipped.", zoneId);
@@ -7204,7 +7204,7 @@ void ObjectMgr::LoadPointsOfInterest()
         POI.data = fields[5].GetUInt32();
         POI.icon_name = fields[6].GetString();
 
-        if (!WoWSource::IsValidMapCoord(POI.x, POI.y))
+        if (!SkyMistCore::IsValidMapCoord(POI.x, POI.y))
         {
             sLog->outError(LOG_FILTER_SQL, "Table `points_of_interest` (Entry: %u) have invalid coordinates (X: %f Y: %f), ignored.", point_id, POI.x, POI.y);
             continue;

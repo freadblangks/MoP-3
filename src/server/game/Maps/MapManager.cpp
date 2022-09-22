@@ -171,15 +171,7 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
         return false;
 
     Difficulty targetDifficulty = player->GetDifficulty(entry->IsRaid());
-	switch (entry->MapID)
-	{
-	case 169:
-	case 409:
-	case 469:
-	case 531:
-		targetDifficulty = RAID_DIFFICULTY_40MAN;
-		break;
-	}
+
     // The player has normal / heroic difficulty active and tries to enter into instance which doesn't have a normal / heroic mode.
     MapDifficulty const* mapDiff = GetMapDifficultyData(entry->MapID, targetDifficulty);
     if (!mapDiff)
@@ -403,7 +395,7 @@ void MapManager::DoDelayedMovesAndRemoves()
 
 bool MapManager::ExistMapAndVMap(uint32 mapid, float x, float y)
 {
-    GridCoord p = WoWSource::ComputeGridCoord(x, y);
+    GridCoord p = SkyMistCore::ComputeGridCoord(x, y);
 
     int gx=63-p.x_coord;
     int gy=63-p.y_coord;

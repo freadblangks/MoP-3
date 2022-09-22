@@ -1151,9 +1151,9 @@ void Spell::SelectImplicitConeTargets(SpellEffIndex effIndex, SpellImplicitTarge
 
     if (uint32 containerTypeMask = GetSearcherTypeMask(objectType, condList))
     {
-        WoWSource::WorldObjectSpellConeTargetCheck check(coneAngle, radius, m_caster, m_spellInfo, selectionType, condList);
-        WoWSource::WorldObjectListSearcher<WoWSource::WorldObjectSpellConeTargetCheck> searcher(m_caster, targets, check, containerTypeMask);
-        SearchTargets<WoWSource::WorldObjectListSearcher<WoWSource::WorldObjectSpellConeTargetCheck> >(searcher, containerTypeMask, m_caster, m_caster, radius);
+        SkyMistCore::WorldObjectSpellConeTargetCheck check(coneAngle, radius, m_caster, m_spellInfo, selectionType, condList);
+        SkyMistCore::WorldObjectListSearcher<SkyMistCore::WorldObjectSpellConeTargetCheck> searcher(m_caster, targets, check, containerTypeMask);
+        SearchTargets<SkyMistCore::WorldObjectListSearcher<SkyMistCore::WorldObjectSpellConeTargetCheck> >(searcher, containerTypeMask, m_caster, m_caster, radius);
 
         CallScriptObjectAreaTargetSelectHandlers(targets, effIndex);
 
@@ -1161,7 +1161,7 @@ void Spell::SelectImplicitConeTargets(SpellEffIndex effIndex, SpellImplicitTarge
         {
             // Other special target selection goes here
             if (uint32 maxTargets = m_spellValue->MaxAffectedTargets)
-                WoWSource::Containers::RandomResizeList(targets, maxTargets);
+                SkyMistCore::Containers::RandomResizeList(targets, maxTargets);
 
             // for compability with older code - add only unit and go targets
             // TODO: remove this
@@ -1183,7 +1183,7 @@ void Spell::SelectImplicitConeTargets(SpellEffIndex effIndex, SpellImplicitTarge
                 unitTargets.push_back(m_caster);
                 if (unitTargets.size() > maxSize)
                 {
-                    unitTargets.sort(WoWSource::HealthPctOrderPred());
+                    unitTargets.sort(SkyMistCore::HealthPctOrderPred());
                     unitTargets.resize(maxSize);
                 }
             }
@@ -1476,7 +1476,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
                             }
                             else
                             {
-                                unitTargets.sort(WoWSource::UnitDistanceCompareOrderPred(m_caster));
+                                unitTargets.sort(SkyMistCore::UnitDistanceCompareOrderPred(m_caster));
                                 Unit* victim = (*unitTargets.begin())->ToUnit();
 
                                 if (victim)
@@ -1526,7 +1526,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
                         break;
                     // Efflorescence
                     case 81269:
-                        maxSize = m_caster->HasAura(138284) ? 4 : 3; // Item - Druid T15 Restoration 2P Bonus
+                        maxSize = 3;
                         power = POWER_HEALTH;
                         break;
                     // Tranquility 
@@ -1560,7 +1560,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
             {
                 if (unitTargets.size() > maxSize)
                 {
-                    unitTargets.sort(WoWSource::HealthPctOrderPred());
+                    unitTargets.sort(SkyMistCore::HealthPctOrderPred());
                     unitTargets.resize(maxSize);
                 }
             }
@@ -1574,7 +1574,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
 
                 if (unitTargets.size() > maxSize)
                 {
-                    unitTargets.sort(WoWSource::PowerPctOrderPred((Powers)power));
+                    unitTargets.sort(SkyMistCore::PowerPctOrderPred((Powers)power));
                     unitTargets.resize(maxSize);
                 }
             }
@@ -1608,7 +1608,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
 
         // Other special target selection goes here
         if (uint32 maxTargets = m_spellValue->MaxAffectedTargets)
-            WoWSource::Containers::RandomResizeList(unitTargets, maxTargets);
+            SkyMistCore::Containers::RandomResizeList(unitTargets, maxTargets);
 
         for (std::list<Unit*>::iterator itr = unitTargets.begin(); itr != unitTargets.end(); ++itr)
             AddUnitTarget(*itr, effMask, false);
@@ -1617,7 +1617,7 @@ void Spell::SelectImplicitAreaTargets(SpellEffIndex effIndex, SpellImplicitTarge
     if (!gObjTargets.empty())
     {
         if (uint32 maxTargets = m_spellValue->MaxAffectedTargets)
-            WoWSource::Containers::RandomResizeList(gObjTargets, maxTargets);
+            SkyMistCore::Containers::RandomResizeList(gObjTargets, maxTargets);
 
         for (std::list<GameObject*>::iterator itr = gObjTargets.begin(); itr != gObjTargets.end(); ++itr)
             AddGOTarget(*itr, effMask);
@@ -1876,13 +1876,13 @@ void Spell::SelectImplicitTrajTargets()
     float srcToDestDelta = m_targets.GetDstPos()->m_positionZ - m_targets.GetSrcPos()->m_positionZ;
 
     std::list<WorldObject*> targets;
-    WoWSource::WorldObjectSpellTrajTargetCheck check(dist2d, m_targets.GetSrcPos(), m_caster, m_spellInfo);
-    WoWSource::WorldObjectListSearcher<WoWSource::WorldObjectSpellTrajTargetCheck> searcher(m_caster, targets, check, GRID_MAP_TYPE_MASK_ALL);
-    SearchTargets<WoWSource::WorldObjectListSearcher<WoWSource::WorldObjectSpellTrajTargetCheck> > (searcher, GRID_MAP_TYPE_MASK_ALL, m_caster, m_targets.GetSrcPos(), dist2d);
+    SkyMistCore::WorldObjectSpellTrajTargetCheck check(dist2d, m_targets.GetSrcPos(), m_caster, m_spellInfo);
+    SkyMistCore::WorldObjectListSearcher<SkyMistCore::WorldObjectSpellTrajTargetCheck> searcher(m_caster, targets, check, GRID_MAP_TYPE_MASK_ALL);
+    SearchTargets<SkyMistCore::WorldObjectListSearcher<SkyMistCore::WorldObjectSpellTrajTargetCheck> > (searcher, GRID_MAP_TYPE_MASK_ALL, m_caster, m_targets.GetSrcPos(), dist2d);
     if (targets.empty())
         return;
 
-    targets.sort(WoWSource::ObjectDistanceOrderPred(m_caster));
+    targets.sort(SkyMistCore::ObjectDistanceOrderPred(m_caster));
 
     float b = tangent(m_targets.GetElevation());
     float a = (srcToDestDelta - dist2d * b) / (dist2d * dist2d);
@@ -2123,7 +2123,7 @@ void Spell::SearchTargets(SEARCHER& searcher, uint32 containerMask, Unit* refere
         x = pos->GetPositionX();
         y = pos->GetPositionY();
 
-        CellCoord p(WoWSource::ComputeCellCoord(x, y));
+        CellCoord p(SkyMistCore::ComputeCellCoord(x, y));
         Cell cell(p);
         cell.SetNoCreate();
 
@@ -2148,9 +2148,9 @@ WorldObject* Spell::SearchNearbyTarget(float range, SpellTargetObjectTypes objec
     uint32 containerTypeMask = GetSearcherTypeMask(objectType, condList);
     if (!containerTypeMask)
         return NULL;
-    WoWSource::WorldObjectSpellNearbyTargetCheck check(range, m_caster, m_spellInfo, selectionType, condList);
-    WoWSource::WorldObjectLastSearcher<WoWSource::WorldObjectSpellNearbyTargetCheck> searcher(m_caster, target, check, containerTypeMask);
-    SearchTargets<WoWSource::WorldObjectLastSearcher<WoWSource::WorldObjectSpellNearbyTargetCheck> > (searcher, containerTypeMask, m_caster, m_caster, range);
+    SkyMistCore::WorldObjectSpellNearbyTargetCheck check(range, m_caster, m_spellInfo, selectionType, condList);
+    SkyMistCore::WorldObjectLastSearcher<SkyMistCore::WorldObjectSpellNearbyTargetCheck> searcher(m_caster, target, check, containerTypeMask);
+    SearchTargets<SkyMistCore::WorldObjectLastSearcher<SkyMistCore::WorldObjectSpellNearbyTargetCheck> > (searcher, containerTypeMask, m_caster, m_caster, range);
     return target;
 }
 
@@ -2159,9 +2159,9 @@ void Spell::SearchAreaTargets(std::list<WorldObject*>& targets, float range, Pos
     uint32 containerTypeMask = GetSearcherTypeMask(objectType, condList);
     if (!containerTypeMask)
         return;
-    WoWSource::WorldObjectSpellAreaTargetCheck check(range, position, m_caster, referer, m_spellInfo, selectionType, condList);
-    WoWSource::WorldObjectListSearcher<WoWSource::WorldObjectSpellAreaTargetCheck> searcher(m_caster, targets, check, containerTypeMask);
-    SearchTargets<WoWSource::WorldObjectListSearcher<WoWSource::WorldObjectSpellAreaTargetCheck> > (searcher, containerTypeMask, m_caster, position, range);
+    SkyMistCore::WorldObjectSpellAreaTargetCheck check(range, position, m_caster, referer, m_spellInfo, selectionType, condList);
+    SkyMistCore::WorldObjectListSearcher<SkyMistCore::WorldObjectSpellAreaTargetCheck> searcher(m_caster, targets, check, containerTypeMask);
+    SearchTargets<SkyMistCore::WorldObjectListSearcher<SkyMistCore::WorldObjectSpellAreaTargetCheck> > (searcher, containerTypeMask, m_caster, position, range);
 }
 
 void Spell::SearchChainTargets(std::list<WorldObject*>& targets, uint32 chainTargets, WorldObject* target, SpellTargetObjectTypes objectType, SpellTargetCheckTypes selectType, ConditionList* condList, bool isChainHeal)
@@ -4049,12 +4049,6 @@ void Spell::_handle_finish_phase()
                 }
             }
         }
-        if (m_needComboPoints)
-        {
-            if (Player* _player = m_caster->ToPlayer())
-                if (_player->HasAura(138352))
-                    m_comboPointGain = 1;
-        }
 
         // Real add combo points from effects
         if (m_comboPointGain)
@@ -4400,10 +4394,6 @@ void Spell::finish(bool ok)
 
             break;
         }
-        case 108212: // BURST OF SPEED
-            for (int i = 0; i <= 9; i++) // max ludicrous amount of slow / root auras can't be arsed finding how aura list is being ahndled
-                GetCaster()->RemoveAurasWithMechanic((1 << MECHANIC_ROOT) | (1 << MECHANIC_SNARE), AURA_REMOVE_BY_DEFAULT, 0);
-            break;
         case 49560: // Death Grip
         case 49576: // Death Grip dummy
         {
@@ -6585,12 +6575,6 @@ void Spell::HandleHolyPower(Player* caster)
     if (!caster)
         return;
 
-    if (caster->HasAura(144593))
-    {
-        if (roll_chance_i(25))
-            caster->CastSpell(caster, 144595, true);
-    }
-
     // Templar's Verdict and Eternal Flame - Don't remove power twice
     if (m_spellInfo->Id == 85256 || m_spellInfo->Id == 114163)
         return;
@@ -7478,9 +7462,9 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (damage && int32(target->getLevel()) > damage)
                         return SPELL_FAILED_HIGHLEVEL;
 
-                    //if (target->GetTypeId() != TYPEID_PLAYER)
-                    //    if (m_spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_MOD_POSSESS)
-                    //        return SPELL_FAILED_DONT_REPORT;
+                    if (target->GetTypeId() != TYPEID_PLAYER)
+                        if (m_spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_MOD_POSSESS)
+                            return SPELL_FAILED_DONT_REPORT;
                 }
 
                 break;
@@ -8111,14 +8095,14 @@ SpellCastResult Spell::CheckItems()
     // check spell focus object
     if (m_spellInfo->RequiresSpellFocus)
     {
-        CellCoord p(WoWSource::ComputeCellCoord(m_caster->GetPositionX(), m_caster->GetPositionY()));
+        CellCoord p(SkyMistCore::ComputeCellCoord(m_caster->GetPositionX(), m_caster->GetPositionY()));
         Cell cell(p);
 
         GameObject* ok = NULL;
-        WoWSource::GameObjectFocusCheck go_check(m_caster, m_spellInfo->RequiresSpellFocus);
-        WoWSource::GameObjectSearcher<WoWSource::GameObjectFocusCheck> checker(m_caster, ok, go_check);
+        SkyMistCore::GameObjectFocusCheck go_check(m_caster, m_spellInfo->RequiresSpellFocus);
+        SkyMistCore::GameObjectSearcher<SkyMistCore::GameObjectFocusCheck> checker(m_caster, ok, go_check);
 
-        TypeContainerVisitor<WoWSource::GameObjectSearcher<WoWSource::GameObjectFocusCheck>, GridTypeMapContainer > object_checker(checker);
+        TypeContainerVisitor<SkyMistCore::GameObjectSearcher<SkyMistCore::GameObjectFocusCheck>, GridTypeMapContainer > object_checker(checker);
         Map& map = *m_caster->GetMap();
         cell.Visit(p, object_checker, map, *m_caster, m_caster->GetVisibilityRange());
 
@@ -9666,7 +9650,7 @@ bool Spell::IsMorePowerfulAura(Unit const* target) const
     return false;
 }
 
-namespace WoWSource
+namespace SkyMistCore
 {
 
 WorldObjectSpellTargetCheck::WorldObjectSpellTargetCheck(Unit* caster, Unit* referer, SpellInfo const* spellInfo,
@@ -9824,4 +9808,4 @@ bool WorldObjectSpellTrajTargetCheck::operator()(WorldObject* target)
     return WorldObjectSpellAreaTargetCheck::operator ()(target);
 }
 
-} //namespace WoWSource
+} //namespace SkyMistCore

@@ -137,9 +137,6 @@ set(scripts_STAT_SRCS
   Kalimdor/WailingCaverns/wailing_caverns.h
   Kalimdor/WailingCaverns/instance_wailing_caverns.cpp
   Kalimdor/WailingCaverns/wailing_caverns.cpp
-  Kalimdor/WailingCaverns/boss_lady_anacondra.cpp
-  Kalimdor/WailingCaverns/boss_lord_cobrahn.cpp
-  Kalimdor/WailingCaverns/boss_lord_pythas.cpp
   Kalimdor/TheVortexPinnacle/boss_grand_vizier_ertan.cpp
   Kalimdor/TheVortexPinnacle/boss_altairus.cpp
   Kalimdor/TheVortexPinnacle/boss_asaad.cpp
@@ -186,10 +183,6 @@ set(scripts_STAT_SRCS
   Kalimdor/OnyxiasLair/boss_onyxia.cpp
   Kalimdor/OnyxiasLair/onyxias_lair.h
   Kalimdor/OnyxiasLair/instance_onyxias_lair.cpp
-  Kalimdor/RageFire/boss_adarogg.cpp
-  Kalimdor/RageFire/boss_gordoth.cpp
-  Kalimdor/RageFire/boss_koranthal.cpp
-  Kalimdor/RageFire/boss_slagmaw.cpp
   Kalimdor/southern_barrens.cpp
 )
 

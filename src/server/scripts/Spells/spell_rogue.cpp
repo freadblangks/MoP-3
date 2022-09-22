@@ -103,41 +103,32 @@ enum RogueSpells
 // Cloak and Dagger - 138106
 class spell_rog_cloak_and_dagger : public SpellScriptLoader
 {
-public:
-    spell_rog_cloak_and_dagger() : SpellScriptLoader("spell_rog_cloak_and_dagger") { }
+    public:
+        spell_rog_cloak_and_dagger() : SpellScriptLoader("spell_rog_cloak_and_dagger") { }
 
-    class script_impl : public SpellScript
-    {
-        PrepareSpellScript(script_impl);
-
-        enum
+        class spell_rog_cloak_and_dagger_SpellScript : public SpellScript
         {
-            TALENT_CLOAK_AND_SHADOW     = 138106,
-            CLOAK_AND_SHADOW_TELEPORT   = 132987
+            PrepareSpellScript(spell_rog_cloak_and_dagger_SpellScript);
+
+            void HandleOnHit()
+            {
+                if (Player* _player = GetCaster()->ToPlayer())
+                    if (Unit* target = GetHitUnit())
+                        if (_player->HasAura(ROGUE_SPELL_CLOAK_AND_DAGGER))
+                            _player->CastSpell(target, ROGUE_SPELL_SHADOWSTEP_TELEPORT_ONLY, true);
+            }
+
+            void Register()
+            {
+                OnHit += SpellHitFn(spell_rog_cloak_and_dagger_SpellScript::HandleOnHit);
+            }
         };
 
-        void HandleOnHit()
+        SpellScript* GetSpellScript() const
         {
-            auto caster = GetCaster();
-            auto target = GetHitUnit();
-            if (caster && target && caster->HasAura(TALENT_CLOAK_AND_SHADOW))
-            {
-                caster->CastSpell(target, CLOAK_AND_SHADOW_TELEPORT, true);
-            }
+            return new spell_rog_cloak_and_dagger_SpellScript();
         }
-
-        void Register()
-        {
-            OnHit += SpellHitFn(script_impl::HandleOnHit);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new script_impl();
-    }
 };
-
 
 // Called by Expose Armor - 8647
 // Glyph of Expose Armor - 56803
@@ -954,12 +945,12 @@ class spell_rog_shroud_of_concealment : public SpellScriptLoader
             void SelectTargets(std::list<WorldObject*>& targets)
             {
                 std::list<WorldObject*> targetsToRemove;
-                targets.remove_if(WoWSource::UnitAuraCheck(true, BG_WS_SPELL_WARSONG_FLAG));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, BG_WS_SPELL_SILVERWING_FLAG));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_1));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_2));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_3));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_4));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, BG_WS_SPELL_WARSONG_FLAG));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, BG_WS_SPELL_SILVERWING_FLAG));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_1));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_2));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_3));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, BG_KT_SPELL_ORB_PICKED_UP_4));
 
                 for (auto itr : targets)
                 {
@@ -1405,32 +1396,24 @@ class spell_rog_preparation : public SpellScriptLoader
 
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
-                Player * const caster = GetCaster()->ToPlayer();
-                if (!caster)
-                    return;
+                Player* caster = GetCaster()->ToPlayer();
 
-                SpellCooldowns const &cm = caster->GetSpellCooldownMap();
-
-                SpellCooldowns::const_iterator i = cm.begin();
-                SpellCooldowns::const_iterator next = i;
-
-                for (; i != cm.end(); i = next)
+                //immediately finishes the cooldown on certain Rogue abilities
+                const SpellCooldowns& cm = caster->GetSpellCooldownMap();
+                for (SpellCooldowns::const_iterator itr = cm.begin(); itr != cm.end();)
                 {
-                    ++next;
+                    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(itr->first);
 
-                    SpellInfo const * const spellInfo = sSpellMgr->GetSpellInfo(i->first);
-                    if (!spellInfo)
-                        continue;
-
-                    switch (spellInfo->Id)
+                    if (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE)
                     {
-                        case 1856:  // Vanish
-                        case 2983:  // Sprint
-                        case 5277:  // Evasion
-                        case 51722: // Dismantle
-                            caster->RemoveSpellCooldown(spellInfo->Id, true);
-                            break;
+                        if (spellInfo->SpellFamilyFlags[0] & SPELLFAMILYFLAG_ROGUE_VAN_EVAS_SPRINT ||   // Vanish, Evasion, Sprint
+                            spellInfo->SpellFamilyFlags[1] & SPELLFAMILYFLAG1_ROGUE_DISMANTLE)          // Dismantle
+                            caster->RemoveSpellCooldown((itr++)->first, true);
+                        else
+                            ++itr;
                     }
+                    else
+                        ++itr;
                 }
             }
 
@@ -1446,7 +1429,6 @@ class spell_rog_preparation : public SpellScriptLoader
             return new spell_rog_preparation_SpellScript();
         }
 };
-
 
 class spell_rog_deadly_poison : public SpellScriptLoader
 {
@@ -1851,43 +1833,6 @@ class spell_rog_find_weakness : public SpellScriptLoader
         }
 };
 
-// Shuriken Toss - 114014
-class spell_rog_shuriken_toss : public SpellScriptLoader
-{
-public:
-    spell_rog_shuriken_toss() : SpellScriptLoader("spell_rog_shuriken_toss") { }
-
-    class script_impl : public SpellScript
-    {
-        PrepareSpellScript(script_impl);
-
-        enum
-        {
-            SPELL_SHURIKEN_TOSS_PROC = 137586,
-        };
-
-        void HandleOnHit()
-        {
-            auto caster = GetCaster();
-            auto target = GetHitUnit();
-            if (caster && target && caster->GetDistance(target) > 10.f)
-            {
-                caster->CastSpell(caster, SPELL_SHURIKEN_TOSS_PROC, true);
-            }
-        }
-
-        void Register()
-        {
-            OnHit += SpellHitFn(script_impl::HandleOnHit);
-        }
-    };
-
-    SpellScript* GetSpellScript() const
-    {
-        return new script_impl();
-    }
-};
-
 void AddSC_rogue_spell_scripts()
 {
     new spell_rog_glyph_of_expose_armor();
@@ -1923,5 +1868,4 @@ void AddSC_rogue_spell_scripts()
     new spell_rog_subterfuge_effect();
     new spell_rog_mind_numbing_poison();
     new spell_rog_find_weakness();
-    new spell_rog_shuriken_toss();
 }

@@ -239,6 +239,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/Karazhan/boss_terestian_illhoof.cpp
   EasternKingdoms/Karazhan/karazhan.h
   EasternKingdoms/Gilneas/gilneas.cpp
+  EasternKingdoms/Gilneas/gilneas.h
   EasternKingdoms/ThroneOfTheTides/boss_lady_nazjar.cpp
   EasternKingdoms/ThroneOfTheTides/boss_commander_ulthok.cpp
   EasternKingdoms/ThroneOfTheTides/boss_mindebender_ghursha.cpp

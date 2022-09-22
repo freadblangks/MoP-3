@@ -26,7 +26,6 @@ void AddWorldScripts();
 void AddEasternKingdomsScripts();
 void AddKalimdorScripts();
 void AddOutlandScripts();
-void AddMaelstromScripts();
 void AddNorthrendScripts();
 void AddPandariaScripts();
 void AddBattlegroundScripts();

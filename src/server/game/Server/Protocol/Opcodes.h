@@ -838,7 +838,6 @@ enum Opcodes
     SMSG_GUILD_FLAGGED_FOR_RENAME                     = 0x0000,
     SMSG_GUILD_INVITE                                 = 0x185A, // 5.4.7 18019
     SMSG_GUILD_INVITE_CANCEL                          = 0x0000,
-    SMSG_GUILD_MAX_DAILY_XP                           = 0x0000,
     SMSG_GUILD_KNOWN_RECIPES                          = 0x0000,
     SMSG_GUILD_MEMBERS_FOR_RECIPE                     = 0x0000,
     SMSG_GUILD_MEMBER_DAILY_RESET                     = 0x0000,
@@ -1158,7 +1157,7 @@ enum Opcodes
     SMSG_SET_PET_SPECIALIZATION                       = 0x1640, // 5.4.7 18019
     SMSG_SET_PHASE_SHIFT                              = 0x1D52, // 5.4.7 18019
     SMSG_SET_PLAYER_DECLINED_NAMES_RESULT             = 0x00E9, // 5.4.7 18019
-    SMSG_SET_PLAY_HOVER_ANIM                          = 0x0729, // 5.4.7 18019 Not implemented - CHECK!
+    SMSG_SET_PLAY_HOVER_ANIM                          = 0x0729, // 5.4.7 18019
     SMSG_SET_PROFICIENCY                              = 0x1E3B, // 5.4.7 18019
     SMSG_SET_VIGNETTE                                 = 0x05A1, // 5.4.7 18019 Not implemented - CHECK!
     SMSG_SET_PROJECTILE_POSITION                      = 0x0000,

@@ -546,9 +546,9 @@ class spell_dru_soul_of_the_forest_eclipse : public SpellScriptLoader
                     if (_player->HasAura(SPELL_DRUID_SOUL_OF_THE_FOREST_HASTE))
                     {
                         if (aurEff->GetSpellInfo()->Id == SPELL_DRUID_SOLAR_ECLIPSE)
-                            _player->SetEclipsePower(int32(_player->GetEclipsePower() - 20));
+                            _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - 20);
                         else if (aurEff->GetSpellInfo()->Id == SPELL_DRUID_LUNAR_ECLIPSE)
-                            _player->SetEclipsePower(int32(_player->GetEclipsePower() + 20));
+                            _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + 20);
                     }
                 }
             }
@@ -630,36 +630,22 @@ class spell_dru_tigers_fury : public SpellScriptLoader
         {
             PrepareSpellScript(spell_dru_tigers_fury_SpellScript);
 
-            SpellCastResult CheckCast()
+            SpellCastResult CheckBerzerk()
             {
                 if (GetCaster())
                 {
-                    // check berserk
                     if (GetCaster()->HasAura(SPELL_DRUID_BERSERK_CAT))
                         return SPELL_FAILED_DONT_REPORT;
-
-                    // check cat form
-                    if (!GetCaster()->HasAura(SPELL_DRUID_CAT_FORM))
-                        return SPELL_FAILED_ONLY_SHAPESHIFT;
                 }
                 else
                     return SPELL_FAILED_DONT_REPORT;
 
                 return SPELL_CAST_OK;
             }
-            void Cast()
-            {
-                if (GetCaster()->HasAura(138357)) // Item - Druid T15 Feral 4P Bonus
-                {
-                    // Increases critical strike chance by 40% for next 3 uses
-                    GetCaster()->CastSpell(GetCaster(), 138358, true);
-                }
-            }
 
             void Register()
             {
-                OnCheckCast += SpellCheckCastFn(spell_dru_tigers_fury_SpellScript::CheckCast);
-                OnCast += SpellCastFn(spell_dru_tigers_fury_SpellScript::Cast);
+                OnCheckCast += SpellCheckCastFn(spell_dru_tigers_fury_SpellScript::CheckBerzerk);
             }
         };
 
@@ -3028,12 +3014,8 @@ class spell_dru_swiftmend_heal : public SpellScriptLoader
 
                 targets.clear();
 
-                unitList.sort(WoWSource::HealthPctOrderPred());
-                int size = 3;
-                if (GetCaster()->HasAura(138284))
-                    size += 1;
-                
-                unitList.resize(size);
+                unitList.sort(SkyMistCore::HealthPctOrderPred());
+                unitList.resize(3);
 
                 for (auto itr : unitList)
                     targets.push_back(itr);
@@ -3119,9 +3101,9 @@ class spell_dru_astral_communion : public SpellScriptLoader
 
                     // Give Solar energy just if our last eclipse was lunar else, give Lunar energy
                     if (_player->GetLastEclipsePower() == SPELL_DRUID_LUNAR_ECLIPSE)
-                        _player->SetEclipsePower(int32(_player->GetEclipsePower() + eclipse));
+                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + eclipse);
                     else
-                        _player->SetEclipsePower(int32(_player->GetEclipsePower() - eclipse));
+                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - eclipse);
 
                     if (_player->HasAura(SPELL_DRUID_ASTRAL_INSIGHT))
                     {
@@ -3129,7 +3111,7 @@ class spell_dru_astral_communion : public SpellScriptLoader
                         _player->RemoveAura(SPELL_DRUID_ASTRAL_INSIGHT);
                     }
 
-                    if (_player->GetEclipsePower() == 100 && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE))
+                    if (_player->GetPower(POWER_ECLIPSE) == 100 && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE))
                     {
                         _player->CastSpell(_player, SPELL_DRUID_SOLAR_ECLIPSE, true, 0); // Cast Solar Eclipse
                         _player->CastSpell(_player, SPELL_DRUID_NATURES_GRACE, true); // Cast Nature's Grace
@@ -3139,7 +3121,7 @@ class spell_dru_astral_communion : public SpellScriptLoader
                         // Now our last eclipse is Solar
                         _player->SetLastEclipsePower(SPELL_DRUID_SOLAR_ECLIPSE);
                     }
-                    else if (_player->GetEclipsePower() == -100 && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
+                    else if (_player->GetPower(POWER_ECLIPSE) == -100 && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
                     {
                         _player->CastSpell(_player, SPELL_DRUID_LUNAR_ECLIPSE, true, 0); // Cast Lunar Eclipse
                         _player->CastSpell(_player, SPELL_DRUID_NATURES_GRACE, true); // Cast Nature's Grace
@@ -3184,7 +3166,7 @@ class spell_dru_celestial_alignment : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
-                        _player->SetEclipsePower(0);
+                        _player->SetPower(POWER_ECLIPSE, 0);
                         _player->RemoveLastEclipsePower();
 
                         _player->CastSpell(_player, SPELL_DRUID_SOLAR_ECLIPSE, true, 0); // Cast Solar Eclipse
@@ -3668,7 +3650,7 @@ class spell_dru_eclipse : public SpellScriptLoader
                                     if (_player->HasAura(SPELL_DRUID_EUPHORIA) && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE) && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
                                         eclipse *= 2;
 
-                                    _player->SetEclipsePower(int32(_player->GetEclipsePower() - eclipse));
+                                    _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - eclipse);
 
                                     // Your crits with Wrath also increase sunfire duration by 2s
                                     if (GetSpell()->IsCritForTarget(target))
@@ -3694,7 +3676,7 @@ class spell_dru_eclipse : public SpellScriptLoader
                                     if (_player->HasAura(SPELL_DRUID_EUPHORIA) && !_player->HasAura(SPELL_DRUID_SOLAR_ECLIPSE) && !_player->HasAura(SPELL_DRUID_LUNAR_ECLIPSE))
                                         eclipse *= 2;
 
-                                    _player->SetEclipsePower(int32(_player->GetEclipsePower() + eclipse));
+                                    _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + eclipse);
 
                                     // Your crits with Starfire also increase moonfire duration by 2s
                                     if (GetSpell()->IsCritForTarget(target))
@@ -3718,9 +3700,9 @@ class spell_dru_eclipse : public SpellScriptLoader
 
                                     // Give Solar energy just if our last eclipse was lunar else, give Lunar energy
                                     if (_player->GetLastEclipsePower() == SPELL_DRUID_LUNAR_ECLIPSE)
-                                        _player->SetEclipsePower(int32(_player->GetEclipsePower() + eclipse));
+                                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) + eclipse);
                                     else
-                                        _player->SetEclipsePower(int32(_player->GetEclipsePower() - eclipse));
+                                        _player->SetPower(POWER_ECLIPSE, _player->GetPower(POWER_ECLIPSE) - eclipse);
 
                                     // Your crits with Starsurge also increase sunfire duration by 2s
                                     if (GetSpell()->IsCritForTarget(target))
@@ -3747,7 +3729,7 @@ class spell_dru_eclipse : public SpellScriptLoader
                                 }
                             }
                             // Now check if we have lunar or solar eclipse and give it with effects
-                            _player->SendEclipse();
+                            // _player->SendEclipse(); // Done in Unit::SetPower.
                         }
                     }
                 }
@@ -3805,7 +3787,7 @@ class spell_dru_t10_restoration_4p_bonus : public SpellScriptLoader
                         return;
                     }
 
-                    Unit* target = WoWSource::Containers::SelectRandomContainerElement(tempTargets);
+                    Unit* target = SkyMistCore::Containers::SelectRandomContainerElement(tempTargets);
                     targets.clear();
                     targets.push_back(target);
                 }
@@ -3868,7 +3850,7 @@ class spell_dru_starfall_dummy : public SpellScriptLoader
 
             void FilterTargets(std::list<WorldObject*>& targets)
             {
-                WoWSource::Containers::RandomResizeList(targets, 2);
+                SkyMistCore::Containers::RandomResizeList(targets, 2);
             }
 
             void HandleDummy(SpellEffIndex /*effIndex*/)
@@ -4047,114 +4029,91 @@ class spell_dru_genesis : public SpellScriptLoader
         }
 };
 
-// 145108 - Ysera's Gift - wowhead.com/spell=145108/
+// Ysera's Gift - 145108
 class spell_dru_yseras_gift : public SpellScriptLoader
 {
-    class script_impl : public AuraScript
-    {
-        PrepareAuraScript(script_impl)
+    public:
+        spell_dru_yseras_gift() : SpellScriptLoader("spell_dru_yseras_gift") { }
 
-
-        enum
+		class spell_dru_yseras_gift_AuraScript : public AuraScript
         {
-            YSERAS_GIFT_HEAL_SELF = 145109,
-            YSERAS_GIFT_HEAL_ALLY = 145110
-        };
+            PrepareAuraScript(spell_dru_yseras_gift_AuraScript);
 
-        void OnTick(constAuraEffectPtr aurEff)
-        {
-            PreventDefaultAction();
+            uint32 update;
+            int32 basepoints;
 
-            auto const caster = GetCaster();
-            if (!caster || caster->isDead() || caster->GetTypeId() != TYPEID_PLAYER)
-                return;
+            void OnUpdate(uint32 diff, AuraEffectPtr aurEff)
+            {
+                update += diff;
 
+                if (update >= 5000)
+                {
+                    if (GetCaster())
+                        if (Player* _player = GetCaster()->ToPlayer())
+                        {
+                            if (_player->GetHealth() != _player->GetMaxHealth())
+                            {
+                                basepoints = _player->CountPctFromMaxHealth(5);
+                                _player->CastCustomSpell(_player, SPELL_DRUID_YSERAS_GIFT, &basepoints, NULL, NULL, true);
+                            }
+                            else
+                            {
+                                std::list<Unit*> tempList;
+                                std::list<Unit*> alliesList;
+                                _player->GetAttackableUnitListInRange(tempList, 100.0f);
 
-            uint32 spellId = YSERAS_GIFT_HEAL_SELF;
+                                for (auto itr : tempList)
+                                {
+                                    //if (!_player->IsWithinLOSInMap(itr))
+                                    //    continue;
 
-            if (caster->GetHealth() == caster->GetMaxHealth()) {
-                // No point in casting anything if character is not in group
-                if (!caster->ToPlayer()->GetGroup())
-                    return;
-                spellId = YSERAS_GIFT_HEAL_ALLY;
+                                    if (itr->GetTypeId() != TYPEID_PLAYER)
+                                        continue;
+
+                                    if (!itr->IsInRaidWith(_player) || !itr->IsInPartyWith(_player))
+                                        continue;
+
+                                    if (itr->IsHostileTo(_player))
+                                        continue;
+
+                                    if (itr->GetGUID() == _player->GetGUID())
+                                        continue;
+
+                                    if (itr->GetHealth() == itr->GetMaxHealth())
+                                        continue;
+
+                                    alliesList.push_back(itr);
+                                }
+
+                                if (!alliesList.empty())
+                                {
+                                    alliesList.sort(SkyMistCore::HealthPctOrderPred());
+
+                                    Unit* healTarget = alliesList.front();
+                                    basepoints = _player->CountPctFromMaxHealth(5);
+                                    _player->CastCustomSpell(healTarget, SPELL_DRUID_YSERAS_GIFT, &basepoints, NULL, NULL, true);
+                                    // to prevent a bug with combat after heal
+                                    if (_player->isInCombat())
+                                        _player->CombatStop();
+                                }
+                            }
+                        }
+
+                    update = 0;
+                }
             }
 
-            // It seems that it heals for 5% of druid's health for both cases
-            int32 const bp0 = caster->CountPctFromMaxHealth(aurEff->GetAmount());
-            caster->CastCustomSpell(caster, spellId, &bp0, nullptr, nullptr, true);
-        }
+            void Register()
+            {
+                OnEffectUpdate += AuraEffectUpdateFn(spell_dru_yseras_gift_AuraScript::OnUpdate, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+            }
+        };
 
-        void Register()
+        AuraScript* GetAuraScript() const
         {
-            OnEffectPeriodic += AuraEffectPeriodicFn(script_impl::OnTick, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+            return new spell_dru_yseras_gift_AuraScript();
         }
-    };
-
-
-public:
-    spell_dru_yseras_gift()
-        : SpellScriptLoader("spell_dru_yseras_gift")
-    { 
-    
-    }
-
-    AuraScript * GetAuraScript() const
-    {
-        return new script_impl;
-    }
 };
-
-// Ysera's Gift (ally heal) - 145110
-class spell_dru_yseras_gift_heal_ally : public SpellScriptLoader
-{
-    class script_impl : public SpellScript
-    {
-        PrepareSpellScript(script_impl)
-
-
-        void FilterTargets(std::list<WorldObject*> &targets)
-        {
-            targets.remove(GetCaster());
-
-            if (targets.empty())
-                return;
-
-
-            // most Injured
-            auto const mostInjuredItr = std::min_element(targets.cbegin(), targets.cend(),
-                [](WorldObject const *a, WorldObject const *b)
-                {
-                    return a->ToUnit()->GetHealthPct() < b->ToUnit()->GetHealthPct();
-                });
-
-
-            auto const mostInjured = (*mostInjuredItr)->ToUnit();
-            targets.clear();
-
-            // Do not cast anything if all group members are at full health
-            if (mostInjured->GetHealth() != mostInjured->GetMaxHealth())
-                targets.emplace_back(mostInjured);
-        }
-
-        void Register()
-        {
-            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(script_impl::FilterTargets, EFFECT_0, TARGET_UNIT_CASTER_AREA_RAID);
-        }
-    };
-
-public:
-    spell_dru_yseras_gift_heal_ally()
-        : SpellScriptLoader("spell_dru_yseras_gift_heal_ally")
-    { 
-    
-    }
-
-    SpellScript * GetSpellScript() const
-    {
-        return new script_impl;
-    }
-};
-
 
 // Charm Woodland Creature - 127757
 // Glyph of Charm Woodland Creature - 57855
@@ -4587,7 +4546,6 @@ void AddSC_druid_spell_scripts()
     new spell_dru_survival_instincts();
     new spell_dru_genesis();
     new spell_dru_yseras_gift();
-    new spell_dru_yseras_gift_heal_ally();
     new spell_druid_glyph_of_charm_woodland_creature();
     new spell_dru_heart_wild();
     new spell_dru_dream_of_cenarius();

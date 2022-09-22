@@ -648,11 +648,6 @@ class WorldObject : public Object, public WorldLocation
         float GetSightRange(const WorldObject* target = NULL) const;
         bool canSeeOrDetect(WorldObject const* obj, bool ignoreStealth = false, bool distanceCheck = false) const;
 
-        void setExplicitSeerGuid(uint64 guid)
-        {
-            m_explicitSeerGuid = guid;
-        }
-
         FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealth;
         FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealthDetect;
 
@@ -790,11 +785,9 @@ class WorldObject : public Object, public WorldLocation
         bool CanDetect(WorldObject const* obj, bool ignoreStealth) const;
         bool CanDetectInvisibilityOf(WorldObject const* obj) const;
         bool CanDetectStealthOf(WorldObject const* obj) const;
-
-        uint64 m_explicitSeerGuid;
 };
 
-namespace WoWSource
+namespace SkyMistCore
 {
     template<class T>
     void RandomResizeList(std::list<T> &_list, uint32 _size)

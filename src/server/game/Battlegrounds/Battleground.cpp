@@ -37,7 +37,7 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 
-namespace WoWSource
+namespace SkyMistCore
 {
     class BattlegroundChatBuilder
     {
@@ -101,7 +101,7 @@ namespace WoWSource
             int32 _arg1;
             int32 _arg2;
     };
-}                                                           // namespace WoWSource
+}                                                           // namespace SkyMistCore
 
 template<class Do>
 void Battleground::BroadcastWorker(Do& _do)
@@ -192,10 +192,10 @@ Battleground::Battleground()
     StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_30S;
     StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
     //we must set to some default existing values
-    StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_BATTLEGROUND_START_2_MINUTES;
-    StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_BATTLEGROUND_START_1_MINUTE;
-    StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_BATTLEGROUND_START_30_SECONDS;
-    StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_BATTLEGROUND_HAS_BEGUN;
+    StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_BG_WS_START_TWO_MINUTES;
+    StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_BG_WS_START_ONE_MINUTE;
+    StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_BG_WS_START_HALF_MINUTE;
+    StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_BG_WS_HAS_BEGUN;
 
     m_CrowdChosed = false;
 
@@ -264,11 +264,6 @@ void Battleground::Update(uint32 diff)
             break;
         case STATUS_IN_PROGRESS:
             _ProcessOfflineQueue();
-            if (GetElapsedTime() >= (1 * MINUTE * IN_MILLISECONDS + 2 * IN_MILLISECONDS) && !(m_Events & BG_STARTING_EVENT_5))
-            {
-                m_Events |= BG_STARTING_EVENT_5;
-                StartingEventDespawnDoors();
-            }
             // after 20 minutes without one team losing, the arena closes with no winner and no rating change
             if (isArena())
             {
@@ -429,18 +424,6 @@ inline void Battleground::_ProcessRessurect(uint32 diff)
         }
         m_ResurrectQueue.clear();
     }
-}
-
-uint32 Battleground::GetPrematureWinner()
-{
-    uint32 hordePlayers = GetPlayersCountByTeam(HORDE);
-    uint32 alliancePlayers = GetPlayersCountByTeam(ALLIANCE);
-    if (hordePlayers > alliancePlayers)
-       return HORDE;
-    if (alliancePlayers > hordePlayers)
-        return ALLIANCE;
-
-    return TEAM_NONE;
 }
 
 inline void Battleground::_ProcessProgress(uint32 diff)
@@ -1034,7 +1017,7 @@ uint32 Battleground::GetBonusHonorFromKill(uint32 kills) const
 {
     //variable kills means how many honorable kills you scored (so we need kills * honor_for_one_kill)
     uint32 maxLevel = GetMaxLevel() < 90 ? GetMaxLevel() : 90;
-    return WoWSource::Honor::hk_honor_at_level(maxLevel, float(kills));
+    return SkyMistCore::Honor::hk_honor_at_level(maxLevel, float(kills));
 }
 
 void Battleground::BlockMovement(Player* player)
@@ -1735,15 +1718,6 @@ bool Battleground::AddObject(uint32 type, uint32 entry, float x, float y, float 
 
 // Some doors aren't despawned so we cannot handle their closing in gameobject::update()
 // It would be nice to correctly implement GO_ACTIVATED state and open/close doors in gameobject code
-void Battleground::DoorDespawn(uint32 type)
-{
-    if (GameObject* obj = GetBgMap()->GetGameObject(BgObjects[type]))
-        DelObject(type);
-    else
-        sLog->outError(LOG_FILTER_BATTLEGROUND, "Battleground::DoorDespawn: door gameobject (type : %u, GUID: %u) not found for BG (map: %u, instance id: %u)!",
-        type, GUID_LOPART(BgObjects[type]), m_MapId, m_InstanceID);
-}
-
 void Battleground::DoorClose(uint32 type)
 {
     if (GameObject* obj = GetBgMap()->GetGameObject(BgObjects[type]))
@@ -1920,8 +1894,8 @@ void Battleground::SendMessageToAll(int32 entry, ChatMsg type, Player const* sou
     if (!entry)
         return;
 
-    WoWSource::BattlegroundChatBuilder bg_builder(type, entry, source);
-    WoWSource::LocalizedPacketDo<WoWSource::BattlegroundChatBuilder> bg_do(bg_builder);
+    SkyMistCore::BattlegroundChatBuilder bg_builder(type, entry, source);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::BattlegroundChatBuilder> bg_do(bg_builder);
     BroadcastWorker(bg_do);
 }
 
@@ -1933,8 +1907,8 @@ void Battleground::PSendMessageToAll(int32 entry, ChatMsg type, Player const* so
     va_list ap;
     va_start(ap, source);
 
-    WoWSource::BattlegroundChatBuilder bg_builder(type, entry, source, &ap);
-    WoWSource::LocalizedPacketDo<WoWSource::BattlegroundChatBuilder> bg_do(bg_builder);
+    SkyMistCore::BattlegroundChatBuilder bg_builder(type, entry, source, &ap);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::BattlegroundChatBuilder> bg_do(bg_builder);
     BroadcastWorker(bg_do);
 
     va_end(ap);
@@ -1969,8 +1943,8 @@ void Battleground::SendWarningToAll(int32 entry, ...)
 
 void Battleground::SendMessage2ToAll(int32 entry, ChatMsg type, Player const* source, int32 arg1, int32 arg2)
 {
-    WoWSource::Battleground2ChatBuilder bg_builder(type, entry, source, arg1, arg2);
-    WoWSource::LocalizedPacketDo<WoWSource::Battleground2ChatBuilder> bg_do(bg_builder);
+    SkyMistCore::Battleground2ChatBuilder bg_builder(type, entry, source, arg1, arg2);
+    SkyMistCore::LocalizedPacketDo<SkyMistCore::Battleground2ChatBuilder> bg_do(bg_builder);
     BroadcastWorker(bg_do);
 }
 

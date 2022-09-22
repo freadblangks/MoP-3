@@ -528,7 +528,6 @@ enum UnitState
     UNIT_STATE_FLEEING_MOVE    = 0x02000000,
     UNIT_STATE_CHASE_MOVE      = 0x04000000,
     UNIT_STATE_FOLLOW_MOVE     = 0x08000000,
-    UNIT_STATE_IGNORE_PATHFINDING = 0x10000000,                 // do not use pathfinding in any MovementGenerator
     UNIT_STATE_UNATTACKABLE    = (UNIT_STATE_IN_FLIGHT | UNIT_STATE_ONVEHICLE),
     // for real move using movegen check and stop (except unstoppable flight)
     UNIT_STATE_MOVING          = UNIT_STATE_ROAMING_MOVE | UNIT_STATE_CONFUSED_MOVE | UNIT_STATE_FLEEING_MOVE | UNIT_STATE_CHASE_MOVE | UNIT_STATE_FOLLOW_MOVE ,
@@ -830,7 +829,7 @@ public:
     void BlockDamage(uint32 amount);
 
     Unit* GetAttacker() const { return m_attacker; };
-    Unit* getVictim() const { return m_victim; };
+    Unit* GetVictim() const { return m_victim; };
     SpellInfo const* GetSpellInfo() const { return m_spellInfo; };
     SpellSchoolMask GetSchoolMask() const { return m_schoolMask; };
     DamageEffectType GetDamageType() const { return m_damageType; };
@@ -2299,10 +2298,6 @@ class Unit : public WorldObject
         void FocusTarget(Spell const* focusSpell, uint64 target);
         void ReleaseFocus(Spell const* focusSpell);
 
-        int32 GetEclipsePower() { return _eclipsePower; };
-        void SetEclipsePower(int32 power, bool send = true);
-        void SendEclipse();
-
         uint32 GetHealingDoneInPastSecs(uint32 secs);
         uint32 GetHealingTakenInPastSecs(uint32 secs);
         uint32 GetDamageDoneInPastSecs(uint32 secs);
@@ -2430,9 +2425,6 @@ class Unit : public WorldObject
 
         uint32 m_SendTransportMoveTimer;
 
-        uint32 m_lastRegenTime[MAX_POWERS];
-        uint32 m_powers[MAX_POWERS];
-
         uint32 m_oldEmoteState; // Used to store and restore old emote states for creatures.
 
     private:
@@ -2498,13 +2490,11 @@ class Unit : public WorldObject
         Spell const* _focusSpell;   ///> Locks the target during spell cast for proper facing       
         bool _isWalkingBeforeCharm; // Are we walking before we were charmed? 
 
-        int32 _eclipsePower;
-
         time_t _lastDamagedTime;
         time_t _lastCombatTime;
 };
 
-namespace WoWSource
+namespace SkyMistCore
 {
     // Binary predicate for sorting Units based on percent value of a power
     class PowerPctOrderPred

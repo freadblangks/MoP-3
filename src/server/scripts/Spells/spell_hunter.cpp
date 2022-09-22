@@ -55,8 +55,6 @@ enum HunterSpells
     SPELL_SHAMAN_SATED                              = 57724,
     SPELL_SHAMAN_EXHAUSTED                          = 57723,
     HUNTER_SPELL_CAMOUFLAGE_VISUAL                  = 80326,
-    HUNTER_SPELL_CAMOUFLAGE_AURA                    = 80325,
-    HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE                = 119449,
     HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL         = 119450,
     HUNTER_SPELL_POWERSHOT                          = 109259,
     HUNTER_SPELL_IMPROVED_SERPENT_STING_AURA        = 82834,
@@ -182,8 +180,8 @@ class spell_hun_glaive_toss_damage : public SpellScriptLoader
                 std::list<Unit*> targetList;
                 float radius = 40.0f;
 
-                WoWSource::AnyUnfriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius);
-                WoWSource::UnitListSearcher<WoWSource::AnyUnfriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
+                SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck u_check(GetCaster(), GetCaster(), radius);
+                SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(GetCaster(), targetList, u_check);
                 GetCaster()->VisitNearbyObject(radius, searcher);
 
                 for (auto itr : targetList)
@@ -536,9 +534,6 @@ class spell_hun_dire_beast : public SpellScriptLoader
                             case 6138: // Dread Wastes
                                 _player->CastSpell(target, DIRE_BEAST_DREAD_WASTES, true);
                                 break;
-							case 6455: // Outland Isle
-								_player->CastSpell(target, DIRE_BEAST_OUTLAND, true);
-								break;
                             default:
                             {
                                 switch (_player->GetMapId())
@@ -549,7 +544,7 @@ class spell_hun_dire_beast : public SpellScriptLoader
                                     case 1: // Kalimdor
                                         _player->CastSpell(target, DIRE_BEAST_KALIMDOR, true);
                                         break;
-                                    case 8: // Outland 
+                                    case 8: // Outland
                                         _player->CastSpell(target, DIRE_BEAST_OUTLAND, true);
                                         break;
                                     case 10: // Northrend
@@ -727,7 +722,7 @@ class spell_hun_lynx_rush : public SpellScriptLoader
                 if (targetList.empty())
                     return;
 
-                WoWSource::Containers::RandomResizeList(targetList, 1);
+                SkyMistCore::Containers::RandomResizeList(targetList, 1);
 
                 for (auto itr : targetList)
                 {
@@ -798,7 +793,7 @@ class spell_hun_lynx_rush : public SpellScriptLoader
                                 if (targetList.empty())
                                     return;
 
-                                WoWSource::Containers::RandomResizeList(targetList, 1);
+                                SkyMistCore::Containers::RandomResizeList(targetList, 1);
 
                                 for (auto itr : targetList)
                                 {
@@ -929,14 +924,6 @@ class spell_hun_cobra_strikes : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
-                        if (_player->HasAura(138367))
-                        {
-                            if (roll_chance_i(90) && !_player->HasSpellCooldown(138366))
-                            {
-                                _player->CastSpell(target, 138366, true);
-                                _player->AddSpellCooldown(138366, 0, time(NULL) + 20);
-                            }
-                        }
                         if (!target->HasAura(HUNTER_SPELL_HUNTERS_MARK))
                             _player->CastSpell(target, HUNTER_SPELL_HUNTERS_MARK, true);
 
@@ -1015,20 +1002,20 @@ class spell_hun_binding_shot : public SpellScriptLoader
 
                     std::list<Unit*> bindedList;
 
-                    CellCoord p(WoWSource::ComputeCellCoord(dynObj->GetPositionX(), dynObj->GetPositionY()));
+                    CellCoord p(SkyMistCore::ComputeCellCoord(dynObj->GetPositionX(), dynObj->GetPositionY()));
                     Cell cell(p);
                     cell.SetNoCreate();
 
-                    WoWSource::AnyUnitInObjectRangeCheck u_check(dynObj, 15.0f);
-                    WoWSource::UnitListSearcher<WoWSource::AnyUnitInObjectRangeCheck> searcher(dynObj, bindedList, u_check);
+                    SkyMistCore::AnyUnitInObjectRangeCheck u_check(dynObj, 15.0f);
+                    SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck> searcher(dynObj, bindedList, u_check);
 
-                    TypeContainerVisitor<WoWSource::UnitListSearcher<WoWSource::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
-                    TypeContainerVisitor<WoWSource::UnitListSearcher<WoWSource::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
+                    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, WorldTypeMapContainer > world_unit_searcher(searcher);
+                    TypeContainerVisitor<SkyMistCore::UnitListSearcher<SkyMistCore::AnyUnitInObjectRangeCheck>, GridTypeMapContainer >  grid_unit_searcher(searcher);
 
                     cell.Visit(p, world_unit_searcher, *dynObj->GetMap(), *dynObj, 15.0f);
                     cell.Visit(p, grid_unit_searcher, *dynObj->GetMap(), *dynObj, 15.0f);
 
-                    bindedList.remove_if(WoWSource::UnitAuraCheck(false, GetSpellInfo()->Id, caster->GetGUID()));
+                    bindedList.remove_if(SkyMistCore::UnitAuraCheck(false, GetSpellInfo()->Id, caster->GetGUID()));
 
                     for (auto itr : bindedList)
                     {
@@ -1268,22 +1255,6 @@ class spell_hun_feign_death : public SpellScriptLoader
             {
                 health = GetTarget()->GetHealth();
                 focus = GetTarget()->GetPower(POWER_FOCUS);
-
-                GetCaster()->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_VISUAL);
-                GetCaster()->RemoveAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL);
-                GetCaster()->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_AURA);
-                GetCaster()->RemoveAura(51753);
-                GetCaster()->RemoveAura(51755);
-
-                if (Unit* pet = GetCaster()->GetGuardianPet())
-                {
-                    pet->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_AURA);
-                    pet->RemoveAura(51753);
-                    pet->RemoveAura(51755);
-
-                    if (pet->HasAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL))
-                        pet->RemoveAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL);
-                }
             }
 
             void HandleEffectRemove(constAuraEffectPtr /*aurEff*/, AuraEffectHandleModes /*mode*/)
@@ -1292,18 +1263,6 @@ class spell_hun_feign_death : public SpellScriptLoader
                 {
                     GetTarget()->SetHealth(health);
                     GetTarget()->SetPower(POWER_FOCUS, focus);
-                }
-
-                GetCaster()->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_VISUAL);
-                GetCaster()->RemoveAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL);
-                GetCaster()->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_AURA);
-
-                if (Unit* pet = GetCaster()->GetGuardianPet())
-                {
-                    pet->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_AURA);
-
-                    if (pet->HasAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL))
-                        pet->RemoveAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL);
                 }
             }
 
@@ -1334,13 +1293,10 @@ class spell_hun_camouflage_visual : public SpellScriptLoader
             {
                 if (GetCaster())
                 {
-                    if (GetCaster()->HasAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE))
+                    if (Unit* pet = GetCaster()->GetGuardianPet())
                     {
-                        if (Unit* pet = GetCaster()->GetGuardianPet())
-                        {
-                            if (!pet->HasAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL))
-                                GetCaster()->AddAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL, pet);
-                        }
+                        if (!pet->HasAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL))
+                            GetCaster()->AddAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL, pet);
                     }
                 }
             }
@@ -1351,15 +1307,6 @@ class spell_hun_camouflage_visual : public SpellScriptLoader
                 {
                     GetCaster()->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_VISUAL);
                     GetCaster()->RemoveAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL);
-                    GetCaster()->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_AURA);
-
-                    if (Unit* pet = GetCaster()->GetGuardianPet())
-                    {
-                        pet->RemoveAura(HUNTER_SPELL_CAMOUFLAGE_AURA);
-
-                        if (pet->HasAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL))
-                            pet->RemoveAura(HUNTER_SPELL_GLYPH_OF_CAMOUFLAGE_VISUAL);
-                    }
                 }
             }
 
@@ -1390,21 +1337,9 @@ class spell_hun_serpent_spread : public SpellScriptLoader
             void HandleOnHit()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
-                {
                     if (Unit* target = GetHitUnit())
-                    {
-                        if (_player->HasAura(138367))
-                        {
-                            if (roll_chance_i(90) && !_player->HasSpellCooldown(138366))
-                            {
-                                _player->CastSpell(target, 138366, true);
-                                _player->AddSpellCooldown(138366, 0, time(NULL) + 20);
-                            }
-                        }
                         if (_player->HasAura(HUNTER_SPELL_SERPENT_SPREAD))
                             _player->CastSpell(target, HUNTER_SPELL_SERPENT_STING, true);
-                    }
-                }
             }
 
             void Register()
@@ -1444,10 +1379,10 @@ class spell_hun_ancient_hysteria : public SpellScriptLoader
 
             void RemoveInvalidTargets(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(WoWSource::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, SPELL_SHAMAN_EXHAUSTED));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, SPELL_SHAMAN_SATED));
-                targets.remove_if(WoWSource::UnitAuraCheck(true, SPELL_MAGE_TEMPORAL_DISPLACEMENT));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, HUNTER_SPELL_INSANITY));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_SHAMAN_EXHAUSTED));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_SHAMAN_SATED));
+                targets.remove_if(SkyMistCore::UnitAuraCheck(true, SPELL_MAGE_TEMPORAL_DISPLACEMENT));
             }
 
             void ApplyDebuff()
@@ -1626,15 +1561,6 @@ class spell_hun_cobra_shot : public SpellScriptLoader
                 {
                     if (Unit* target = GetHitUnit())
                     {
-                        if (_player->HasAura(138365))
-                        {
-                            if (roll_chance_i(90) && !_player->HasSpellCooldown(138363))
-                            {
-                                _player->CastSpell(target, 138363, true);
-                                _player->AddSpellCooldown(138363, 0, time(NULL) + 61);
-                            }
-                        }
-
                         if (AuraEffectPtr aurEff = target->GetAuraEffect(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_HUNTER, 16384, 0, 0, GetCaster()->GetGUID()))
                         {
                             AuraPtr serpentSting = aurEff->GetBase();
@@ -1679,21 +1605,9 @@ class spell_hun_steady_shot : public SpellScriptLoader
             void HandleOnHit()
             {
                 if (Player* _player = GetCaster()->ToPlayer())
-                {
                     if (Unit* target = GetHitUnit())
-                    {
-                        if (_player->HasAura(138365))
-                        {
-                            if (roll_chance_i(90) && !_player->HasSpellCooldown(138363))
-                            {
-                                _player->CastSpell(target, 138363, true);
-                                _player->AddSpellCooldown(138363, 0, time(NULL) + 61);
-                            }
-                        }
                         if (GetSpell()->IsCritForTarget(target))
                             _player->CastSpell(target, HUNTER_SPELL_PIERCING_SHOTS_EFFECT, true);
-                    }
-                }
             }
 
             void HandleAfterCast()
@@ -2033,8 +1947,8 @@ class spell_hun_pet_carrion_feeder : public SpellScriptLoader
                 float max_range = GetSpellInfo()->GetMaxRange(false);
                 WorldObject* result = NULL;
                 // search for nearby enemy corpse in range
-                WoWSource::AnyDeadUnitSpellTargetInRangeCheck check(caster, max_range, GetSpellInfo(), TARGET_CHECK_ENEMY);
-                WoWSource::WorldObjectSearcher<WoWSource::AnyDeadUnitSpellTargetInRangeCheck> searcher(caster, result, check);
+                SkyMistCore::AnyDeadUnitSpellTargetInRangeCheck check(caster, max_range, GetSpellInfo(), TARGET_CHECK_ENEMY);
+                SkyMistCore::WorldObjectSearcher<SkyMistCore::AnyDeadUnitSpellTargetInRangeCheck> searcher(caster, result, check);
                 caster->GetMap()->VisitFirstFound(caster->m_positionX, caster->m_positionY, max_range, searcher);
                 if (!result)
                     return SPELL_FAILED_NO_EDIBLE_CORPSES;
